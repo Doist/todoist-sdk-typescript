@@ -29,13 +29,18 @@ export const SECTION_WEBHOOK_EVENTS = [
 /**
  * A section as delivered in a webhook payload.
  *
- * Reuses {@link SectionBaseSchema} and overrides `updatedAt` to allow
- * `null` — tombstones and never-updated sections come through without
- * an `updated_at` value. Surfaces the computed `url` so the exposed shape
+ * Reuses {@link SectionBaseSchema} and overrides `updatedAt` to tolerate
+ * payloads that deliver it as `null` or omit the key entirely — tombstones
+ * and never-updated sections come through without an `updated_at` value.
+ * The result is normalised to `Date | null` so consumers don't have to
+ * handle three shapes. Surfaces the computed `url` so the exposed shape
  * matches {@link Section}.
  */
 export const WebhookSectionSchema = SectionBaseSchema.extend({
-    updatedAt: z.coerce.date().nullable(),
+    updatedAt: z.coerce
+        .date()
+        .nullish()
+        .transform((value) => value ?? null),
 }).transform((data) => ({
     ...data,
     url: getSectionUrl(data.id, data.name),

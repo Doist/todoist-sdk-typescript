@@ -54,6 +54,15 @@ describe('section:* payloads', () => {
         expect(payload.eventData.updatedAt).toBeNull()
     })
 
+    test('section:deleted tolerates a missing updatedAt key', () => {
+        const base = rawSection({ is_deleted: true, name: '' })
+        delete base.updated_at
+        const payload = parseWebhookPayload(envelope('section:deleted', base))
+        if (payload.eventName !== 'section:deleted') throw new Error('expected section:deleted')
+
+        expect(payload.eventData.updatedAt).toBeNull()
+    })
+
     test('section:archived carries isArchived=true', () => {
         const payload = parseWebhookPayload(
             envelope(
