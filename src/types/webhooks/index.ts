@@ -1,5 +1,6 @@
 export * from './comments'
 export * from './envelope'
+export * from './filters'
 export * from './labels'
 export * from './projects'
 export * from './sections'
