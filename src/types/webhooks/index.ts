@@ -1,4 +1,5 @@
 export * from './comments'
 export * from './envelope'
+export * from './labels'
 export * from './tasks'
 export * from './types'

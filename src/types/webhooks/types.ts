@@ -8,6 +8,12 @@ import {
 } from './comments'
 import { BaseWebhookEnvelopeShape } from './envelope'
 import {
+    LABEL_WEBHOOK_EVENTS,
+    LabelAddedPayloadSchema,
+    LabelDeletedPayloadSchema,
+    LabelUpdatedPayloadSchema,
+} from './labels'
+import {
     TASK_WEBHOOK_EVENTS,
     TaskAddedPayloadSchema,
     TaskCompletedPayloadSchema,
@@ -24,6 +30,7 @@ import {
 const TYPED_WEBHOOK_EVENTS = [
     ...TASK_WEBHOOK_EVENTS,
     ...COMMENT_WEBHOOK_EVENTS,
+    ...LABEL_WEBHOOK_EVENTS,
 ] as const satisfies readonly WebhookEvent[]
 
 /**
@@ -42,7 +49,7 @@ const untypedEventNames = WEBHOOK_EVENTS.filter(
 /**
  * A single branch covering every event whose payload has not yet been typed
  * per resource. Follow-up PRs will replace slices of this with dedicated
- * variants (projects, sections, labels, filters, reminders).
+ * variants (projects, sections, filters, reminders).
  */
 export const UntypedWebhookPayloadSchema = z.object({
     ...BaseWebhookEnvelopeShape,
@@ -59,9 +66,10 @@ export const UntypedWebhookPayloadSchema = z.object({
  * `parseWebhookPayload` receive camelCase fields directly.
  *
  * Typed today: `item:*` events carry a parsed {@link Task}; `note:*` events
- * carry a parsed comment (item-comment or project-comment). Other events
- * still expose `eventData` as `unknown`; they will be narrowed in follow-up
- * PRs (projects, sections, labels, filters, reminders).
+ * carry a parsed comment (item-comment or project-comment); `label:*` events
+ * carry a parsed label. Other events still expose `eventData` as `unknown`;
+ * they will be narrowed in follow-up PRs (projects, sections, filters,
+ * reminders).
  */
 export const WebhookPayloadSchema = z.discriminatedUnion('eventName', [
     TaskAddedPayloadSchema,
@@ -72,6 +80,9 @@ export const WebhookPayloadSchema = z.discriminatedUnion('eventName', [
     CommentAddedPayloadSchema,
     CommentUpdatedPayloadSchema,
     CommentDeletedPayloadSchema,
+    LabelAddedPayloadSchema,
+    LabelUpdatedPayloadSchema,
+    LabelDeletedPayloadSchema,
     UntypedWebhookPayloadSchema,
 ])
 

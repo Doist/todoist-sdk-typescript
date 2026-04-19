@@ -86,14 +86,14 @@ describe('parseWebhookPayload', () => {
     })
 
     test('rejects payloads with unsupported versions', () => {
-        const raw = envelope('label:added', {})
+        const raw = envelope('filter:added', {})
         raw.version = '9'
         expect(() => parseWebhookPayload(raw)).toThrow()
     })
 
     test('leaves eventData untyped for not-yet-narrowed events', () => {
-        const payload = parseWebhookPayload(envelope('label:added', { id: 'lbl1', name: 'home' }))
-        expect(payload.eventName).toBe('label:added')
+        const payload = parseWebhookPayload(envelope('filter:added', { id: 'lbl1', name: 'home' }))
+        expect(payload.eventName).toBe('filter:added')
         expect(payload.eventData).toEqual({ id: 'lbl1', name: 'home' })
     })
 })
