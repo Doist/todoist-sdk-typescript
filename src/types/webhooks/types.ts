@@ -14,6 +14,14 @@ import {
     LabelUpdatedPayloadSchema,
 } from './labels'
 import {
+    PROJECT_WEBHOOK_EVENTS,
+    ProjectAddedPayloadSchema,
+    ProjectArchivedPayloadSchema,
+    ProjectDeletedPayloadSchema,
+    ProjectUnarchivedPayloadSchema,
+    ProjectUpdatedPayloadSchema,
+} from './projects'
+import {
     TASK_WEBHOOK_EVENTS,
     TaskAddedPayloadSchema,
     TaskCompletedPayloadSchema,
@@ -31,6 +39,7 @@ const TYPED_WEBHOOK_EVENTS = [
     ...TASK_WEBHOOK_EVENTS,
     ...COMMENT_WEBHOOK_EVENTS,
     ...LABEL_WEBHOOK_EVENTS,
+    ...PROJECT_WEBHOOK_EVENTS,
 ] as const satisfies readonly WebhookEvent[]
 
 /**
@@ -49,7 +58,7 @@ const untypedEventNames = WEBHOOK_EVENTS.filter(
 /**
  * A single branch covering every event whose payload has not yet been typed
  * per resource. Follow-up PRs will replace slices of this with dedicated
- * variants (projects, sections, filters, reminders).
+ * variants (sections, filters, reminders).
  */
 export const UntypedWebhookPayloadSchema = z.object({
     ...BaseWebhookEnvelopeShape,
@@ -67,8 +76,9 @@ export const UntypedWebhookPayloadSchema = z.object({
  *
  * Typed today: `item:*` events carry a parsed {@link Task}; `note:*` events
  * carry a parsed comment (item-comment or project-comment); `label:*` events
- * carry a parsed label. Other events still expose `eventData` as `unknown`;
- * they will be narrowed in follow-up PRs (projects, sections, filters,
+ * carry a parsed label; `project:*` events carry a parsed {@link Project}
+ * (personal or workspace). Other events still expose `eventData` as
+ * `unknown`; they will be narrowed in follow-up PRs (sections, filters,
  * reminders).
  */
 export const WebhookPayloadSchema = z.discriminatedUnion('eventName', [
@@ -83,6 +93,11 @@ export const WebhookPayloadSchema = z.discriminatedUnion('eventName', [
     LabelAddedPayloadSchema,
     LabelUpdatedPayloadSchema,
     LabelDeletedPayloadSchema,
+    ProjectAddedPayloadSchema,
+    ProjectUpdatedPayloadSchema,
+    ProjectDeletedPayloadSchema,
+    ProjectArchivedPayloadSchema,
+    ProjectUnarchivedPayloadSchema,
     UntypedWebhookPayloadSchema,
 ])
 
