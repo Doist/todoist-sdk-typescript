@@ -90,4 +90,9 @@ describe('note:* payloads', () => {
         delete broken.url
         expect(() => parseWebhookPayload(envelope('note:added', broken))).toThrow()
     })
+
+    test('rejects a note payload carrying both itemId and projectId', () => {
+        const broken = rawItemComment({ project_id: '6XR4H993xv8H5qCR' })
+        expect(() => parseWebhookPayload(envelope('note:added', broken))).toThrow()
+    })
 })

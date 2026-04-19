@@ -32,7 +32,7 @@ export const LABEL_WEBHOOK_EVENTS = [
  */
 export const WebhookLabelSchema = LabelSchema.omit({ order: true })
     .extend({
-        itemOrder: z.number().int(),
+        itemOrder: z.number().int().nullable(),
         isDeleted: z.boolean(),
     })
     .transform(({ itemOrder, ...rest }) => ({

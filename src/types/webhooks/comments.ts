@@ -61,10 +61,12 @@ export const WebhookItemCommentSchema = WebhookCommentBaseSchema.extend({
     itemId: z.string(),
     url: z.string(),
     item: TaskSchema,
-}).transform(({ itemId, ...rest }) => ({
-    ...rest,
-    taskId: itemId,
-}))
+})
+    .strict()
+    .transform(({ itemId, ...rest }) => ({
+        ...rest,
+        taskId: itemId,
+    }))
 
 /** A comment attached to a task, delivered in a webhook payload. */
 export type WebhookItemComment = z.infer<typeof WebhookItemCommentSchema>
@@ -77,7 +79,7 @@ export type WebhookItemComment = z.infer<typeof WebhookItemCommentSchema>
  */
 export const WebhookProjectCommentSchema = WebhookCommentBaseSchema.extend({
     projectId: z.string(),
-})
+}).strict()
 
 /** A comment attached to a project, delivered in a webhook payload. */
 export type WebhookProjectComment = z.infer<typeof WebhookProjectCommentSchema>
