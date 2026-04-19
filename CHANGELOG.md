@@ -1,3 +1,9 @@
+## [9.7.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.6.0...v9.7.0) (2026-04-19)
+
+### Features
+
+* type filter:* and reminder:fired webhook payloads ([#589](https://github.com/Doist/todoist-sdk-typescript/issues/589)) ([29ceca4](https://github.com/Doist/todoist-sdk-typescript/commit/29ceca450d16c3814bc4c8bced60362e28599f0a))
+
 ## [9.6.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.5.0...v9.6.0) (2026-04-19)
 
 ### Features
