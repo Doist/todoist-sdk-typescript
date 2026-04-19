@@ -4,6 +4,19 @@ import { TaskSchema } from '../tasks/types'
 import { BaseWebhookEnvelopeShape } from './envelope'
 
 /**
+ * Enum-like object of task (`item:*`) webhook event names. Single source of
+ * truth for the discriminator values — `TASK_WEBHOOK_EVENTS` and every
+ * `z.literal()` below derive from it.
+ */
+export const TaskWebhookEventEnum = {
+    Added: 'item:added',
+    Updated: 'item:updated',
+    Completed: 'item:completed',
+    Uncompleted: 'item:uncompleted',
+    Deleted: 'item:deleted',
+} as const
+
+/**
  * Webhook events that carry a {@link Task} as their `eventData`.
  *
  * The on-the-wire event names remain `item:*` for historical reasons; the
@@ -11,11 +24,11 @@ import { BaseWebhookEnvelopeShape } from './envelope'
  * resource is named `Task`.
  */
 export const TASK_WEBHOOK_EVENTS = [
-    'item:added',
-    'item:updated',
-    'item:completed',
-    'item:uncompleted',
-    'item:deleted',
+    TaskWebhookEventEnum.Added,
+    TaskWebhookEventEnum.Updated,
+    TaskWebhookEventEnum.Completed,
+    TaskWebhookEventEnum.Uncompleted,
+    TaskWebhookEventEnum.Deleted,
 ] as const satisfies readonly WebhookEvent[]
 
 /**
@@ -58,14 +71,14 @@ export type TaskUpdatedExtra = z.infer<typeof TaskUpdatedExtraSchema>
 
 export const TaskAddedPayloadSchema = z.object({
     ...BaseWebhookEnvelopeShape,
-    eventName: z.literal('item:added'),
+    eventName: z.literal(TaskWebhookEventEnum.Added),
     eventData: TaskSchema,
 })
 export type TaskAddedPayload = z.infer<typeof TaskAddedPayloadSchema>
 
 export const TaskUpdatedPayloadSchema = z.object({
     ...BaseWebhookEnvelopeShape,
-    eventName: z.literal('item:updated'),
+    eventName: z.literal(TaskWebhookEventEnum.Updated),
     eventData: TaskSchema,
     eventDataExtra: TaskUpdatedExtraSchema.optional(),
 })
@@ -73,21 +86,21 @@ export type TaskUpdatedPayload = z.infer<typeof TaskUpdatedPayloadSchema>
 
 export const TaskCompletedPayloadSchema = z.object({
     ...BaseWebhookEnvelopeShape,
-    eventName: z.literal('item:completed'),
+    eventName: z.literal(TaskWebhookEventEnum.Completed),
     eventData: TaskSchema,
 })
 export type TaskCompletedPayload = z.infer<typeof TaskCompletedPayloadSchema>
 
 export const TaskUncompletedPayloadSchema = z.object({
     ...BaseWebhookEnvelopeShape,
-    eventName: z.literal('item:uncompleted'),
+    eventName: z.literal(TaskWebhookEventEnum.Uncompleted),
     eventData: TaskSchema,
 })
 export type TaskUncompletedPayload = z.infer<typeof TaskUncompletedPayloadSchema>
 
 export const TaskDeletedPayloadSchema = z.object({
     ...BaseWebhookEnvelopeShape,
-    eventName: z.literal('item:deleted'),
+    eventName: z.literal(TaskWebhookEventEnum.Deleted),
     eventData: TaskSchema,
 })
 export type TaskDeletedPayload = z.infer<typeof TaskDeletedPayloadSchema>

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { WebhookVersionSchema, type WebhookEvent } from '../apps/types'
+import { WebhookVersionSchema } from '../apps/types'
 
 /**
  * Collaborator info for the user that triggered a webhook event.
@@ -28,16 +28,3 @@ export const BaseWebhookEnvelopeShape = {
     initiator: WebhookInitiatorSchema,
     triggeredAt: z.coerce.date(),
 } as const
-
-/**
- * Builds a variant schema for an event whose `eventData` has not yet been
- * narrowed per resource.
- */
-export function untypedWebhookVariant<E extends WebhookEvent>(eventName: E) {
-    return z.object({
-        ...BaseWebhookEnvelopeShape,
-        eventName: z.literal(eventName),
-        eventData: z.unknown(),
-        eventDataExtra: z.unknown().optional(),
-    })
-}

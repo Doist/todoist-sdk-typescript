@@ -28,7 +28,7 @@ const untypedEventNames = WEBHOOK_EVENTS.filter(
  * per resource. Follow-up PRs will replace slices of this with dedicated
  * variants (notes, projects, sections, labels, filters, reminders).
  */
-const UntypedWebhookPayloadSchema = z.object({
+export const UntypedWebhookPayloadSchema = z.object({
     ...BaseWebhookEnvelopeShape,
     eventName: z.enum(untypedEventNames as [UntypedWebhookEvent, ...UntypedWebhookEvent[]]),
     eventData: z.unknown(),
