@@ -1,3 +1,9 @@
+## [9.6.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.5.0...v9.6.0) (2026-04-19)
+
+### Features
+
+* type project:* and section:* webhook payloads ([#588](https://github.com/Doist/todoist-sdk-typescript/issues/588)) ([e4825c9](https://github.com/Doist/todoist-sdk-typescript/commit/e4825c9d468a9066cdbe2d165499b1a4de90c9fe))
+
 ## [9.5.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.4.0...v9.5.0) (2026-04-19)
 
 ### Features
