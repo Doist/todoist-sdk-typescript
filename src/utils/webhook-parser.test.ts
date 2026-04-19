@@ -65,70 +65,70 @@ function envelope(event: string, eventData: unknown, extra?: Record<string, unkn
 const SAMPLE_BODY = JSON.stringify(envelope('item:added', rawTask()))
 
 describe('verifyWebhookSignature', () => {
-    test('accepts a correctly signed body', () => {
+    test('accepts a correctly signed body', async () => {
         const signature = sign(SAMPLE_BODY)
-        expect(
+        await expect(
             verifyWebhookSignature({
                 rawBody: SAMPLE_BODY,
                 signature,
                 clientSecret: CLIENT_SECRET,
             }),
-        ).toBe(true)
+        ).resolves.toBe(true)
     })
 
-    test('accepts a Buffer body', () => {
-        const body = Buffer.from(SAMPLE_BODY, 'utf8')
+    test('accepts a Uint8Array body', async () => {
+        const body = new TextEncoder().encode(SAMPLE_BODY)
         const signature = sign(SAMPLE_BODY)
-        expect(
+        await expect(
             verifyWebhookSignature({
                 rawBody: body,
                 signature,
                 clientSecret: CLIENT_SECRET,
             }),
-        ).toBe(true)
+        ).resolves.toBe(true)
     })
 
-    test('rejects a tampered body', () => {
+    test('rejects a tampered body', async () => {
         const signature = sign(SAMPLE_BODY)
         const tampered = SAMPLE_BODY.replace('Alice', 'Mallory')
-        expect(
+        await expect(
             verifyWebhookSignature({
                 rawBody: tampered,
                 signature,
                 clientSecret: CLIENT_SECRET,
             }),
-        ).toBe(false)
+        ).resolves.toBe(false)
     })
 
-    test('rejects a signature generated with a different secret', () => {
+    test('rejects a signature generated with a different secret', async () => {
         const signature = sign(SAMPLE_BODY, 'other-secret')
-        expect(
+        await expect(
             verifyWebhookSignature({
                 rawBody: SAMPLE_BODY,
                 signature,
                 clientSecret: CLIENT_SECRET,
             }),
-        ).toBe(false)
+        ).resolves.toBe(false)
     })
 
-    test('rejects a signature of the wrong length', () => {
-        expect(
+    test('rejects a signature of the wrong length', async () => {
+        await expect(
             verifyWebhookSignature({
                 rawBody: SAMPLE_BODY,
                 signature: Buffer.from('too-short').toString('base64'),
                 clientSecret: CLIENT_SECRET,
             }),
-        ).toBe(false)
+        ).resolves.toBe(false)
     })
 
-    test('rejects an empty signature', () => {
-        expect(
+    test('rejects an empty signature', async () => {
+        await expect(
             verifyWebhookSignature({
                 rawBody: SAMPLE_BODY,
                 signature: '',
                 clientSecret: CLIENT_SECRET,
             }),
-        ).toBe(false)
+        ).resolves.toBe(false)
     })
 })
 
@@ -233,13 +233,16 @@ describe('item:* payloads', () => {
         expect(payload.eventDataExtra?.oldItem.content).toBe('Buy Milk')
     })
 
-    test('item:updated rejects unknown updateIntent values', () => {
+    test('item:updated falls back to item_updated for unknown intents', () => {
         const raw = envelope('item:updated', rawTask(), {
             event_data_extra: {
                 old_item: rawTask(),
                 update_intent: 'something_new',
             },
         })
-        expect(() => parseWebhookPayload(raw)).toThrow()
+        const payload = parseWebhookPayload(raw)
+        if (payload.eventName !== 'item:updated') throw new Error('expected item:updated')
+
+        expect(payload.eventDataExtra?.updateIntent).toBe('item_updated')
     })
 })

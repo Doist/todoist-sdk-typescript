@@ -1,4 +1,3 @@
-import { createHmac, timingSafeEqual } from 'node:crypto'
 import { WebhookPayloadSchema, type WebhookPayload } from '../types/webhooks/types'
 import { camelCaseKeys } from './case-conversion'
 
@@ -8,8 +7,7 @@ import { camelCaseKeys } from './case-conversion'
  * The backend sends snake_case keys (e.g. `event_name`, `user_id`, `added_at`);
  * this converts them to camelCase and validates against
  * {@link WebhookPayloadSchema}. Event-specific `eventData` is returned as
- * `unknown` for now and will be narrowed to per-resource types in follow-up
- * work.
+ * `unknown` for events that are not yet narrowed per-resource.
  *
  * Pass the parsed JSON body (or any unknown value) — validation throws on
  * unexpected shape.
@@ -39,6 +37,17 @@ export type VerifyWebhookSignatureArgs = {
     clientSecret: string
 }
 
+const encoder = new TextEncoder()
+
+function base64ToBytes(base64: string): Uint8Array {
+    const binary = atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i)
+    }
+    return bytes
+}
+
 /**
  * Verifies a webhook request's HMAC signature.
  *
@@ -46,26 +55,43 @@ export type VerifyWebhookSignatureArgs = {
  * using the app's `client_secret` as the key, base64-encoded in the
  * `X-Todoist-Hmac-SHA256` header.
  *
+ * Uses the Web Crypto API (`crypto.subtle`), which is available in Node ≥ 20,
+ * modern browsers, React Native (with polyfills), and edge runtimes. The
+ * comparison is constant-time.
+ *
  * @returns `true` when the signature is valid, `false` otherwise. Never throws
  * on malformed input.
  */
-export function verifyWebhookSignature({
+export async function verifyWebhookSignature({
     rawBody,
     signature,
     clientSecret,
-}: VerifyWebhookSignatureArgs): boolean {
-    const expected = createHmac('sha256', clientSecret).update(rawBody).digest()
-
-    let provided: Buffer
+}: VerifyWebhookSignatureArgs): Promise<boolean> {
+    let provided: Uint8Array
     try {
-        provided = Buffer.from(signature, 'base64')
+        provided = base64ToBytes(signature)
     } catch {
         return false
     }
 
-    if (provided.length !== expected.length) {
+    const key = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(clientSecret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['verify'],
+    )
+
+    const body = typeof rawBody === 'string' ? encoder.encode(rawBody) : rawBody
+
+    try {
+        return await crypto.subtle.verify(
+            'HMAC',
+            key,
+            provided as BufferSource,
+            body as BufferSource,
+        )
+    } catch {
         return false
     }
-
-    return timingSafeEqual(provided, expected)
 }
