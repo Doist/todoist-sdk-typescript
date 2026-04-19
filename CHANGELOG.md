@@ -1,3 +1,9 @@
+## [9.5.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.4.0...v9.5.0) (2026-04-19)
+
+### Features
+
+* type note:* and label:* webhook payloads ([#587](https://github.com/Doist/todoist-sdk-typescript/issues/587)) ([7195b55](https://github.com/Doist/todoist-sdk-typescript/commit/7195b5559ff90da90a5545056d4b8ccf7ba6134c))
+
 ## [9.4.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.3.0...v9.4.0) (2026-04-19)
 
 ### Features
