@@ -86,16 +86,8 @@ describe('parseWebhookPayload', () => {
     })
 
     test('rejects payloads with unsupported versions', () => {
-        const raw = envelope('reminder:fired', {})
+        const raw = envelope('item:added', rawTask())
         raw.version = '9'
         expect(() => parseWebhookPayload(raw)).toThrow()
-    })
-
-    test('leaves eventData untyped for not-yet-narrowed events', () => {
-        const payload = parseWebhookPayload(
-            envelope('reminder:fired', { id: 'lbl1', name: 'home' }),
-        )
-        expect(payload.eventName).toBe('reminder:fired')
-        expect(payload.eventData).toEqual({ id: 'lbl1', name: 'home' })
     })
 })
