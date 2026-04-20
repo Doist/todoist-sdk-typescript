@@ -1,3 +1,9 @@
+## [9.8.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.7.0...v9.8.0) (2026-04-20)
+
+### Features
+
+* add folderId and workspaceId filters to projects endpoints ([#590](https://github.com/Doist/todoist-sdk-typescript/issues/590)) ([4ee221a](https://github.com/Doist/todoist-sdk-typescript/commit/4ee221adf59e4c374ea4c2e824f1acaf1f756fbb))
+
 ## [9.7.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.6.0...v9.7.0) (2026-04-19)
 
 ### Features
