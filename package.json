@@ -52,7 +52,7 @@
         "form-data": "4.0.5",
         "ts-custom-error": "^3.2.0",
         "undici": "^7.16.0",
-        "uuid": "11.1.0",
+        "uuid": "14.0.0",
         "zod": "4.3.6"
     },
     "devDependencies": {
