@@ -1,4 +1,4 @@
-import { TodoistApi, type CurrentUser, type ProductivityStats } from '.'
+import { TodoistApi, type CurrentUser } from '.'
 import { getSyncBaseUri, ENDPOINT_REST_USER, ENDPOINT_REST_PRODUCTIVITY } from './consts/endpoints'
 import { server, http, HttpResponse } from './test-utils/msw-setup'
 import { DEFAULT_AUTH_TOKEN } from './test-utils/test-defaults'
@@ -42,7 +42,7 @@ const DEFAULT_CURRENT_USER_RESPONSE: CurrentUser = {
     weekendStartDay: 6,
 }
 
-const PRODUCTIVITY_STATS_RESPONSE: ProductivityStats = {
+const PRODUCTIVITY_STATS_RESPONSE = {
     completedCount: 42,
     daysItems: [
         {
@@ -195,7 +195,18 @@ describe('TodoistApi user endpoints', () => {
             )
             const api = getTarget()
             const stats = await api.getProductivityStats()
-            expect(stats).toEqual(PRODUCTIVITY_STATS_RESPONSE)
+            expect(stats).toEqual({
+                ...PRODUCTIVITY_STATS_RESPONSE,
+                goals: {
+                    ...PRODUCTIVITY_STATS_RESPONSE.goals,
+                    ignoreDays: ['Friday', 'Saturday'],
+                    karmaDisabled: false,
+                    vacationMode: true,
+                },
+            })
+            expect(stats.goals.karmaDisabled).toBe(false)
+            expect(stats.goals.vacationMode).toBe(true)
+            expect(stats.goals.ignoreDays).toEqual(['Friday', 'Saturday'])
         })
     })
 })
