@@ -1,3 +1,13 @@
+## [10.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.8.0...v10.0.0) (2026-04-30)
+
+### ⚠ BREAKING CHANGES
+
+* type ProductivityStats goal flags and ignoreDays (#592)
+
+### Features
+
+* type ProductivityStats goal flags and ignoreDays ([#592](https://github.com/Doist/todoist-sdk-typescript/issues/592)) ([375d4c7](https://github.com/Doist/todoist-sdk-typescript/commit/375d4c733e30a6780877715b953b187e1379d07e))
+
 ## [9.8.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.7.0...v9.8.0) (2026-04-20)
 
 ### Features
