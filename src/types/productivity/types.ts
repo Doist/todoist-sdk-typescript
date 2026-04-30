@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { BooleanFromZeroOneSchema } from '../sync/user-preferences'
+import { BooleanFromZeroOneSchema, DayOfWeekSchema } from '../sync/user-preferences'
 
 export const StreakSchema = z.object({
     count: z.number(),
@@ -37,7 +37,7 @@ export const ProductivityStatsSchema = z.object({
         currentDailyStreak: StreakSchema,
         currentWeeklyStreak: StreakSchema,
         dailyGoal: z.number(),
-        ignoreDays: z.array(z.number()),
+        ignoreDays: z.array(DayOfWeekSchema),
         karmaDisabled: BooleanFromZeroOneSchema,
         lastDailyStreak: StreakSchema,
         lastWeeklyStreak: StreakSchema,

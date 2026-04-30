@@ -199,12 +199,14 @@ describe('TodoistApi user endpoints', () => {
                 ...PRODUCTIVITY_STATS_RESPONSE,
                 goals: {
                     ...PRODUCTIVITY_STATS_RESPONSE.goals,
+                    ignoreDays: ['Friday', 'Saturday'],
                     karmaDisabled: false,
                     vacationMode: true,
                 },
             })
             expect(stats.goals.karmaDisabled).toBe(false)
             expect(stats.goals.vacationMode).toBe(true)
+            expect(stats.goals.ignoreDays).toEqual(['Friday', 'Saturday'])
         })
     })
 })

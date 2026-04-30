@@ -66,6 +66,9 @@ function serializeUpdateGoalsArgs(args: UpdateGoalsArgs): Record<string, unknown
         ...spreadIfDefined(args.karmaDisabled, (v) => ({
             karmaDisabled: v ? 1 : 0,
         })),
+        ...spreadIfDefined(args.ignoreDays, (v) => ({
+            ignoreDays: v.map((day) => DAY_OF_WEEK_TO_API[day]),
+        })),
     }
 }
 
