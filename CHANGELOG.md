@@ -1,3 +1,9 @@
+## [10.1.0](https://github.com/Doist/todoist-sdk-typescript/compare/v10.0.0...v10.1.0) (2026-05-01)
+
+### Features
+
+* export getDefaultDispatcher ([#594](https://github.com/Doist/todoist-sdk-typescript/issues/594)) ([1dad069](https://github.com/Doist/todoist-sdk-typescript/commit/1dad0698add0f7d9127cbe1bd2b8bf5ced0e3710))
+
 ## [10.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.8.0...v10.0.0) (2026-04-30)
 
 ### ⚠ BREAKING CHANGES
