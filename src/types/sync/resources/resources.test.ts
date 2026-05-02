@@ -790,6 +790,18 @@ describe('Sync resource schemas', () => {
             expect(UserSettingsSchema.parse(withTruthyIntPricing).legacyPricing).toBe(true)
         })
 
+        test('rejects legacyPricing values outside boolean and 0/1', () => {
+            expect(() => UserSettingsSchema.parse({ ...validSettings, legacyPricing: 2 })).toThrow(
+                ZodError,
+            )
+            expect(() =>
+                UserSettingsSchema.parse({ ...validSettings, legacyPricing: 'true' }),
+            ).toThrow(ZodError)
+            expect(() =>
+                UserSettingsSchema.parse({ ...validSettings, legacyPricing: null }),
+            ).toThrow(ZodError)
+        })
+
         test('throws on invalid data', () => {
             expect(() => UserSettingsSchema.parse({ completedSoundDesktop: 'yes' })).toThrow(
                 ZodError,

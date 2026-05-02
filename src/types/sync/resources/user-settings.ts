@@ -17,7 +17,7 @@ export const UserSettingsSchema = z.looseObject({
     completedSoundDesktop: z.boolean(),
     completedSoundMobile: z.boolean(),
     debugLogSendingEnabledUntil: z.string().nullish(),
-    legacyPricing: z.coerce.boolean(),
+    legacyPricing: z.union([z.boolean(), z.literal(0), z.literal(1)]).transform(Boolean),
     navigation: z
         .object({
             countsShown: z.boolean(),
