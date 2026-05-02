@@ -16,8 +16,8 @@ export const QuickAddFeatureSchema = z.object({
 export const UserSettingsSchema = z.looseObject({
     completedSoundDesktop: z.boolean(),
     completedSoundMobile: z.boolean(),
-    debugLogSendingEnabledUntil: z.string().nullable(),
-    legacyPricing: z.boolean(),
+    debugLogSendingEnabledUntil: z.string().nullish(),
+    legacyPricing: z.coerce.boolean(),
     navigation: z
         .object({
             countsShown: z.boolean(),

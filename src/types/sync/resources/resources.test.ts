@@ -714,6 +714,21 @@ describe('Sync resource schemas', () => {
             expect(result.onboardingUseCases).toEqual(['solo', 'teamwork'])
         })
 
+        test('parses when sync API omits dateistLang, mobileHost, mobileNumber, and token', () => {
+            const {
+                dateistLang: _dateistLang,
+                mobileHost: _mobileHost,
+                mobileNumber: _mobileNumber,
+                token: _token,
+                ...withoutOptionalFields
+            } = validUser
+            const result = SyncUserSchema.parse(withoutOptionalFields)
+            expect(result.dateistLang).toBeUndefined()
+            expect(result.mobileHost).toBeUndefined()
+            expect(result.mobileNumber).toBeUndefined()
+            expect(result.token).toBeUndefined()
+        })
+
         test('throws on invalid data', () => {
             expect(() => SyncUserSchema.parse({ id: 'user1' })).toThrow(ZodError)
         })
@@ -760,6 +775,19 @@ describe('Sync resource schemas', () => {
             const withTheme = { ...validSettings, theme: 'dark', syncTheme: true }
             const result = UserSettingsSchema.parse(withTheme)
             expect(result.theme).toBe('dark')
+        })
+
+        test('parses when sync API omits debugLogSendingEnabledUntil', () => {
+            const { debugLogSendingEnabledUntil: _omitted, ...withoutDebugLog } = validSettings
+            const result = UserSettingsSchema.parse(withoutDebugLog)
+            expect(result.debugLogSendingEnabledUntil).toBeUndefined()
+        })
+
+        test('coerces numeric legacyPricing to boolean', () => {
+            const withIntPricing = { ...validSettings, legacyPricing: 0 }
+            expect(UserSettingsSchema.parse(withIntPricing).legacyPricing).toBe(false)
+            const withTruthyIntPricing = { ...validSettings, legacyPricing: 1 }
+            expect(UserSettingsSchema.parse(withTruthyIntPricing).legacyPricing).toBe(true)
         })
 
         test('throws on invalid data', () => {
