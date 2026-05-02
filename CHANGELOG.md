@@ -1,3 +1,9 @@
+## [10.1.1](https://github.com/Doist/todoist-sdk-typescript/compare/v10.1.0...v10.1.1) (2026-05-02)
+
+### Bug Fixes
+
+* align sync user and user-settings schemas with API responses ([#596](https://github.com/Doist/todoist-sdk-typescript/issues/596)) ([377fa8a](https://github.com/Doist/todoist-sdk-typescript/commit/377fa8ac3d96acacb2a20fe7ed3dccdec990fc19))
+
 ## [10.1.0](https://github.com/Doist/todoist-sdk-typescript/compare/v10.0.0...v10.1.0) (2026-05-01)
 
 ### Features
