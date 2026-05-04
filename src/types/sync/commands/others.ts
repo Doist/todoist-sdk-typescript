@@ -39,7 +39,7 @@ export type UserSettingsUpdateArgs = {
 export type UpdateGoalsArgs = {
     dailyGoal?: number
     weeklyGoal?: number
-    ignoreDays?: number[]
+    ignoreDays?: DayOfWeek[]
     vacationMode?: boolean
     karmaDisabled?: boolean
 }

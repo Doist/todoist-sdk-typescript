@@ -1,5 +1,5 @@
 import { ENDPOINT_SYNC } from '../consts/endpoints'
-import { TodoistRequestError } from '../types'
+import { TodoistArgumentError, TodoistRequestError } from '../types'
 import type { CustomFetch } from '../types/http'
 import {
     type SyncCommand,
@@ -65,6 +65,17 @@ function serializeUpdateGoalsArgs(args: UpdateGoalsArgs): Record<string, unknown
         ...spreadIfDefined(args.vacationMode, (v) => ({ vacationMode: v ? 1 : 0 })),
         ...spreadIfDefined(args.karmaDisabled, (v) => ({
             karmaDisabled: v ? 1 : 0,
+        })),
+        ...spreadIfDefined(args.ignoreDays, (v) => ({
+            ignoreDays: v.map((day) => {
+                const apiValue = DAY_OF_WEEK_TO_API[day]
+                if (apiValue === undefined) {
+                    throw new TodoistArgumentError(
+                        `Invalid ignoreDays entry "${String(day)}". Expected a DayOfWeek (e.g. "Monday").`,
+                    )
+                }
+                return apiValue
+            }),
         })),
     }
 }

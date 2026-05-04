@@ -69,6 +69,23 @@ describe('TodoistApi project endpoints', () => {
             expect(results).toEqual(projects)
             expect(nextCursor).toBe('123')
         })
+
+        test('forwards folderId and workspaceId as snake_case query params', async () => {
+            let capturedUrl = ''
+            server.use(
+                http.get(`${getSyncBaseUri()}${ENDPOINT_REST_PROJECTS}`, ({ request }) => {
+                    capturedUrl = request.url
+                    return HttpResponse.json({ results: [], nextCursor: null }, { status: 200 })
+                }),
+            )
+            const api = getTarget()
+
+            await api.getProjects({ folderId: '5', workspaceId: '9' })
+
+            const params = new URL(capturedUrl).searchParams
+            expect(params.get('folder_id')).toBe('5')
+            expect(params.get('workspace_id')).toBe('9')
+        })
     })
 
     describe('searchProjects', () => {
@@ -133,6 +150,26 @@ describe('TodoistApi project endpoints', () => {
             const result = await api.updateProject('123', DEFAULT_UPDATE_PROJECT_ARGS)
 
             expect(result).toEqual(returnedProject)
+        })
+
+        test('sends folderId as snake_case in body, preserving null for clear', async () => {
+            const capturedBodies: unknown[] = []
+            server.use(
+                http.post(
+                    `${getSyncBaseUri()}${ENDPOINT_REST_PROJECTS}/123`,
+                    async ({ request }) => {
+                        capturedBodies.push(await request.json())
+                        return HttpResponse.json(DEFAULT_WORKSPACE_PROJECT, { status: 200 })
+                    },
+                ),
+            )
+            const api = getTarget()
+
+            await api.updateProject('123', { folderId: '42' })
+            await api.updateProject('123', { folderId: null })
+
+            expect(capturedBodies[0]).toEqual({ folder_id: '42' })
+            expect(capturedBodies[1]).toEqual({ folder_id: null })
         })
     })
 

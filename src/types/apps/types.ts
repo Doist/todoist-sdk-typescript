@@ -174,6 +174,7 @@ export const AppTokenScopesSchema = z
  */
 export const AppSchema = z.object({
     id: StringOrNumberSchema,
+    clientId: z.string(),
     status: AppStatusSchema,
     displayName: z.string(),
     userId: StringOrNumberSchema,

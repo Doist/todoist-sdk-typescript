@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import {
     ENDPOINT_REST_SECTIONS,
     ENDPOINT_REST_SECTIONS_SEARCH,
@@ -15,7 +14,7 @@ import type {
     UpdateSectionArgs,
 } from '../types/sections'
 import { generatePath } from '../utils/request-helpers'
-import { validateSection, validateSectionArray } from '../utils/validators'
+import { IdSchema, validateSection, validateSectionArray } from '../utils/validators'
 import { BaseClient } from './base-client'
 
 /**
@@ -62,7 +61,7 @@ export class SectionClient extends BaseClient {
     }
 
     async getSection(id: string): Promise<Section> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Section>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -89,7 +88,7 @@ export class SectionClient extends BaseClient {
     }
 
     async updateSection(id: string, args: UpdateSectionArgs, requestId?: string): Promise<Section> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -103,7 +102,7 @@ export class SectionClient extends BaseClient {
     }
 
     async deleteSection(id: string, requestId?: string): Promise<boolean> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request({
             httpMethod: 'DELETE',
             baseUri: this.syncApiBase,
@@ -116,7 +115,7 @@ export class SectionClient extends BaseClient {
     }
 
     async archiveSection(id: string, requestId?: string): Promise<Section> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Section>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -129,7 +128,7 @@ export class SectionClient extends BaseClient {
     }
 
     async unarchiveSection(id: string, requestId?: string): Promise<Section> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Section>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,

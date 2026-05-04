@@ -1,3 +1,67 @@
+## [10.1.1](https://github.com/Doist/todoist-sdk-typescript/compare/v10.1.0...v10.1.1) (2026-05-02)
+
+### Bug Fixes
+
+* align sync user and user-settings schemas with API responses ([#596](https://github.com/Doist/todoist-sdk-typescript/issues/596)) ([377fa8a](https://github.com/Doist/todoist-sdk-typescript/commit/377fa8ac3d96acacb2a20fe7ed3dccdec990fc19))
+
+## [10.1.0](https://github.com/Doist/todoist-sdk-typescript/compare/v10.0.0...v10.1.0) (2026-05-01)
+
+### Features
+
+* export getDefaultDispatcher ([#594](https://github.com/Doist/todoist-sdk-typescript/issues/594)) ([1dad069](https://github.com/Doist/todoist-sdk-typescript/commit/1dad0698add0f7d9127cbe1bd2b8bf5ced0e3710))
+
+## [10.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.8.0...v10.0.0) (2026-04-30)
+
+### ⚠ BREAKING CHANGES
+
+* type ProductivityStats goal flags and ignoreDays (#592)
+
+### Features
+
+* type ProductivityStats goal flags and ignoreDays ([#592](https://github.com/Doist/todoist-sdk-typescript/issues/592)) ([375d4c7](https://github.com/Doist/todoist-sdk-typescript/commit/375d4c733e30a6780877715b953b187e1379d07e))
+
+## [9.8.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.7.0...v9.8.0) (2026-04-20)
+
+### Features
+
+* add folderId and workspaceId filters to projects endpoints ([#590](https://github.com/Doist/todoist-sdk-typescript/issues/590)) ([4ee221a](https://github.com/Doist/todoist-sdk-typescript/commit/4ee221adf59e4c374ea4c2e824f1acaf1f756fbb))
+
+## [9.7.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.6.0...v9.7.0) (2026-04-19)
+
+### Features
+
+* type filter:* and reminder:fired webhook payloads ([#589](https://github.com/Doist/todoist-sdk-typescript/issues/589)) ([29ceca4](https://github.com/Doist/todoist-sdk-typescript/commit/29ceca450d16c3814bc4c8bced60362e28599f0a))
+
+## [9.6.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.5.0...v9.6.0) (2026-04-19)
+
+### Features
+
+* type project:* and section:* webhook payloads ([#588](https://github.com/Doist/todoist-sdk-typescript/issues/588)) ([e4825c9](https://github.com/Doist/todoist-sdk-typescript/commit/e4825c9d468a9066cdbe2d165499b1a4de90c9fe))
+
+## [9.5.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.4.0...v9.5.0) (2026-04-19)
+
+### Features
+
+* type note:* and label:* webhook payloads ([#587](https://github.com/Doist/todoist-sdk-typescript/issues/587)) ([7195b55](https://github.com/Doist/todoist-sdk-typescript/commit/7195b5559ff90da90a5545056d4b8ccf7ba6134c))
+
+## [9.4.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.3.0...v9.4.0) (2026-04-19)
+
+### Features
+
+* type incoming webhook payloads (envelope + item:*) ([#586](https://github.com/Doist/todoist-sdk-typescript/issues/586)) ([6c14564](https://github.com/Doist/todoist-sdk-typescript/commit/6c14564437f052059b21a93e0d1d850d77c177c5))
+
+## [9.3.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.2.0...v9.3.0) (2026-04-18)
+
+### Features
+
+* reject tmp- placeholder IDs in client validators ([#585](https://github.com/Doist/todoist-sdk-typescript/issues/585)) ([6a0b48f](https://github.com/Doist/todoist-sdk-typescript/commit/6a0b48f217b3b7a3d36ed79cd86510bc44bd7b57))
+
+## [9.2.0](https://github.com/Doist/todoist-sdk-typescript/compare/v9.1.3...v9.2.0) (2026-04-18)
+
+### Features
+
+* include clientId in app list and detail responses ([#584](https://github.com/Doist/todoist-sdk-typescript/issues/584)) ([b4c2c1e](https://github.com/Doist/todoist-sdk-typescript/commit/b4c2c1e5ce535bb5a1c70d3a03a5b20bb4fdcfd5))
+
 ## [9.1.3](https://github.com/Doist/todoist-sdk-typescript/compare/v9.1.2...v9.1.3) (2026-04-14)
 
 ### Bug Fixes

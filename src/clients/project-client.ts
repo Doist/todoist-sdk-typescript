@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import {
     ENDPOINT_REST_PROJECTS,
     ENDPOINT_REST_PROJECTS_ARCHIVED,
@@ -37,6 +36,7 @@ import type {
 } from '../types/projects'
 import { generatePath } from '../utils/request-helpers'
 import {
+    IdSchema,
     validateCollaboratorArray,
     validateCollaboratorStateArray,
     validateCommentArray,
@@ -60,7 +60,7 @@ import { BaseClient } from './base-client'
  */
 export class ProjectClient extends BaseClient {
     async getProject(id: string): Promise<PersonalProject | WorkspaceProject> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<PersonalProject | WorkspaceProject>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -150,7 +150,7 @@ export class ProjectClient extends BaseClient {
         args: UpdateProjectArgs,
         requestId?: string,
     ): Promise<PersonalProject | WorkspaceProject> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<PersonalProject | WorkspaceProject>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -165,7 +165,7 @@ export class ProjectClient extends BaseClient {
     }
 
     async deleteProject(id: string, requestId?: string): Promise<boolean> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request({
             httpMethod: 'DELETE',
             baseUri: this.syncApiBase,
@@ -181,7 +181,7 @@ export class ProjectClient extends BaseClient {
         id: string,
         requestId?: string,
     ): Promise<PersonalProject | WorkspaceProject> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<PersonalProject | WorkspaceProject>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -197,7 +197,7 @@ export class ProjectClient extends BaseClient {
         id: string,
         requestId?: string,
     ): Promise<PersonalProject | WorkspaceProject> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<PersonalProject | WorkspaceProject>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -274,7 +274,7 @@ export class ProjectClient extends BaseClient {
         id: string,
         args: GetFullProjectArgs = {},
     ): Promise<GetFullProjectResponse> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const { data } = await request<Record<string, unknown>>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -294,7 +294,7 @@ export class ProjectClient extends BaseClient {
     }
 
     async joinProject(id: string, requestId?: string): Promise<JoinProjectResponse> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const { data } = await request<JoinProjectResponse>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -319,7 +319,7 @@ export class ProjectClient extends BaseClient {
         projectId: string,
         args: GetProjectCollaboratorsArgs = {},
     ): Promise<GetProjectCollaboratorsResponse> {
-        z.string().parse(projectId)
+        IdSchema.parse(projectId)
         const {
             data: { results, nextCursor },
         } = await request<GetProjectCollaboratorsResponse>({

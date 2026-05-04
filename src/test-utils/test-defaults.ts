@@ -433,6 +433,7 @@ export const DEFAULT_ACCESS_TOKEN_ID = '3003'
 
 export const DEFAULT_APP: App = {
     id: DEFAULT_APP_ID,
+    clientId: 'client-id-xyz',
     status: 'public',
     displayName: 'Sample App',
     userId: DEFAULT_USER_ID,

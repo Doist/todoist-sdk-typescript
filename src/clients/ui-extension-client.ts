@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import {
     ENDPOINT_REST_APPS_UI_EXTENSIONS,
     ENDPOINT_REST_APPS_UI_EXTENSIONS_INSTALLED,
@@ -15,7 +14,7 @@ import type {
 } from '../types/ui-extensions'
 import { camelCaseKeys } from '../utils/case-conversion'
 import { uploadMultipartFile } from '../utils/multipart-upload'
-import { validateUiExtension, validateUiExtensionArray } from '../utils/validators'
+import { IdSchema, validateUiExtension, validateUiExtensionArray } from '../utils/validators'
 import { BaseClient } from './base-client'
 
 /**
@@ -27,7 +26,7 @@ import { BaseClient } from './base-client'
  */
 export class UiExtensionClient extends BaseClient {
     async getUiExtension(uiExtensionId: string, requestId?: string): Promise<UiExtension> {
-        z.string().parse(uiExtensionId)
+        IdSchema.parse(uiExtensionId)
         const response = await request<UiExtension>({
             httpMethod: 'GET',
             baseUri: this.apiRootBase,
@@ -52,7 +51,7 @@ export class UiExtensionClient extends BaseClient {
     }
 
     async getUiExtensionsForApp(appId: string, requestId?: string): Promise<UiExtension[]> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const response = await request<unknown[]>({
             httpMethod: 'GET',
             baseUri: this.apiRootBase,
@@ -82,7 +81,7 @@ export class UiExtensionClient extends BaseClient {
         args: UpdateUiExtensionArgs,
         requestId?: string,
     ): Promise<UiExtension> {
-        z.string().parse(uiExtensionId)
+        IdSchema.parse(uiExtensionId)
         const response = await request<UiExtension>({
             httpMethod: 'PATCH',
             baseUri: this.apiRootBase,
@@ -96,7 +95,7 @@ export class UiExtensionClient extends BaseClient {
     }
 
     async deleteUiExtension(uiExtensionId: string, requestId?: string): Promise<boolean> {
-        z.string().parse(uiExtensionId)
+        IdSchema.parse(uiExtensionId)
         const response = await request({
             httpMethod: 'DELETE',
             baseUri: this.apiRootBase,

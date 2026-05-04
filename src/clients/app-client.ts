@@ -40,6 +40,7 @@ import { webhookEventToWireName } from '../types/apps'
 import { camelCaseKeys } from '../utils/case-conversion'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import {
+    IdSchema,
     validateApp,
     validateAppArray,
     validateAppByDistributionToken,
@@ -77,7 +78,7 @@ export class AppClient extends BaseClient {
     }
 
     async getApp(appId: string, requestId?: string): Promise<AppWithUserCount> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const response = await request<AppWithUserCount>({
             httpMethod: 'GET',
             baseUri: this.apiRootBase,
@@ -107,7 +108,7 @@ export class AppClient extends BaseClient {
         args: UpdateAppArgs,
         requestId?: string,
     ): Promise<AppWithUserCount> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const { appTokenScopes, ...rest } = args
         const payload: Record<string, unknown> = { ...rest }
         if (appTokenScopes !== undefined) {
@@ -126,7 +127,7 @@ export class AppClient extends BaseClient {
     }
 
     async deleteApp(appId: string, requestId?: string): Promise<boolean> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const response = await request({
             httpMethod: 'DELETE',
             baseUri: this.apiRootBase,
@@ -139,7 +140,7 @@ export class AppClient extends BaseClient {
     }
 
     async getAppSecrets(appId: string, requestId?: string): Promise<AppSecrets> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const response = await request<AppSecrets>({
             httpMethod: 'GET',
             baseUri: this.apiRootBase,
@@ -152,7 +153,7 @@ export class AppClient extends BaseClient {
     }
 
     async resetAppClientSecret(appId: string, requestId?: string): Promise<AppWithUserCount> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const response = await request<AppWithUserCount>({
             httpMethod: 'DELETE',
             baseUri: this.apiRootBase,
@@ -165,7 +166,7 @@ export class AppClient extends BaseClient {
     }
 
     async revokeAppTokens(appId: string, requestId?: string): Promise<AppWithUserCount> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const response = await request<AppWithUserCount>({
             httpMethod: 'DELETE',
             baseUri: this.apiRootBase,
@@ -177,19 +178,22 @@ export class AppClient extends BaseClient {
         return validateAppWithUserCount(response.data)
     }
 
-    async uploadAppIcon(args: UploadAppIconArgs, requestId?: string): Promise<AppWithUserCount> {
-        if (Buffer.isBuffer(args.file) && args.file.length === 0) {
+    async uploadAppIcon(
+        { appId, file, fileName = '', size = 'medium' }: UploadAppIconArgs,
+        requestId?: string,
+    ): Promise<AppWithUserCount> {
+        IdSchema.parse(appId)
+        if (Buffer.isBuffer(file) && file.length === 0) {
             throw new Error('Cannot upload empty image file')
         }
 
-        const size = args.size ?? 'medium'
         const data = await uploadMultipartFile<unknown>({
             baseUrl: this.apiRootBase,
             authToken: this.authToken,
-            endpoint: getAppIconEndpoint(args.appId, size),
-            file: args.file,
-            fileName: args.fileName,
-            additionalFields: { file_name: args.fileName ?? '' },
+            endpoint: getAppIconEndpoint(appId, size),
+            file,
+            fileName,
+            additionalFields: { file_name: fileName },
             requestId: requestId,
             customFetch: this.customFetch,
         })
@@ -197,7 +201,7 @@ export class AppClient extends BaseClient {
     }
 
     async getAppTestToken(appId: string, requestId?: string): Promise<AppTestToken> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const response = await request<AppTestToken>({
             httpMethod: 'GET',
             baseUri: this.apiRootBase,
@@ -210,7 +214,7 @@ export class AppClient extends BaseClient {
     }
 
     async createAppTestToken(appId: string, requestId?: string): Promise<AppTestToken> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const response = await request<AppTestToken>({
             httpMethod: 'PUT',
             baseUri: this.apiRootBase,
@@ -226,7 +230,7 @@ export class AppClient extends BaseClient {
         appId: string,
         requestId?: string,
     ): Promise<AppDistributionToken> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const response = await request<AppDistributionToken>({
             httpMethod: 'GET',
             baseUri: this.apiRootBase,
@@ -242,7 +246,7 @@ export class AppClient extends BaseClient {
         appId: string,
         requestId?: string,
     ): Promise<AppVerificationToken> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const response = await request<AppVerificationToken>({
             httpMethod: 'GET',
             baseUri: this.apiRootBase,
@@ -258,7 +262,7 @@ export class AppClient extends BaseClient {
         appId: string,
         requestId?: string,
     ): Promise<AppVerificationToken> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const response = await request<AppVerificationToken>({
             httpMethod: 'DELETE',
             baseUri: this.apiRootBase,
@@ -274,7 +278,7 @@ export class AppClient extends BaseClient {
         distributionToken: string,
         requestId?: string,
     ): Promise<AppByDistributionToken> {
-        z.string().parse(distributionToken)
+        z.string().min(1).parse(distributionToken)
         const response = await request<AppByDistributionToken>({
             httpMethod: 'GET',
             baseUri: this.apiRootBase,
@@ -289,7 +293,7 @@ export class AppClient extends BaseClient {
     // --- App webhooks ---
 
     async getAppWebhook(appId: string, requestId?: string): Promise<AppWebhook | null> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const response = await request<AppWebhook | null>({
             httpMethod: 'GET',
             baseUri: this.apiRootBase,
@@ -319,7 +323,7 @@ export class AppClient extends BaseClient {
     }
 
     async deleteAppWebhook(appId: string, requestId?: string): Promise<boolean> {
-        z.string().parse(appId)
+        IdSchema.parse(appId)
         const response = await request({
             httpMethod: 'DELETE',
             baseUri: this.apiRootBase,
@@ -359,7 +363,7 @@ export class AppClient extends BaseClient {
     }
 
     async getAppInstallation(installationId: string, requestId?: string): Promise<AppInstallation> {
-        z.string().parse(installationId)
+        IdSchema.parse(installationId)
         const response = await request<AppInstallation>({
             httpMethod: 'GET',
             baseUri: this.apiRootBase,
@@ -376,7 +380,7 @@ export class AppClient extends BaseClient {
         args: UpdateAppInstallationArgs,
         requestId?: string,
     ): Promise<AppInstallation> {
-        z.string().parse(installationId)
+        IdSchema.parse(installationId)
         const response = await request<AppInstallation>({
             httpMethod: 'POST',
             baseUri: this.apiRootBase,
@@ -390,7 +394,7 @@ export class AppClient extends BaseClient {
     }
 
     async uninstallApp(installationId: string, requestId?: string): Promise<boolean> {
-        z.string().parse(installationId)
+        IdSchema.parse(installationId)
         const response = await request({
             httpMethod: 'DELETE',
             baseUri: this.apiRootBase,

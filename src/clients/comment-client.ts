@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import { ENDPOINT_REST_COMMENTS } from '../consts/endpoints'
 import { isSuccess, request } from '../transport/http-client'
 import type {
@@ -10,7 +9,7 @@ import type {
     UpdateCommentArgs,
 } from '../types/comments'
 import { generatePath } from '../utils/request-helpers'
-import { validateComment, validateCommentArray } from '../utils/validators'
+import { IdSchema, validateComment, validateCommentArray } from '../utils/validators'
 import { BaseClient } from './base-client'
 
 /**
@@ -41,7 +40,7 @@ export class CommentClient extends BaseClient {
     }
 
     async getComment(id: string): Promise<Comment> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Comment>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -72,7 +71,7 @@ export class CommentClient extends BaseClient {
     }
 
     async updateComment(id: string, args: UpdateCommentArgs, requestId?: string): Promise<Comment> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Comment>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -86,7 +85,7 @@ export class CommentClient extends BaseClient {
     }
 
     async deleteComment(id: string, requestId?: string): Promise<boolean> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request({
             httpMethod: 'DELETE',
             baseUri: this.syncApiBase,

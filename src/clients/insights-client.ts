@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import {
     getProjectInsightsActivityStatsEndpoint,
     getProjectInsightsHealthAnalyzeEndpoint,
@@ -18,6 +17,7 @@ import type {
     WorkspaceInsights,
 } from '../types/insights'
 import {
+    IdSchema,
     validateProjectActivityStats,
     validateProjectHealth,
     validateProjectHealthContext,
@@ -39,7 +39,7 @@ export class InsightsClient extends BaseClient {
         projectId: string,
         args: GetProjectActivityStatsArgs = {},
     ): Promise<ProjectActivityStats> {
-        z.string().parse(projectId)
+        IdSchema.parse(projectId)
         const response = await request<ProjectActivityStats>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -52,7 +52,7 @@ export class InsightsClient extends BaseClient {
     }
 
     async getProjectHealth(projectId: string): Promise<ProjectHealth> {
-        z.string().parse(projectId)
+        IdSchema.parse(projectId)
         const response = await request<ProjectHealth>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -64,7 +64,7 @@ export class InsightsClient extends BaseClient {
     }
 
     async getProjectHealthContext(projectId: string): Promise<ProjectHealthContext> {
-        z.string().parse(projectId)
+        IdSchema.parse(projectId)
         const response = await request<ProjectHealthContext>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -76,7 +76,7 @@ export class InsightsClient extends BaseClient {
     }
 
     async getProjectProgress(projectId: string): Promise<ProjectProgress> {
-        z.string().parse(projectId)
+        IdSchema.parse(projectId)
         const response = await request<ProjectProgress>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -91,7 +91,7 @@ export class InsightsClient extends BaseClient {
         workspaceId: string,
         args: GetWorkspaceInsightsArgs = {},
     ): Promise<WorkspaceInsights> {
-        z.string().parse(workspaceId)
+        IdSchema.parse(workspaceId)
         const response = await request<WorkspaceInsights>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -107,7 +107,7 @@ export class InsightsClient extends BaseClient {
     }
 
     async analyzeProjectHealth(projectId: string, requestId?: string): Promise<ProjectHealth> {
-        z.string().parse(projectId)
+        IdSchema.parse(projectId)
         const response = await request<ProjectHealth>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,

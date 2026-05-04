@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import {
     ENDPOINT_REST_WORKSPACES,
     ENDPOINT_WORKSPACE_INVITATIONS,
@@ -49,6 +48,7 @@ import type {
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import { generatePath } from '../utils/request-helpers'
 import {
+    IdSchema,
     validateJoinWorkspaceResult,
     validateMemberActivityInfoArray,
     validateProject,
@@ -297,7 +297,7 @@ export class WorkspaceClient extends BaseClient {
     }
 
     async getWorkspace(id: string, requestId?: string): Promise<Workspace> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Workspace>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -327,7 +327,7 @@ export class WorkspaceClient extends BaseClient {
         args: UpdateWorkspaceArgs,
         requestId?: string,
     ): Promise<Workspace> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Workspace>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -341,7 +341,7 @@ export class WorkspaceClient extends BaseClient {
     }
 
     async deleteWorkspace(id: string, requestId?: string): Promise<boolean> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request({
             httpMethod: 'DELETE',
             baseUri: this.syncApiBase,

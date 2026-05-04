@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import { ENDPOINT_REST_FOLDERS } from '../consts/endpoints'
 import { isSuccess, request } from '../transport/http-client'
 import type {
@@ -9,7 +8,7 @@ import type {
 } from '../types/folders'
 import type { Folder } from '../types/sync/resources/folders'
 import { generatePath } from '../utils/request-helpers'
-import { validateFolder, validateFolderArray } from '../utils/validators'
+import { IdSchema, validateFolder, validateFolderArray } from '../utils/validators'
 import { BaseClient } from './base-client'
 
 /**
@@ -38,7 +37,7 @@ export class FolderClient extends BaseClient {
     }
 
     async getFolder(id: string): Promise<Folder> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Folder>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -65,7 +64,7 @@ export class FolderClient extends BaseClient {
     }
 
     async updateFolder(id: string, args: UpdateFolderArgs, requestId?: string): Promise<Folder> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Folder>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -80,7 +79,7 @@ export class FolderClient extends BaseClient {
     }
 
     async deleteFolder(id: string, requestId?: string): Promise<boolean> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request({
             httpMethod: 'DELETE',
             baseUri: this.syncApiBase,

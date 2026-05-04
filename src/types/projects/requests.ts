@@ -20,6 +20,10 @@ import type {
  * @see https://developer.todoist.com/api/v1/#tag/Projects/operation/get_projects_api_v1_projects_get
  */
 export type GetProjectsArgs = {
+    /** Filter projects to only those in this folder. If provided, workspaceId is ignored. */
+    folderId?: string | null
+    /** Filter projects to only those in this workspace. Ignored if folderId is also provided. */
+    workspaceId?: string | null
     cursor?: string | null
     limit?: number
 }
@@ -78,6 +82,11 @@ export type UpdateProjectArgs = {
     color?: ColorKey
     isFavorite?: boolean
     viewStyle?: ProjectViewStyle
+    /**
+     * Folder to move the project into. Only supported for workspace projects.
+     * Pass `null` to clear the value. Omit this field to keep it unchanged.
+     */
+    folderId?: string | null
 }
 
 /**

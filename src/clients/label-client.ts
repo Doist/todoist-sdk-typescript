@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import {
     ENDPOINT_REST_LABELS,
     ENDPOINT_REST_LABELS_SEARCH,
@@ -20,7 +19,7 @@ import type {
     UpdateLabelArgs,
 } from '../types/labels'
 import { generatePath } from '../utils/request-helpers'
-import { validateLabel, validateLabelArray } from '../utils/validators'
+import { IdSchema, validateLabel, validateLabelArray } from '../utils/validators'
 import { BaseClient } from './base-client'
 
 /**
@@ -31,7 +30,7 @@ import { BaseClient } from './base-client'
  */
 export class LabelClient extends BaseClient {
     async getLabel(id: string): Promise<Label> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Label>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -94,7 +93,7 @@ export class LabelClient extends BaseClient {
     }
 
     async updateLabel(id: string, args: UpdateLabelArgs, requestId?: string): Promise<Label> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -108,7 +107,7 @@ export class LabelClient extends BaseClient {
     }
 
     async deleteLabel(id: string, requestId?: string): Promise<boolean> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request({
             httpMethod: 'DELETE',
             baseUri: this.syncApiBase,

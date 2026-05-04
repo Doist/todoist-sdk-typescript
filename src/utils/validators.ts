@@ -73,6 +73,14 @@ function createValidator<T>(schema: ZodType<T>) {
     }
 }
 
+const TMP_ID_MESSAGE =
+    'This looks like a client-side placeholder — wait for sync to complete before calling the API.'
+
+export const IdSchema = z
+    .string()
+    .min(1)
+    .refine((id) => !id.startsWith('tmp-'), { message: TMP_ID_MESSAGE })
+
 // Entity validators
 
 export const { validate: validateTask, validateArray: validateTaskArray } =

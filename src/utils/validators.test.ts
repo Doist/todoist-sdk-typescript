@@ -16,6 +16,7 @@ import {
     DEFAULT_WORKSPACE_PROJECT,
 } from '../test-utils/test-defaults'
 import {
+    IdSchema,
     validateTask,
     validateTaskArray,
     validateProject,
@@ -247,6 +248,25 @@ describe('validators', () => {
             expect(() => {
                 validateUserArray([INVALID_USER])
             }).toThrow(ZodError)
+        })
+    })
+
+    describe('IdSchema', () => {
+        test('passes for a plain non-empty ID', () => {
+            const result = IdSchema.parse('6X4Vw2Hq9J3mC8kF')
+            expect(result).toBe('6X4Vw2Hq9J3mC8kF')
+        })
+
+        test('throws ZodError for an empty string', () => {
+            expect(() => IdSchema.parse('')).toThrow(ZodError)
+        })
+
+        test('throws ZodError for a tmp- prefixed ID', () => {
+            expect(() => IdSchema.parse('tmp-abc-123')).toThrow(ZodError)
+        })
+
+        test('tmp- rejection surfaces the client-side placeholder guidance', () => {
+            expect(() => IdSchema.parse('tmp-abc-123')).toThrow(/client-side placeholder/)
         })
     })
 })
