@@ -39,6 +39,9 @@ export async function resetDefaultDispatcherForTests(): Promise<void> {
 }
 
 async function createDefaultDispatcher(): Promise<Dispatcher> {
+    // Dynamic import so non-Node consumers (browser, edge runtimes) don't pull
+    // undici into their bundle. `getDefaultDispatcher` already short-circuits
+    // outside Node, so this branch only runs when undici is safe to load.
     const { EnvHttpProxyAgent, interceptors } = await import('undici')
 
     // Compose the response-decompression interceptor so gzip/deflate/br/zstd
