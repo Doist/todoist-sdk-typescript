@@ -1,3 +1,15 @@
+## [10.1.3](https://github.com/Doist/todoist-sdk-typescript/compare/v10.1.2...v10.1.3) (2026-05-09)
+
+### Bug Fixes
+
+* decompress gzipped responses on Node 24+ (undici 7) ([#599](https://github.com/Doist/todoist-sdk-typescript/issues/599)) ([2e5c9f7](https://github.com/Doist/todoist-sdk-typescript/commit/2e5c9f7aad562899e438e29483128287371958bc))
+
+## [10.1.2](https://github.com/Doist/todoist-sdk-typescript/compare/v10.1.1...v10.1.2) (2026-05-06)
+
+### Bug Fixes
+
+* **deps:** update dependency uuid to v11.1.1 [security] ([#591](https://github.com/Doist/todoist-sdk-typescript/issues/591)) ([0004e93](https://github.com/Doist/todoist-sdk-typescript/commit/0004e93c19058f8aed2811110f15e61470b4f382))
+
 ## [10.1.1](https://github.com/Doist/todoist-sdk-typescript/compare/v10.1.0...v10.1.1) (2026-05-02)
 
 ### Bug Fixes
