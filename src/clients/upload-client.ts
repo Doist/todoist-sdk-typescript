@@ -3,7 +3,7 @@ import { isSuccess, request } from '../transport/http-client'
 import type { Attachment, Comment } from '../types/comments'
 import type { FileResponse } from '../types/http'
 import type { DeleteUploadArgs, UploadFileArgs } from '../types/uploads'
-import { headersToRecord } from '../utils/headers'
+import { wrapAsFileResponse } from '../utils/file-response'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import { validateAttachment } from '../utils/validators'
 import { BaseClient } from './base-client'
@@ -82,13 +82,7 @@ export class UploadClient extends BaseClient {
                 )
             }
 
-            if (typeof response.arrayBuffer !== 'function') {
-                throw new Error(
-                    'customFetch response must implement arrayBuffer() for viewAttachment (binary endpoint); reading the body via text() corrupts non-UTF-8 bytes',
-                )
-            }
-
-            return response as FileResponse
+            return wrapAsFileResponse(response, 'viewAttachment')
         }
 
         const response = await fetch(fileUrl, fetchOptions)
@@ -97,14 +91,6 @@ export class UploadClient extends BaseClient {
             throw new Error(`Failed to fetch attachment: ${response.status} ${response.statusText}`)
         }
 
-        return {
-            ok: response.ok,
-            status: response.status,
-            statusText: response.statusText,
-            headers: headersToRecord(response.headers),
-            text: () => response.text(),
-            json: () => response.json(),
-            arrayBuffer: () => response.arrayBuffer(),
-        }
+        return wrapAsFileResponse(response, 'viewAttachment')
     }
 }

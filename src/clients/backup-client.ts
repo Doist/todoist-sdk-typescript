@@ -2,7 +2,7 @@ import { ENDPOINT_REST_BACKUPS, ENDPOINT_REST_BACKUPS_DOWNLOAD } from '../consts
 import { request } from '../transport/http-client'
 import type { Backup, DownloadBackupArgs, GetBackupsArgs } from '../types/backups'
 import type { FileResponse } from '../types/http'
-import { headersToRecord } from '../utils/headers'
+import { wrapAsFileResponse } from '../utils/file-response'
 import { validateBackupArray } from '../utils/validators'
 import { BaseClient } from './base-client'
 
@@ -39,26 +39,13 @@ export class BackupClient extends BaseClient {
                     `Failed to download backup: ${response.status} ${response.statusText}`,
                 )
             }
-            if (typeof response.arrayBuffer !== 'function') {
-                throw new Error(
-                    'customFetch response must implement arrayBuffer() for downloadBackup (binary endpoint); reading the body via text() corrupts non-UTF-8 bytes',
-                )
-            }
-            return response as FileResponse
+            return wrapAsFileResponse(response, 'downloadBackup')
         }
 
         const response = await fetch(url, fetchOptions)
         if (!response.ok) {
             throw new Error(`Failed to download backup: ${response.status} ${response.statusText}`)
         }
-        return {
-            ok: response.ok,
-            status: response.status,
-            statusText: response.statusText,
-            headers: headersToRecord(response.headers),
-            text: () => response.text(),
-            json: () => response.json(),
-            arrayBuffer: () => response.arrayBuffer(),
-        }
+        return wrapAsFileResponse(response, 'downloadBackup')
     }
 }
