@@ -23,7 +23,7 @@ export class UploadClient extends BaseClient {
             additionalFields.project_id = args.projectId
         }
 
-        const data = await uploadMultipartFile<Attachment>({
+        const data = await uploadMultipartFile({
             baseUrl: this.syncApiBase,
             authToken: this.authToken,
             endpoint: ENDPOINT_REST_UPLOADS,

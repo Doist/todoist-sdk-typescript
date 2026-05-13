@@ -78,7 +78,7 @@ function getContentTypeFromFileName(fileName: string): string {
  * )
  * ```
  */
-export async function uploadMultipartFile<T>(args: UploadMultipartFileArgs): Promise<T> {
+export async function uploadMultipartFile(args: UploadMultipartFileArgs): Promise<unknown> {
     const {
         baseUrl,
         authToken,
@@ -172,5 +172,5 @@ export async function uploadMultipartFile<T>(args: UploadMultipartFileArgs): Pro
         customFetch,
     })
 
-    return camelCaseKeys(response.data) as T
+    return camelCaseKeys(response.data)
 }

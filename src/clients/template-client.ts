@@ -67,7 +67,7 @@ export class TemplateClient extends BaseClient {
             additionalFields.workspace_id = workspaceId
         }
 
-        const data = await uploadMultipartFile<Record<string, unknown>>({
+        const data = await uploadMultipartFile({
             baseUrl: this.syncApiBase,
             authToken: this.authToken,
             endpoint: ENDPOINT_REST_TEMPLATES_CREATE_FROM_FILE,
@@ -77,7 +77,9 @@ export class TemplateClient extends BaseClient {
             customFetch: this.customFetch,
             requestId,
         })
-        return this.validateTemplateResponse(data) as CreateProjectFromTemplateResponse
+        return this.validateTemplateResponse(
+            data as Record<string, unknown>,
+        ) as CreateProjectFromTemplateResponse
     }
 
     async importTemplateIntoProject(
@@ -85,7 +87,7 @@ export class TemplateClient extends BaseClient {
         requestId?: string,
     ): Promise<ImportTemplateResponse> {
         const { file, fileName, projectId } = args
-        const data = await uploadMultipartFile<Record<string, unknown>>({
+        const data = await uploadMultipartFile({
             baseUrl: this.syncApiBase,
             authToken: this.authToken,
             endpoint: ENDPOINT_REST_TEMPLATES_IMPORT_FROM_FILE,
@@ -95,7 +97,9 @@ export class TemplateClient extends BaseClient {
             customFetch: this.customFetch,
             requestId,
         })
-        return this.validateTemplateResponse(data) as ImportTemplateResponse
+        return this.validateTemplateResponse(
+            data as Record<string, unknown>,
+        ) as ImportTemplateResponse
     }
 
     async importTemplateFromId(

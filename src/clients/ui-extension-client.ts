@@ -114,7 +114,7 @@ export class UiExtensionClient extends BaseClient {
             throw new Error('Cannot upload empty image file')
         }
 
-        const data = await uploadMultipartFile<unknown>({
+        const data = await uploadMultipartFile({
             baseUrl: this.apiRootBase,
             authToken: this.authToken,
             endpoint: getUiExtensionIconEndpoint(args.uiExtensionId),
