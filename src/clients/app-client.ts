@@ -37,7 +37,6 @@ import type {
     UserAuthorization,
 } from '../types/apps'
 import { webhookEventToWireName } from '../types/apps'
-import { camelCaseKeys } from '../utils/case-conversion'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import {
     IdSchema,
@@ -187,7 +186,7 @@ export class AppClient extends BaseClient {
             throw new Error('Cannot upload empty image file')
         }
 
-        const data = await uploadMultipartFile<unknown>({
+        const data = await uploadMultipartFile({
             baseUrl: this.apiRootBase,
             authToken: this.authToken,
             endpoint: getAppIconEndpoint(appId, size),
@@ -197,7 +196,7 @@ export class AppClient extends BaseClient {
             requestId: requestId,
             customFetch: this.customFetch,
         })
-        return validateAppWithUserCount(camelCaseKeys(data))
+        return validateAppWithUserCount(data)
     }
 
     async getAppTestToken(appId: string, requestId?: string): Promise<AppTestToken> {

@@ -188,7 +188,7 @@ export class WorkspaceClient extends BaseClient {
     ): Promise<WorkspaceLogoResponse> {
         if (args.delete) {
             // Delete logo
-            const data = await uploadMultipartFile<WorkspaceLogoResponse>({
+            const data = await uploadMultipartFile({
                 baseUrl: this.syncApiBase,
                 authToken: this.authToken,
                 endpoint: ENDPOINT_WORKSPACE_LOGO,
@@ -201,7 +201,7 @@ export class WorkspaceClient extends BaseClient {
                 requestId: requestId,
                 customFetch: this.customFetch,
             })
-            return data
+            return data as WorkspaceLogoResponse
         }
 
         if (!args.file) {
@@ -217,7 +217,7 @@ export class WorkspaceClient extends BaseClient {
             workspace_id: args.workspaceId,
         }
 
-        const data = await uploadMultipartFile<WorkspaceLogoResponse>({
+        const data = await uploadMultipartFile({
             baseUrl: this.syncApiBase,
             authToken: this.authToken,
             endpoint: ENDPOINT_WORKSPACE_LOGO,
@@ -228,7 +228,7 @@ export class WorkspaceClient extends BaseClient {
             customFetch: this.customFetch,
         })
 
-        return data
+        return data as WorkspaceLogoResponse
     }
 
     async getWorkspacePlanDetails(
