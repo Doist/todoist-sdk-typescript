@@ -4,6 +4,7 @@ import { vi } from 'vitest'
 import { getSyncBaseUri } from './consts/endpoints'
 import { server, http, HttpResponse, getLastRequest, captureRequest } from './test-utils/msw-setup'
 import { TodoistApi } from './todoist-api'
+import { snakeCaseKeys } from './utils/case-conversion'
 
 // Mock fs
 vi.mock('fs')
@@ -34,7 +35,7 @@ describe('TodoistApi uploads', () => {
                         // FormData parsing might fail in test environment
                     }
                     captureRequest({ request, body })
-                    return HttpResponse.json(mockUploadResult, { status: 200 })
+                    return HttpResponse.json(snakeCaseKeys(mockUploadResult), { status: 200 })
                 }),
             )
         })
@@ -157,45 +158,6 @@ describe('TodoistApi uploads', () => {
 
             const capturedRequest = getLastRequest()
             expect(capturedRequest).toBeDefined()
-        })
-
-        test('camelCases snake_case keys returned by the API', async () => {
-            server.use(
-                http.post(`${getSyncBaseUri()}uploads`, () =>
-                    HttpResponse.json(
-                        {
-                            file_url: 'https://cdn.todoist.com/uploads/snake.pdf',
-                            file_name: 'snake.pdf',
-                            file_size: 2048,
-                            file_type: 'application/pdf',
-                            resource_type: 'file',
-                            upload_state: 'completed',
-                            image: null,
-                            image_width: null,
-                            image_height: null,
-                        },
-                        { status: 200 },
-                    ),
-                ),
-            )
-
-            const api = new TodoistApi('token')
-            const result = await api.uploadFile({
-                file: Buffer.from('test file content'),
-                fileName: 'snake.pdf',
-            })
-
-            expect(result).toEqual({
-                fileUrl: 'https://cdn.todoist.com/uploads/snake.pdf',
-                fileName: 'snake.pdf',
-                fileSize: 2048,
-                fileType: 'application/pdf',
-                resourceType: 'file',
-                uploadState: 'completed',
-                image: null,
-                imageWidth: null,
-                imageHeight: null,
-            })
         })
     })
 
