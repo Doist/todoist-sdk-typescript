@@ -193,6 +193,8 @@ describe('TodoistApi viewAttachment', () => {
                 headers: { 'content-type': 'text/plain' },
                 text: () => Promise.resolve('custom fetch content'),
                 json: () => Promise.resolve({}),
+                arrayBuffer: () =>
+                    Promise.resolve(new TextEncoder().encode('custom fetch content').buffer),
             })
 
             const api = new TodoistApi('test-token', { customFetch: mockCustomFetch })
@@ -205,7 +207,30 @@ describe('TodoistApi viewAttachment', () => {
             expect(await response.text()).toBe('custom fetch content')
         })
 
-        test('provides arrayBuffer from custom fetch text response', async () => {
+        test('returns binary arrayBuffer from custom fetch byte-for-byte', async () => {
+            // PNG magic bytes — includes 0x89 which would be corrupted by a UTF-8 text round-trip
+            const binaryBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+            const mockCustomFetch =
+                vi.fn<(url: string, init?: RequestInit) => Promise<CustomFetchResponse>>()
+            mockCustomFetch.mockResolvedValue({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                headers: { 'content-type': 'image/png' },
+                text: () => Promise.resolve(''),
+                json: () => Promise.resolve({}),
+                arrayBuffer: () => Promise.resolve(binaryBytes.buffer),
+            })
+
+            const api = new TodoistApi('test-token', { customFetch: mockCustomFetch })
+            const response = await api.viewAttachment(FILE_URL)
+            const buffer = await response.arrayBuffer()
+
+            expect(new Uint8Array(buffer)).toEqual(binaryBytes)
+        })
+
+        test('text-only custom fetch response still works (no arrayBuffer required)', async () => {
+            // text-only customFetch impl: lazy arrayBuffer check should not fire for text() callers
             const mockCustomFetch =
                 vi.fn<(url: string, init?: RequestInit) => Promise<CustomFetchResponse>>()
             mockCustomFetch.mockResolvedValue({
@@ -213,15 +238,36 @@ describe('TodoistApi viewAttachment', () => {
                 status: 200,
                 statusText: 'OK',
                 headers: { 'content-type': 'text/plain' },
-                text: () => Promise.resolve('hello'),
+                text: () => Promise.resolve('hello world'),
                 json: () => Promise.resolve({}),
+                // no arrayBuffer
             })
 
             const api = new TodoistApi('test-token', { customFetch: mockCustomFetch })
             const response = await api.viewAttachment(FILE_URL)
-            const buffer = await response.arrayBuffer()
 
-            expect(new TextDecoder().decode(buffer)).toBe('hello')
+            expect(await response.text()).toBe('hello world')
+        })
+
+        test('throws only when arrayBuffer() is called on a custom fetch lacking it', async () => {
+            const mockCustomFetch =
+                vi.fn<(url: string, init?: RequestInit) => Promise<CustomFetchResponse>>()
+            mockCustomFetch.mockResolvedValue({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                headers: { 'content-type': 'image/png' },
+                text: () => Promise.resolve(''),
+                json: () => Promise.resolve({}),
+                // no arrayBuffer
+            })
+
+            const api = new TodoistApi('test-token', { customFetch: mockCustomFetch })
+            const response = await api.viewAttachment(FILE_URL)
+
+            expect(() => response.arrayBuffer()).toThrow(
+                /customFetch response must implement arrayBuffer\(\)/,
+            )
         })
 
         test('throws on error response from custom fetch', async () => {

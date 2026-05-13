@@ -1,7 +1,9 @@
+import { vi } from 'vitest'
 import { TodoistApi } from '.'
 import { getSyncBaseUri } from './consts/endpoints'
 import { server, http, HttpResponse } from './test-utils/msw-setup'
 import { DEFAULT_AUTH_TOKEN } from './test-utils/test-defaults'
+import type { CustomFetchResponse } from './types/http'
 
 function getTarget() {
     return new TodoistApi(DEFAULT_AUTH_TOKEN)
@@ -46,6 +48,68 @@ describe('TodoistApi backups endpoints', () => {
             expect(result.status).toBe(200)
             const text = await result.text()
             expect(text).toBe('binary-content')
+        })
+
+        test('returns binary arrayBuffer from custom fetch byte-for-byte', async () => {
+            // ZIP magic bytes — includes 0x90 which would be corrupted by a UTF-8 text round-trip
+            const binaryBytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x90])
+            const mockCustomFetch =
+                vi.fn<(url: string, init?: RequestInit) => Promise<CustomFetchResponse>>()
+            mockCustomFetch.mockResolvedValue({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                headers: { 'content-type': 'application/zip' },
+                text: () => Promise.resolve(''),
+                json: () => Promise.resolve({}),
+                arrayBuffer: () => Promise.resolve(binaryBytes.buffer),
+            })
+
+            const api = new TodoistApi(DEFAULT_AUTH_TOKEN, { customFetch: mockCustomFetch })
+            const result = await api.downloadBackup({ file: 'backup123.zip' })
+            const buffer = await result.arrayBuffer()
+
+            expect(new Uint8Array(buffer)).toEqual(binaryBytes)
+        })
+
+        test('throws only when arrayBuffer() is called on a custom fetch lacking it', async () => {
+            const mockCustomFetch =
+                vi.fn<(url: string, init?: RequestInit) => Promise<CustomFetchResponse>>()
+            mockCustomFetch.mockResolvedValue({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                headers: { 'content-type': 'application/zip' },
+                text: () => Promise.resolve(''),
+                json: () => Promise.resolve({}),
+                // no arrayBuffer
+            })
+
+            const api = new TodoistApi(DEFAULT_AUTH_TOKEN, { customFetch: mockCustomFetch })
+            const result = await api.downloadBackup({ file: 'backup123.zip' })
+
+            expect(() => result.arrayBuffer()).toThrow(
+                /customFetch response must implement arrayBuffer\(\) for downloadBackup/,
+            )
+        })
+
+        test('throws on error response from custom fetch', async () => {
+            const mockCustomFetch =
+                vi.fn<(url: string, init?: RequestInit) => Promise<CustomFetchResponse>>()
+            mockCustomFetch.mockResolvedValue({
+                ok: false,
+                status: 404,
+                statusText: 'Not Found',
+                headers: {},
+                text: () => Promise.resolve(''),
+                json: () => Promise.resolve({}),
+            })
+
+            const api = new TodoistApi(DEFAULT_AUTH_TOKEN, { customFetch: mockCustomFetch })
+
+            await expect(api.downloadBackup({ file: 'backup123.zip' })).rejects.toThrow(
+                'Failed to download backup: 404 Not Found',
+            )
         })
     })
 })

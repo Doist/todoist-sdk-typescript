@@ -55,6 +55,7 @@ export function createObsidianFetchAdapter(
             // Wrap Obsidian's direct properties as methods returning promises
             text: () => Promise.resolve(response.text),
             json: () => Promise.resolve(response.json as unknown),
+            arrayBuffer: () => Promise.resolve(response.arrayBuffer),
         }
     }
 }
