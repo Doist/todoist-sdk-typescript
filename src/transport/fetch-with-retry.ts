@@ -96,6 +96,7 @@ function convertResponseToCustomFetch(response: Response): CustomFetchResponse {
         headers: headersToObject(response.headers),
         text: () => clonedResponse.text(),
         json: () => response.json(),
+        arrayBuffer: () => response.arrayBuffer(),
     }
 }
 

@@ -39,17 +39,12 @@ export class BackupClient extends BaseClient {
                     `Failed to download backup: ${response.status} ${response.statusText}`,
                 )
             }
-            const text = await response.text()
-            const buffer = new TextEncoder().encode(text).buffer
-            return {
-                ok: response.ok,
-                status: response.status,
-                statusText: response.statusText,
-                headers: response.headers,
-                text: () => Promise.resolve(text),
-                json: () => response.json(),
-                arrayBuffer: () => Promise.resolve(buffer),
+            if (typeof response.arrayBuffer !== 'function') {
+                throw new Error(
+                    'customFetch response must implement arrayBuffer() for downloadBackup (binary endpoint); reading the body via text() corrupts non-UTF-8 bytes',
+                )
             }
+            return response as FileResponse
         }
 
         const response = await fetch(url, fetchOptions)

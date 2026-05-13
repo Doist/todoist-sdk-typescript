@@ -82,19 +82,13 @@ export class UploadClient extends BaseClient {
                 )
             }
 
-            // Convert text to ArrayBuffer for custom fetch implementations that lack arrayBuffer()
-            const text = await response.text()
-            const buffer = new TextEncoder().encode(text).buffer
-
-            return {
-                ok: response.ok,
-                status: response.status,
-                statusText: response.statusText,
-                headers: response.headers,
-                text: () => Promise.resolve(text),
-                json: () => response.json(),
-                arrayBuffer: () => Promise.resolve(buffer),
+            if (typeof response.arrayBuffer !== 'function') {
+                throw new Error(
+                    'customFetch response must implement arrayBuffer() for viewAttachment (binary endpoint); reading the body via text() corrupts non-UTF-8 bytes',
+                )
             }
+
+            return response as FileResponse
         }
 
         const response = await fetch(fileUrl, fetchOptions)
