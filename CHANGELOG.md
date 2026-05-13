@@ -1,3 +1,9 @@
+## [10.1.5](https://github.com/Doist/todoist-sdk-typescript/compare/v10.1.4...v10.1.5) (2026-05-13)
+
+### Bug Fixes
+
+* read attachment/backup bodies as binary in customFetch branch ([#602](https://github.com/Doist/todoist-sdk-typescript/issues/602)) ([313e7d6](https://github.com/Doist/todoist-sdk-typescript/commit/313e7d641f4ceb2b66c9551e51c74bfe5c0cad6d))
+
 ## [10.1.4](https://github.com/Doist/todoist-sdk-typescript/compare/v10.1.3...v10.1.4) (2026-05-13)
 
 ### Bug Fixes
