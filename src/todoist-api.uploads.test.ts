@@ -160,10 +160,6 @@ describe('TodoistApi uploads', () => {
         })
 
         test('camelCases snake_case keys returned by the API', async () => {
-            // The real upload endpoint returns snake_case (e.g. `file_url`,
-            // `resource_type`). Without conversion, `validateAttachment` would
-            // reject the response because `AttachmentSchema` requires
-            // camelCase keys.
             server.use(
                 http.post(`${getSyncBaseUri()}uploads`, () =>
                     HttpResponse.json(
