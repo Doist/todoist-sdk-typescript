@@ -158,6 +158,49 @@ describe('TodoistApi uploads', () => {
             const capturedRequest = getLastRequest()
             expect(capturedRequest).toBeDefined()
         })
+
+        test('camelCases snake_case keys returned by the API', async () => {
+            // The real upload endpoint returns snake_case (e.g. `file_url`,
+            // `resource_type`). Without conversion, `validateAttachment` would
+            // reject the response because `AttachmentSchema` requires
+            // camelCase keys.
+            server.use(
+                http.post(`${getSyncBaseUri()}uploads`, () =>
+                    HttpResponse.json(
+                        {
+                            file_url: 'https://cdn.todoist.com/uploads/snake.pdf',
+                            file_name: 'snake.pdf',
+                            file_size: 2048,
+                            file_type: 'application/pdf',
+                            resource_type: 'file',
+                            upload_state: 'completed',
+                            image: null,
+                            image_width: null,
+                            image_height: null,
+                        },
+                        { status: 200 },
+                    ),
+                ),
+            )
+
+            const api = new TodoistApi('token')
+            const result = await api.uploadFile({
+                file: Buffer.from('test file content'),
+                fileName: 'snake.pdf',
+            })
+
+            expect(result).toEqual({
+                fileUrl: 'https://cdn.todoist.com/uploads/snake.pdf',
+                fileName: 'snake.pdf',
+                fileSize: 2048,
+                fileType: 'application/pdf',
+                resourceType: 'file',
+                uploadState: 'completed',
+                image: null,
+                imageWidth: null,
+                imageHeight: null,
+            })
+        })
     })
 
     describe('deleteUpload', () => {
