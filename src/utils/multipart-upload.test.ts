@@ -234,4 +234,38 @@ describe('uploadMultipartFile', () => {
             expect(capturedRequest?.headers['x-request-id']).toBeUndefined()
         })
     })
+
+    describe('response conversion', () => {
+        test('camelCases snake_case keys returned by the server', async () => {
+            server.use(
+                http.post(`${baseUrl}${endpoint}`, () =>
+                    HttpResponse.json(
+                        {
+                            file_url: 'https://example.com/file.pdf',
+                            file_name: 'file.pdf',
+                            resource_type: 'file',
+                            nested_object: { inner_key: 'value' },
+                        },
+                        { status: 200 },
+                    ),
+                ),
+            )
+
+            const result = await uploadMultipartFile({
+                baseUrl: baseUrl,
+                authToken: authToken,
+                endpoint: endpoint,
+                file: Buffer.from('test'),
+                fileName: 'test.pdf',
+                additionalFields: {},
+            })
+
+            expect(result).toEqual({
+                fileUrl: 'https://example.com/file.pdf',
+                fileName: 'file.pdf',
+                resourceType: 'file',
+                nestedObject: { innerKey: 'value' },
+            })
+        })
+    })
 })

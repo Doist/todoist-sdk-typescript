@@ -12,7 +12,6 @@ import type {
     UpdateUiExtensionArgs,
     UploadUiExtensionIconArgs,
 } from '../types/ui-extensions'
-import { camelCaseKeys } from '../utils/case-conversion'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import { IdSchema, validateUiExtension, validateUiExtensionArray } from '../utils/validators'
 import { BaseClient } from './base-client'
@@ -125,6 +124,6 @@ export class UiExtensionClient extends BaseClient {
             requestId: requestId,
             customFetch: this.customFetch,
         })
-        return validateUiExtension(camelCaseKeys(data))
+        return validateUiExtension(data)
     }
 }

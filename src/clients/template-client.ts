@@ -16,7 +16,6 @@ import type {
     ImportTemplateIntoProjectArgs,
     ImportTemplateResponse,
 } from '../types/templates'
-import { camelCaseKeys } from '../utils/case-conversion'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import {
     validateCommentArray,
@@ -78,9 +77,7 @@ export class TemplateClient extends BaseClient {
             customFetch: this.customFetch,
             requestId,
         })
-        return this.validateTemplateResponse(
-            camelCaseKeys(data),
-        ) as CreateProjectFromTemplateResponse
+        return this.validateTemplateResponse(data) as CreateProjectFromTemplateResponse
     }
 
     async importTemplateIntoProject(
@@ -98,7 +95,7 @@ export class TemplateClient extends BaseClient {
             customFetch: this.customFetch,
             requestId,
         })
-        return this.validateTemplateResponse(camelCaseKeys(data)) as ImportTemplateResponse
+        return this.validateTemplateResponse(data) as ImportTemplateResponse
     }
 
     async importTemplateFromId(

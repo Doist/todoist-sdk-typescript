@@ -3,7 +3,6 @@ import { isSuccess, request } from '../transport/http-client'
 import type { Attachment, Comment } from '../types/comments'
 import type { FileResponse } from '../types/http'
 import type { DeleteUploadArgs, UploadFileArgs } from '../types/uploads'
-import { camelCaseKeys } from '../utils/case-conversion'
 import { headersToRecord } from '../utils/headers'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import { validateAttachment } from '../utils/validators'
@@ -24,7 +23,7 @@ export class UploadClient extends BaseClient {
             additionalFields.project_id = args.projectId
         }
 
-        const data = await uploadMultipartFile<Record<string, unknown>>({
+        const data = await uploadMultipartFile<Attachment>({
             baseUrl: this.syncApiBase,
             authToken: this.authToken,
             endpoint: ENDPOINT_REST_UPLOADS,
@@ -35,7 +34,7 @@ export class UploadClient extends BaseClient {
             customFetch: this.customFetch,
         })
 
-        return validateAttachment(camelCaseKeys(data))
+        return validateAttachment(data)
     }
 
     async deleteUpload(args: DeleteUploadArgs, requestId?: string): Promise<boolean> {

@@ -1,5 +1,6 @@
 import { fetchWithRetry } from '../transport/fetch-with-retry'
 import type { HttpResponse, CustomFetch } from '../types/http'
+import { camelCaseKeys } from './case-conversion'
 
 type UploadMultipartFileArgs = {
     baseUrl: string
@@ -160,7 +161,7 @@ export async function uploadMultipartFile<T>(args: UploadMultipartFileArgs): Pro
     }
 
     // Make the request using fetch
-    const response: HttpResponse<T> = await fetchWithRetry({
+    const response: HttpResponse<unknown> = await fetchWithRetry({
         url,
         options: {
             method: 'POST',
@@ -171,5 +172,5 @@ export async function uploadMultipartFile<T>(args: UploadMultipartFileArgs): Pro
         customFetch,
     })
 
-    return response.data
+    return camelCaseKeys(response.data) as T
 }
