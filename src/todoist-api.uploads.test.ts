@@ -4,6 +4,7 @@ import { vi } from 'vitest'
 import { getSyncBaseUri } from './consts/endpoints'
 import { server, http, HttpResponse, getLastRequest, captureRequest } from './test-utils/msw-setup'
 import { TodoistApi } from './todoist-api'
+import { snakeCaseKeys } from './utils/case-conversion'
 
 // Mock fs
 vi.mock('fs')
@@ -34,7 +35,7 @@ describe('TodoistApi uploads', () => {
                         // FormData parsing might fail in test environment
                     }
                     captureRequest({ request, body })
-                    return HttpResponse.json(mockUploadResult, { status: 200 })
+                    return HttpResponse.json(snakeCaseKeys(mockUploadResult), { status: 200 })
                 }),
             )
         })

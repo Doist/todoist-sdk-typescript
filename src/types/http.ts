@@ -91,7 +91,12 @@ export function isHttpError(error: Error): error is HttpError {
 }
 
 /**
- * Custom fetch response interface that custom HTTP clients must implement
+ * Custom fetch response interface that custom HTTP clients must implement.
+ *
+ * `arrayBuffer()` is optional for back-compat with existing implementations,
+ * but must be provided when the fetch is used with binary endpoints
+ * (`viewAttachment`, `downloadBackup`) — those endpoints throw at runtime if
+ * it is missing rather than fall back to a lossy `text()` round-trip.
  */
 export type CustomFetchResponse = {
     ok: boolean
@@ -100,6 +105,7 @@ export type CustomFetchResponse = {
     headers: Record<string, string>
     text(): Promise<string>
     json(): Promise<unknown>
+    arrayBuffer?: () => Promise<ArrayBuffer>
 }
 
 /**

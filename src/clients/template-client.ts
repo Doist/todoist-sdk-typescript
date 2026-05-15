@@ -16,7 +16,6 @@ import type {
     ImportTemplateIntoProjectArgs,
     ImportTemplateResponse,
 } from '../types/templates'
-import { camelCaseKeys } from '../utils/case-conversion'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import {
     validateCommentArray,
@@ -68,7 +67,7 @@ export class TemplateClient extends BaseClient {
             additionalFields.workspace_id = workspaceId
         }
 
-        const data = await uploadMultipartFile<Record<string, unknown>>({
+        const data = await uploadMultipartFile({
             baseUrl: this.syncApiBase,
             authToken: this.authToken,
             endpoint: ENDPOINT_REST_TEMPLATES_CREATE_FROM_FILE,
@@ -79,7 +78,7 @@ export class TemplateClient extends BaseClient {
             requestId,
         })
         return this.validateTemplateResponse(
-            camelCaseKeys(data),
+            data as Record<string, unknown>,
         ) as CreateProjectFromTemplateResponse
     }
 
@@ -88,7 +87,7 @@ export class TemplateClient extends BaseClient {
         requestId?: string,
     ): Promise<ImportTemplateResponse> {
         const { file, fileName, projectId } = args
-        const data = await uploadMultipartFile<Record<string, unknown>>({
+        const data = await uploadMultipartFile({
             baseUrl: this.syncApiBase,
             authToken: this.authToken,
             endpoint: ENDPOINT_REST_TEMPLATES_IMPORT_FROM_FILE,
@@ -98,7 +97,9 @@ export class TemplateClient extends BaseClient {
             customFetch: this.customFetch,
             requestId,
         })
-        return this.validateTemplateResponse(camelCaseKeys(data)) as ImportTemplateResponse
+        return this.validateTemplateResponse(
+            data as Record<string, unknown>,
+        ) as ImportTemplateResponse
     }
 
     async importTemplateFromId(

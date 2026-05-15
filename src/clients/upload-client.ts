@@ -3,7 +3,7 @@ import { isSuccess, request } from '../transport/http-client'
 import type { Attachment, Comment } from '../types/comments'
 import type { FileResponse } from '../types/http'
 import type { DeleteUploadArgs, UploadFileArgs } from '../types/uploads'
-import { headersToRecord } from '../utils/headers'
+import { wrapAsFileResponse } from '../utils/file-response'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import { validateAttachment } from '../utils/validators'
 import { BaseClient } from './base-client'
@@ -23,7 +23,7 @@ export class UploadClient extends BaseClient {
             additionalFields.project_id = args.projectId
         }
 
-        const data = await uploadMultipartFile<Attachment>({
+        const data = await uploadMultipartFile({
             baseUrl: this.syncApiBase,
             authToken: this.authToken,
             endpoint: ENDPOINT_REST_UPLOADS,
@@ -82,19 +82,7 @@ export class UploadClient extends BaseClient {
                 )
             }
 
-            // Convert text to ArrayBuffer for custom fetch implementations that lack arrayBuffer()
-            const text = await response.text()
-            const buffer = new TextEncoder().encode(text).buffer
-
-            return {
-                ok: response.ok,
-                status: response.status,
-                statusText: response.statusText,
-                headers: response.headers,
-                text: () => Promise.resolve(text),
-                json: () => response.json(),
-                arrayBuffer: () => Promise.resolve(buffer),
-            }
+            return wrapAsFileResponse(response, 'viewAttachment')
         }
 
         const response = await fetch(fileUrl, fetchOptions)
@@ -103,14 +91,6 @@ export class UploadClient extends BaseClient {
             throw new Error(`Failed to fetch attachment: ${response.status} ${response.statusText}`)
         }
 
-        return {
-            ok: response.ok,
-            status: response.status,
-            statusText: response.statusText,
-            headers: headersToRecord(response.headers),
-            text: () => response.text(),
-            json: () => response.json(),
-            arrayBuffer: () => response.arrayBuffer(),
-        }
+        return wrapAsFileResponse(response, 'viewAttachment')
     }
 }
