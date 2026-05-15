@@ -467,16 +467,13 @@ describe('TodoistApi template endpoints', () => {
         test('URL-encodes templateId path segment', async () => {
             let observedUrl = ''
             server.use(
-                http.put(
-                    `${getSyncBaseUri()}templates/user/user%2Ftemplate%2F1`,
-                    ({ request }) => {
-                        observedUrl = request.url
-                        return HttpResponse.json(
-                            { status: 'ok', ...MOCK_TEMPLATE_API, template_source: 'user' },
-                            { status: 200 },
-                        )
-                    },
-                ),
+                http.put(`${getSyncBaseUri()}templates/user/user%2Ftemplate%2F1`, ({ request }) => {
+                    observedUrl = request.url
+                    return HttpResponse.json(
+                        { status: 'ok', ...MOCK_TEMPLATE_API, template_source: 'user' },
+                        { status: 200 },
+                    )
+                }),
             )
             const api = getTarget()
 
@@ -490,13 +487,10 @@ describe('TodoistApi template endpoints', () => {
         test('DELETEs and returns status', async () => {
             let observedMethod = ''
             server.use(
-                http.delete(
-                    `${getSyncBaseUri()}templates/user/user_template_42`,
-                    ({ request }) => {
-                        observedMethod = request.method
-                        return HttpResponse.json({ status: 'ok' }, { status: 200 })
-                    },
-                ),
+                http.delete(`${getSyncBaseUri()}templates/user/user_template_42`, ({ request }) => {
+                    observedMethod = request.method
+                    return HttpResponse.json({ status: 'ok' }, { status: 200 })
+                }),
             )
             const api = getTarget()
 
