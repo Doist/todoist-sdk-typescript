@@ -143,6 +143,9 @@ import {
     ExportTemplateUrlResponse,
     CreateProjectFromTemplateArgs,
     CreateProjectFromTemplateResponse,
+    CreateUserTemplateArgs,
+    CreateUserTemplateFromFileArgs,
+    DeleteUserTemplateResponse,
     GetTemplateCategoriesArgs,
     GetTemplateCategoriesResponse,
     GetTemplatesArgs,
@@ -152,6 +155,11 @@ import {
     ImportTemplateIntoProjectArgs,
     ImportTemplateFromIdArgs,
     ImportTemplateResponse,
+    PreviewUserTemplateFromFileArgs,
+    PreviewUserTemplateFromFileResponse,
+    Template,
+    UpdateUserTemplateArgs,
+    UpdateUserTemplateResponse,
 } from './types/templates'
 import type {
     AddUiExtensionArgs,
@@ -1494,6 +1502,83 @@ export class TodoistApi {
      */
     async getTemplatesByIds(args: GetTemplatesByIdsArgs): Promise<GetTemplatesByIdsResponse> {
         return this.templateClient.getTemplatesByIds(args)
+    }
+
+    /**
+     * Creates a new user template from an existing project.
+     *
+     * Requires an OAuth token with the `data:read_write` scope.
+     *
+     * @param args - Template metadata + source `projectId` + Todoist color.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns The newly created template.
+     */
+    async createUserTemplate(args: CreateUserTemplateArgs, requestId?: string): Promise<Template> {
+        return this.templateClient.createUserTemplate(args, requestId)
+    }
+
+    /**
+     * Updates an existing user template. Only supplied fields are changed.
+     *
+     * @param templateId - ID of the user template to update.
+     * @param args - Fields to overwrite. Omit a field to leave it unchanged.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns The updated template plus a `status: 'ok'` flag.
+     */
+    async updateUserTemplate(
+        templateId: string,
+        args?: UpdateUserTemplateArgs,
+        requestId?: string,
+    ): Promise<UpdateUserTemplateResponse> {
+        return this.templateClient.updateUserTemplate(templateId, args, requestId)
+    }
+
+    /**
+     * Deletes a user template.
+     *
+     * @param templateId - ID of the user template to delete.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns `{ status: 'ok' }` on success.
+     */
+    async deleteUserTemplate(
+        templateId: string,
+        requestId?: string,
+    ): Promise<DeleteUserTemplateResponse> {
+        return this.templateClient.deleteUserTemplate(templateId, requestId)
+    }
+
+    /**
+     * Previews an uploaded template CSV before creating a user template from it.
+     *
+     * The returned `uploadedFileName` can be passed to {@link createUserTemplateFromFile}
+     * via its `uploadedFileName` field so the file does not need to be re-uploaded.
+     *
+     * @param args - Template CSV file and optional file name.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns The parsed preview plus the server-side uploaded file name.
+     */
+    async previewUserTemplateFromFile(
+        args: PreviewUserTemplateFromFileArgs,
+        requestId?: string,
+    ): Promise<PreviewUserTemplateFromFileResponse> {
+        return this.templateClient.previewUserTemplateFromFile(args, requestId)
+    }
+
+    /**
+     * Creates a new user template by uploading a template CSV file.
+     *
+     * If the file was already uploaded via {@link previewUserTemplateFromFile}, pass
+     * its `uploadedFileName` to skip re-uploading.
+     *
+     * @param args - Template metadata + the CSV file (or previously uploaded file name).
+     * @param requestId - Optional custom identifier for the request.
+     * @returns The newly created template.
+     */
+    async createUserTemplateFromFile(
+        args: CreateUserTemplateFromFileArgs,
+        requestId?: string,
+    ): Promise<Template> {
+        return this.templateClient.createUserTemplateFromFile(args, requestId)
     }
 
     /* Workspace methods */

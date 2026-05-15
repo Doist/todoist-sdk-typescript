@@ -142,3 +142,76 @@ export type GetTemplatesByIdsArgs = {
     /** ISO locale (default `en`). */
     locale?: string
 }
+
+/**
+ * Arguments for creating a new user template from an existing project.
+ * @see Undocumented; lives at `POST /api/v1/templates/user`.
+ */
+export type CreateUserTemplateArgs = {
+    /** Template type. Only `project` is currently supported by the API. */
+    templateType: 'project'
+    /** Display name for the template (max 255 chars). */
+    name: string
+    /** Long description (max 1000 chars). */
+    description: string
+    /** ID of the project to capture as a template. */
+    projectId: string
+    /** Todoist color name or numeric ID. */
+    color: string | number
+    /** If true, save into the workspace gallery instead of the user's personal gallery. */
+    forWorkspace?: boolean
+}
+
+/**
+ * Arguments for updating an existing user template. Only supplied fields are changed.
+ * @see Undocumented; lives at `PUT /api/v1/templates/user/{template_id}`.
+ */
+export type UpdateUserTemplateArgs = {
+    /** New display name (max 255 chars). */
+    name?: string
+    /** New long description (max 1000 chars). */
+    description?: string
+    /** Replace the source project used to build the template. */
+    projectId?: string
+    /** New Todoist color. */
+    color?: string | number
+    /** Move the template into a specific workspace gallery. */
+    workspaceId?: string | null
+    /** Toggle workspace-member visibility. */
+    sharedWithWorkspaceMembers?: boolean
+}
+
+/**
+ * Arguments for previewing a CSV template file before importing it as a user template.
+ * @see Undocumented; lives at `POST /api/v1/templates/user/preview_from_file`.
+ */
+export type PreviewUserTemplateFromFileArgs = {
+    /** Template CSV file contents. */
+    file: Buffer | NodeJS.ReadableStream | string | Blob
+    /** Optional file name (required for Buffer/Stream uploads). */
+    fileName?: string
+}
+
+/**
+ * Arguments for creating a new user template by uploading a CSV file.
+ * @see Undocumented; lives at `POST /api/v1/templates/user/import`.
+ */
+export type CreateUserTemplateFromFileArgs = {
+    /** Template type. Only `project` is currently supported by the API. */
+    templateType: 'project'
+    /** Display name for the template (max 255 chars). */
+    name: string
+    /** Long description (max 1000 chars). */
+    description: string
+    /** Todoist color name or numeric ID. */
+    color: string | number
+    /** Template CSV file contents. */
+    file: Buffer | NodeJS.ReadableStream | string | Blob
+    /** Optional file name (required for Buffer/Stream uploads). */
+    fileName?: string
+    /**
+     * If the file has already been uploaded via `previewUserTemplateFromFile`, pass the
+     * returned `uploadedFileName` to skip re-uploading.
+     */
+    uploadedFileName?: string
+}
