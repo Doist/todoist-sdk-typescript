@@ -75,7 +75,7 @@ export const ENDPOINT_REST_TEMPLATES_USER = 'templates/user'
 export const ENDPOINT_REST_TEMPLATES_USER_PREVIEW = 'templates/user/preview_from_file'
 export const ENDPOINT_REST_TEMPLATES_USER_IMPORT = 'templates/user/import'
 export function getUserTemplateEndpoint(templateId: string): string {
-    return `${ENDPOINT_REST_TEMPLATES_USER}/${templateId}`
+    return `${ENDPOINT_REST_TEMPLATES_USER}/${encodeURIComponent(templateId)}`
 }
 
 export const ENDPOINT_REST_ACCESS_TOKENS_MIGRATE = 'access_tokens/migrate_personal_token'

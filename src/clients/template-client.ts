@@ -228,7 +228,7 @@ export class TemplateClient extends BaseClient {
         const { data } = await request<UpdateUserTemplateResponse>({
             httpMethod: 'PUT',
             baseUri: this.syncApiBase,
-            relativePath: getUserTemplateEndpoint(encodeURIComponent(templateId)),
+            relativePath: getUserTemplateEndpoint(templateId),
             apiToken: this.authToken,
             customFetch: this.customFetch,
             payload: args,
@@ -247,7 +247,7 @@ export class TemplateClient extends BaseClient {
         const { data } = await request<DeleteUserTemplateResponse>({
             httpMethod: 'DELETE',
             baseUri: this.syncApiBase,
-            relativePath: getUserTemplateEndpoint(encodeURIComponent(templateId)),
+            relativePath: getUserTemplateEndpoint(templateId),
             apiToken: this.authToken,
             customFetch: this.customFetch,
             requestId,
@@ -277,6 +277,33 @@ export class TemplateClient extends BaseClient {
         requestId?: string,
     ): Promise<Template> {
         const { templateType, name, description, color, file, fileName, uploadedFileName } = args
+        if (file === undefined && uploadedFileName === undefined) {
+            throw new TodoistArgumentError(
+                'createUserTemplateFromFile requires either `file` or `uploadedFileName`.',
+            )
+        }
+
+        // No new upload needed — server reuses the previously uploaded CSV from S3, so
+        // skip multipart and send a regular JSON request.
+        if (file === undefined) {
+            const { data } = await request<Template>({
+                httpMethod: 'POST',
+                baseUri: this.syncApiBase,
+                relativePath: ENDPOINT_REST_TEMPLATES_USER_IMPORT,
+                apiToken: this.authToken,
+                customFetch: this.customFetch,
+                payload: {
+                    templateType,
+                    name,
+                    description,
+                    color,
+                    uploadedFileName,
+                },
+                requestId,
+            })
+            return validateTemplate(data)
+        }
+
         const additionalFields: Record<string, string> = {
             template_type: templateType,
             name,

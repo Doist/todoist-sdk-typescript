@@ -3,6 +3,7 @@ import { TodoistApi } from '.'
 import { getSyncBaseUri } from './consts/endpoints'
 import { server, http, HttpResponse } from './test-utils/msw-setup'
 import { DEFAULT_AUTH_TOKEN, DEFAULT_SECTION, DEFAULT_TASK } from './test-utils/test-defaults'
+import { camelCaseKeys } from './utils/case-conversion'
 import { uploadMultipartFile } from './utils/multipart-upload'
 
 // Mock the multipart upload helper
@@ -37,28 +38,11 @@ const MOCK_TEMPLATE_API = {
 }
 
 // Pre-camelCased version for `uploadMultipartFile` mocks (the real helper performs the
-// snake_case → camelCase conversion before resolving).
+// snake_case → camelCase conversion before resolving). Derived from `MOCK_TEMPLATE_API` so
+// schema changes only need updating in one place.
 const MOCK_TEMPLATE_CAMEL = {
-    id: 'product-launch',
-    name: 'Product launch',
-    templateType: 'project',
+    ...(camelCaseKeys(MOCK_TEMPLATE_API) as Record<string, unknown>),
     templateSource: 'user',
-    shortDescription: 'Ship faster',
-    longDescription: 'A reusable checklist for product launches.',
-    instructions: null,
-    importUrl: null,
-    viewType: 'list',
-    thumbnailImage: null,
-    thumbnailImageDark: null,
-    coverImage: null,
-    previewImage: null,
-    templateColor: null,
-    backgroundColor: null,
-    backgroundColorDark: null,
-    creator: { name: 'Doist', position: 'Team', avatar: '' },
-    seo: null,
-    moreResources: [],
-    categoryIds: ['productivity'],
 }
 
 describe('TodoistApi template endpoints', () => {
@@ -504,6 +488,24 @@ describe('TodoistApi template endpoints', () => {
             const api = getTarget()
             await expect(api.deleteUserTemplate('')).rejects.toThrow(/templateId is required/)
         })
+
+        test('URL-encodes templateId path segment', async () => {
+            let observedUrl = ''
+            server.use(
+                http.delete(
+                    `${getSyncBaseUri()}templates/user/user%2Ftemplate%2F1`,
+                    ({ request }) => {
+                        observedUrl = request.url
+                        return HttpResponse.json({ status: 'ok' }, { status: 200 })
+                    },
+                ),
+            )
+            const api = getTarget()
+
+            await api.deleteUserTemplate('user/template/1')
+
+            expect(observedUrl).toContain('templates/user/user%2Ftemplate%2F1')
+        })
     })
 
     describe('previewUserTemplateFromFile', () => {
@@ -578,7 +580,7 @@ describe('TodoistApi template endpoints', () => {
             expect(result).toMatchObject({ id: 'product-launch', templateSource: 'user' })
         })
 
-        test('passes uploadedFileName through when supplied', async () => {
+        test('passes uploadedFileName through when supplied alongside a file', async () => {
             mockedUploadMultipartFile.mockResolvedValue(MOCK_TEMPLATE_CAMEL)
             const api = getTarget()
 
@@ -599,6 +601,50 @@ describe('TodoistApi template endpoints', () => {
                     }),
                 }),
             )
+        })
+
+        test('sends a JSON POST (no multipart upload) when only uploadedFileName is provided', async () => {
+            let observedBody: Record<string, unknown> | undefined
+            server.use(
+                http.post(`${getSyncBaseUri()}templates/user/import`, async ({ request }) => {
+                    observedBody = (await request.json()) as Record<string, unknown>
+                    return HttpResponse.json(
+                        { ...MOCK_TEMPLATE_API, template_source: 'user' },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.createUserTemplateFromFile({
+                templateType: 'project',
+                name: 'From cached',
+                description: 'desc',
+                color: 'lime_green',
+                uploadedFileName: 'prev-upload.csv',
+            })
+
+            expect(mockedUploadMultipartFile).not.toHaveBeenCalled()
+            expect(observedBody).toEqual({
+                template_type: 'project',
+                name: 'From cached',
+                description: 'desc',
+                color: 'lime_green',
+                uploaded_file_name: 'prev-upload.csv',
+            })
+            expect(result.templateSource).toBe('user')
+        })
+
+        test('rejects when neither file nor uploadedFileName is provided', async () => {
+            const api = getTarget()
+            await expect(
+                api.createUserTemplateFromFile({
+                    templateType: 'project',
+                    name: 'x',
+                    description: 'y',
+                    color: 'lime_green',
+                }),
+            ).rejects.toThrow(/requires either `file` or `uploadedFileName`/)
         })
     })
 })

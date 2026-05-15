@@ -1,8 +1,13 @@
+import type { ColorKey } from '../../utils/colors'
 import type { Comment } from '../comments/types'
 import type { PersonalProject, WorkspaceProject } from '../projects/types'
 import type { Section } from '../sections/types'
 import type { Task } from '../tasks/types'
+import type { UploadFileArgs } from '../uploads/requests'
 import type { TemplateSourceFilter, TemplateTypeFilter } from './types'
+
+/** Shared file-upload surface for endpoints that accept a template CSV. */
+type TemplateFileUpload = Pick<UploadFileArgs, 'file' | 'fileName'>
 
 /**
  * Arguments for exporting a project as a template file.
@@ -38,13 +43,9 @@ export type ExportTemplateUrlResponse = {
  * Arguments for creating a project from a template file.
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/create_project_from_file_api_v1_templates_create_project_from_file_post
  */
-export type CreateProjectFromTemplateArgs = {
+export type CreateProjectFromTemplateArgs = TemplateFileUpload & {
     /** Name for the new project. */
     name: string
-    /** The template file content. */
-    file: Buffer | NodeJS.ReadableStream | string | Blob
-    /** Optional file name (required for Buffer/Stream). */
-    fileName?: string
     /** Optional workspace ID. */
     workspaceId?: string | null
 }
@@ -66,13 +67,9 @@ export type CreateProjectFromTemplateResponse = {
  * Arguments for importing a template file into an existing project.
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/import_into_project_from_file_api_v1_templates_import_into_project_from_file_post
  */
-export type ImportTemplateIntoProjectArgs = {
+export type ImportTemplateIntoProjectArgs = TemplateFileUpload & {
     /** The project ID to import into. */
     projectId: string
-    /** The template file content. */
-    file: Buffer | NodeJS.ReadableStream | string | Blob
-    /** Optional file name (required for Buffer/Stream). */
-    fileName?: string
 }
 
 /**
@@ -156,8 +153,8 @@ export type CreateUserTemplateArgs = {
     description: string
     /** ID of the project to capture as a template. */
     projectId: string
-    /** Todoist color name or numeric ID. */
-    color: string | number
+    /** Todoist color key (e.g. `lime_green`) or its numeric ID. */
+    color: ColorKey | number
     /** If true, save into the workspace gallery instead of the user's personal gallery. */
     forWorkspace?: boolean
 }
@@ -173,8 +170,8 @@ export type UpdateUserTemplateArgs = {
     description?: string
     /** Replace the source project used to build the template. */
     projectId?: string
-    /** New Todoist color. */
-    color?: string | number
+    /** New Todoist color key or numeric ID. */
+    color?: ColorKey | number
     /** Move the template into a specific workspace gallery. */
     workspaceId?: string | null
     /** Toggle workspace-member visibility. */
@@ -185,33 +182,29 @@ export type UpdateUserTemplateArgs = {
  * Arguments for previewing a CSV template file before importing it as a user template.
  * @see Undocumented; lives at `POST /api/v1/templates/user/preview_from_file`.
  */
-export type PreviewUserTemplateFromFileArgs = {
-    /** Template CSV file contents. */
-    file: Buffer | NodeJS.ReadableStream | string | Blob
-    /** Optional file name (required for Buffer/Stream uploads). */
-    fileName?: string
-}
+export type PreviewUserTemplateFromFileArgs = TemplateFileUpload
 
 /**
  * Arguments for creating a new user template by uploading a CSV file.
+ *
+ * Provide either `file` (the SDK uploads it) or `uploadedFileName` (server reuses a
+ * previously uploaded file from {@link PreviewUserTemplateFromFileArgs}). One of the
+ * two is required.
+ *
  * @see Undocumented; lives at `POST /api/v1/templates/user/import`.
  */
-export type CreateUserTemplateFromFileArgs = {
+export type CreateUserTemplateFromFileArgs = Partial<TemplateFileUpload> & {
     /** Template type. Only `project` is currently supported by the API. */
     templateType: 'project'
     /** Display name for the template (max 255 chars). */
     name: string
     /** Long description (max 1000 chars). */
     description: string
-    /** Todoist color name or numeric ID. */
-    color: string | number
-    /** Template CSV file contents. */
-    file: Buffer | NodeJS.ReadableStream | string | Blob
-    /** Optional file name (required for Buffer/Stream uploads). */
-    fileName?: string
+    /** Todoist color key (e.g. `lime_green`) or its numeric ID. */
+    color: ColorKey | number
     /**
      * If the file has already been uploaded via `previewUserTemplateFromFile`, pass the
-     * returned `uploadedFileName` to skip re-uploading.
+     * returned `uploadedFileName` to skip re-uploading. Required when `file` is omitted.
      */
     uploadedFileName?: string
 }

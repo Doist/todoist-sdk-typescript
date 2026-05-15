@@ -141,7 +141,7 @@ export type DeleteUserTemplateResponse = z.infer<typeof DeleteUserTemplateRespon
 export const PreviewUserTemplateFromFileResponseSchema = z
     .object({
         uploadedFileName: z.string(),
-        templateType: z.string(),
+        templateType: z.enum(TEMPLATE_TYPE_VALUES),
         projects: z.array(ProjectSchema),
         sections: z.array(SectionSchema),
         items: z.array(TaskSchema),
