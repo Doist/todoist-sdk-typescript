@@ -143,6 +143,173 @@ describe('TodoistApi template endpoints', () => {
         })
     })
 
+    describe('getTemplates', () => {
+        const MOCK_TEMPLATE_API = {
+            id: 'product-launch',
+            name: 'Product launch',
+            template_type: 'project',
+            template_source: 'doist',
+            short_description: 'Ship faster',
+            long_description: 'A reusable checklist for product launches.',
+            instructions: null,
+            import_url: null,
+            view_type: 'list',
+            thumbnail_image: null,
+            thumbnail_image_dark: null,
+            cover_image: null,
+            preview_image: null,
+            template_color: null,
+            background_color: null,
+            background_color_dark: null,
+            creator: { name: 'Doist', position: 'Team', avatar: '' },
+            seo: null,
+            more_resources: [],
+            category_ids: ['productivity'],
+        }
+
+        test('returns validated, camelCased list with pagination metadata', async () => {
+            server.use(
+                http.get(`${getSyncBaseUri()}templates/list`, () => {
+                    return HttpResponse.json(
+                        {
+                            templates: [MOCK_TEMPLATE_API],
+                            count: 1,
+                            has_more: true,
+                            next_cursor: 'abc',
+                        },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.getTemplates({ templateType: 'project', limit: 1 })
+
+            expect(result.count).toBe(1)
+            expect(result.hasMore).toBe(true)
+            expect(result.nextCursor).toBe('abc')
+            expect(result.templates).toHaveLength(1)
+            expect(result.templates[0]).toMatchObject({
+                id: 'product-launch',
+                templateType: 'project',
+                templateSource: 'doist',
+                shortDescription: 'Ship faster',
+                categoryIds: ['productivity'],
+            })
+        })
+
+        test('forwards filter args as snake_case query params', async () => {
+            let observedUrl = ''
+            server.use(
+                http.get(`${getSyncBaseUri()}templates/list`, ({ request }) => {
+                    observedUrl = request.url
+                    return HttpResponse.json(
+                        { templates: [], count: 0, has_more: false },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            await api.getTemplates({
+                templateType: 'all',
+                templateSource: 'workspace',
+                categoryId: 'productivity',
+                cursor: 'cur_1',
+            })
+
+            expect(observedUrl).toContain('template_type=all')
+            expect(observedUrl).toContain('template_source=workspace')
+            expect(observedUrl).toContain('category_id=productivity')
+            expect(observedUrl).toContain('cursor=cur_1')
+        })
+    })
+
+    describe('getTemplateCategories', () => {
+        test('returns validated categories', async () => {
+            server.use(
+                http.get(`${getSyncBaseUri()}templates/categories`, () => {
+                    return HttpResponse.json(
+                        {
+                            categories: [
+                                {
+                                    id: 'productivity',
+                                    name: 'Productivity',
+                                    description: 'Get things done.',
+                                    seo: { title: 'Productivity', description: null },
+                                },
+                            ],
+                        },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.getTemplateCategories({ locale: 'en' })
+
+            expect(result.categories).toHaveLength(1)
+            expect(result.categories[0]).toMatchObject({
+                id: 'productivity',
+                name: 'Productivity',
+                seo: { title: 'Productivity', description: null },
+            })
+        })
+    })
+
+    describe('getTemplatesByIds', () => {
+        test('joins template ids into CSV and validates each value in the response map', async () => {
+            let observedUrl = ''
+            server.use(
+                http.get(`${getSyncBaseUri()}templates/get`, ({ request }) => {
+                    observedUrl = request.url
+                    return HttpResponse.json(
+                        {
+                            templates: {
+                                'product-launch': {
+                                    id: 'product-launch',
+                                    name: 'Product launch',
+                                    template_type: 'project',
+                                    template_source: 'doist',
+                                    short_description: 'Ship faster',
+                                    long_description: 'desc',
+                                    instructions: null,
+                                    import_url: null,
+                                    thumbnail_image: null,
+                                    thumbnail_image_dark: null,
+                                    cover_image: null,
+                                    preview_image: null,
+                                    template_color: null,
+                                    background_color: null,
+                                    background_color_dark: null,
+                                    creator: { name: 'Doist', position: 'Team', avatar: '' },
+                                    seo: null,
+                                    more_resources: [],
+                                    category_ids: [],
+                                },
+                            },
+                        },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.getTemplatesByIds({
+                templateIds: ['product-launch', 'sprint-planning'],
+                locale: 'en',
+            })
+
+            expect(observedUrl).toContain('template_ids=product-launch%2Csprint-planning')
+            expect(observedUrl).toContain('locale=en')
+            expect(Object.keys(result.templates)).toEqual(['product-launch'])
+            expect(result.templates['product-launch']).toMatchObject({
+                id: 'product-launch',
+                shortDescription: 'Ship faster',
+            })
+        })
+    })
+
     describe('importTemplateFromId', () => {
         test('returns import result from rest client', async () => {
             const mockResponse = {

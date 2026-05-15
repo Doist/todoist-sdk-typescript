@@ -29,6 +29,7 @@ import { WorkspaceProjectSchema, ProjectSchema } from '../types/projects/types'
 import { SectionSchema } from '../types/sections/types'
 import { type SyncResponse, SyncResponseSchema } from '../types/sync/response'
 import { TaskSchema } from '../types/tasks/types'
+import { TemplateCategorySchema, TemplateSchema } from '../types/templates/types'
 import { UiExtensionSchema } from '../types/ui-extensions/types'
 import { UserSchema, CurrentUserSchema } from '../types/users/types'
 import {
@@ -266,3 +267,9 @@ export const {
 
 export const { validate: validateUiExtension, validateArray: validateUiExtensionArray } =
     createValidator(UiExtensionSchema)
+
+export const { validate: validateTemplate, validateArray: validateTemplateArray } =
+    createValidator(TemplateSchema)
+
+export const { validate: validateTemplateCategory, validateArray: validateTemplateCategoryArray } =
+    createValidator(TemplateCategorySchema)

@@ -1,8 +1,11 @@
 import {
+    ENDPOINT_REST_TEMPLATES_CATEGORIES,
     ENDPOINT_REST_TEMPLATES_CREATE_FROM_FILE,
     ENDPOINT_REST_TEMPLATES_FILE,
+    ENDPOINT_REST_TEMPLATES_GET,
     ENDPOINT_REST_TEMPLATES_IMPORT_FROM_FILE,
     ENDPOINT_REST_TEMPLATES_IMPORT_FROM_ID,
+    ENDPOINT_REST_TEMPLATES_LIST,
     ENDPOINT_REST_TEMPLATES_URL,
 } from '../consts/endpoints'
 import { request } from '../transport/http-client'
@@ -12,9 +15,16 @@ import type {
     ExportTemplateFileArgs,
     ExportTemplateUrlArgs,
     ExportTemplateUrlResponse,
+    GetTemplateCategoriesArgs,
+    GetTemplateCategoriesResponse,
+    GetTemplatesArgs,
+    GetTemplatesByIdsArgs,
+    GetTemplatesByIdsResponse,
+    GetTemplatesResponse,
     ImportTemplateFromIdArgs,
     ImportTemplateIntoProjectArgs,
     ImportTemplateResponse,
+    Template,
 } from '../types/templates'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import {
@@ -22,6 +32,9 @@ import {
     validateProjectArray,
     validateSectionArray,
     validateTaskArray,
+    validateTemplate,
+    validateTemplateArray,
+    validateTemplateCategoryArray,
 } from '../utils/validators'
 import { BaseClient } from './base-client'
 
@@ -116,6 +129,50 @@ export class TemplateClient extends BaseClient {
             requestId: requestId,
         })
         return this.validateTemplateResponse(data) as ImportTemplateResponse
+    }
+
+    async getTemplates(args: GetTemplatesArgs = {}): Promise<GetTemplatesResponse> {
+        const { data } = await request<GetTemplatesResponse>({
+            httpMethod: 'GET',
+            baseUri: this.syncApiBase,
+            relativePath: ENDPOINT_REST_TEMPLATES_LIST,
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            payload: args,
+        })
+        return { ...data, templates: validateTemplateArray(data.templates) }
+    }
+
+    async getTemplateCategories(
+        args: GetTemplateCategoriesArgs = {},
+    ): Promise<GetTemplateCategoriesResponse> {
+        const { data } = await request<GetTemplateCategoriesResponse>({
+            httpMethod: 'GET',
+            baseUri: this.syncApiBase,
+            relativePath: ENDPOINT_REST_TEMPLATES_CATEGORIES,
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            payload: args,
+        })
+        return { categories: validateTemplateCategoryArray(data.categories) }
+    }
+
+    async getTemplatesByIds(args: GetTemplatesByIdsArgs): Promise<GetTemplatesByIdsResponse> {
+        const { templateIds, locale } = args
+        const { data } = await request<GetTemplatesByIdsResponse>({
+            httpMethod: 'GET',
+            baseUri: this.syncApiBase,
+            relativePath: ENDPOINT_REST_TEMPLATES_GET,
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            payload: { templateIds: templateIds.join(','), ...(locale ? { locale } : {}) },
+        })
+        const validated: Record<string, Template> = {}
+        for (const template of Object.values(data.templates ?? {})) {
+            const valid = validateTemplate(template)
+            validated[valid.id] = valid
+        }
+        return { templates: validated }
     }
 
     private validateTemplateResponse(data: Record<string, unknown>) {
