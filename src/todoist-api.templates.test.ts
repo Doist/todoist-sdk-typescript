@@ -507,15 +507,27 @@ describe('TodoistApi template endpoints', () => {
     })
 
     describe('previewUserTemplateFromFile', () => {
-        test('uploads file and returns validated preview', async () => {
+        test('uploads file, renames items→tasks, concats notes+projectNotes→comments', async () => {
+            const taskNote = {
+                id: 'note_1',
+                content: 'Task note',
+                postedAt: '2026-05-15T00:00:00Z',
+                postedUid: 'u1',
+                itemId: 'task_1',
+                fileAttachment: null,
+                uidsToNotify: null,
+                isDeleted: false,
+                reactions: null,
+            }
+            const projectNote = { ...taskNote, id: 'note_2', itemId: undefined, projectId: 'p1' }
             mockedUploadMultipartFile.mockResolvedValue({
                 uploadedFileName: 'template.csv',
                 templateType: 'project',
                 projects: [],
                 sections: [DEFAULT_SECTION],
                 items: [DEFAULT_TASK],
-                notes: [],
-                projectNotes: [],
+                notes: [taskNote],
+                projectNotes: [projectNote],
             })
             const api = getTarget()
 
@@ -531,8 +543,10 @@ describe('TodoistApi template endpoints', () => {
                 }),
             )
             expect(result.uploadedFileName).toBe('template.csv')
-            expect(result.items).toHaveLength(1)
+            expect(result.tasks).toHaveLength(1)
             expect(result.sections).toHaveLength(1)
+            expect(result.comments).toHaveLength(2)
+            expect(result.comments.map((c) => c.id)).toEqual(['note_1', 'note_2'])
         })
     })
 

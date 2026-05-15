@@ -138,15 +138,23 @@ export const DeleteUserTemplateResponseSchema = z.object({
 /** Response from deleting a user template. */
 export type DeleteUserTemplateResponse = z.infer<typeof DeleteUserTemplateResponseSchema>
 
-export const PreviewUserTemplateFromFileResponseSchema = z.object({
-    uploadedFileName: z.string(),
-    templateType: z.string(),
-    projects: z.array(ProjectSchema),
-    sections: z.array(SectionSchema),
-    items: z.array(TaskSchema),
-    notes: z.array(CommentSchema),
-    projectNotes: z.array(CommentSchema),
-})
+export const PreviewUserTemplateFromFileResponseSchema = z
+    .object({
+        uploadedFileName: z.string(),
+        templateType: z.string(),
+        projects: z.array(ProjectSchema),
+        sections: z.array(SectionSchema),
+        items: z.array(TaskSchema),
+        notes: z.array(CommentSchema),
+        projectNotes: z.array(CommentSchema),
+    })
+    .transform(({ items, notes, projectNotes, ...rest }) => ({
+        ...rest,
+        // Match the rest of the SDK: server `items` → `tasks`; project-level notes and
+        // task notes are both Comments here, so concatenate into a single `comments` array.
+        tasks: items,
+        comments: [...notes, ...projectNotes],
+    }))
 /**
  * Response from previewing a user template from an uploaded CSV file.
  * The `uploadedFileName` can be passed to the import endpoint to skip re-uploading.
