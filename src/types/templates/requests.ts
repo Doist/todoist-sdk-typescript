@@ -2,7 +2,7 @@ import type { Comment } from '../comments/types'
 import type { PersonalProject, WorkspaceProject } from '../projects/types'
 import type { Section } from '../sections/types'
 import type { Task } from '../tasks/types'
-import type { Template, TemplateCategory, TemplateSourceFilter, TemplateTypeFilter } from './types'
+import type { TemplateSourceFilter, TemplateTypeFilter } from './types'
 
 /**
  * Arguments for exporting a project as a template file.
@@ -122,16 +122,6 @@ export type GetTemplatesArgs = {
 }
 
 /**
- * Response from listing templates.
- */
-export type GetTemplatesResponse = {
-    templates: Template[]
-    count: number
-    hasMore: boolean
-    nextCursor?: string
-}
-
-/**
  * Arguments for listing template categories.
  * @see Undocumented; lives at `GET /api/v1/templates/categories`.
  */
@@ -143,13 +133,6 @@ export type GetTemplateCategoriesArgs = {
 }
 
 /**
- * Response from listing template categories.
- */
-export type GetTemplateCategoriesResponse = {
-    categories: TemplateCategory[]
-}
-
-/**
  * Arguments for fetching one or more templates by ID.
  * @see Undocumented; lives at `GET /api/v1/templates/get`.
  */
@@ -158,11 +141,4 @@ export type GetTemplatesByIdsArgs = {
     templateIds: string[]
     /** ISO locale (default `en`). */
     locale?: string
-}
-
-/**
- * Response from fetching templates by ID. Unknown IDs are silently omitted.
- */
-export type GetTemplatesByIdsResponse = {
-    templates: Record<string, Template>
 }

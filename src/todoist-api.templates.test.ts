@@ -317,7 +317,7 @@ describe('TodoistApi template endpoints', () => {
             const api = getTarget()
             await expect(
                 api.getTemplatesByIds({ templateIds: ['product-launch'] }),
-            ).rejects.toThrow(/expected `templates` to be an object/)
+            ).rejects.toThrow(/expected record/)
         })
     })
 

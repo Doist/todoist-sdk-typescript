@@ -9,7 +9,7 @@ import {
     ENDPOINT_REST_TEMPLATES_URL,
 } from '../consts/endpoints'
 import { request } from '../transport/http-client'
-import { TodoistArgumentError, TodoistRequestError } from '../types/errors'
+import { TodoistArgumentError } from '../types/errors'
 import type {
     CreateProjectFromTemplateArgs,
     CreateProjectFromTemplateResponse,
@@ -25,37 +25,21 @@ import type {
     ImportTemplateFromIdArgs,
     ImportTemplateIntoProjectArgs,
     ImportTemplateResponse,
-    Template,
 } from '../types/templates'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import { spreadIfDefined } from '../utils/request-helpers'
 import {
     validateCommentArray,
+    validateGetTemplateCategoriesResponse,
+    validateGetTemplatesByIdsResponse,
+    validateGetTemplatesResponse,
     validateProjectArray,
     validateSectionArray,
     validateTaskArray,
-    validateTemplate,
-    validateTemplateArray,
-    validateTemplateCategoryArray,
 } from '../utils/validators'
 import { BaseClient } from './base-client'
 
 const TEMPLATES_BY_IDS_MAX = 100
-
-type RawGetTemplatesResponse = {
-    templates: unknown
-    count: number
-    hasMore: boolean
-    nextCursor?: string
-}
-
-type RawGetTemplateCategoriesResponse = {
-    categories: unknown
-}
-
-type RawGetTemplatesByIdsResponse = {
-    templates?: unknown
-}
 
 /**
  * Internal sub-client handling all template-domain endpoints.
@@ -151,7 +135,7 @@ export class TemplateClient extends BaseClient {
     }
 
     async getTemplates(args: GetTemplatesArgs = {}): Promise<GetTemplatesResponse> {
-        const { data } = await request<RawGetTemplatesResponse>({
+        const { data } = await request<GetTemplatesResponse>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
             relativePath: ENDPOINT_REST_TEMPLATES_LIST,
@@ -159,18 +143,13 @@ export class TemplateClient extends BaseClient {
             customFetch: this.customFetch,
             payload: args,
         })
-        return {
-            templates: validateTemplateArray(data.templates),
-            count: data.count,
-            hasMore: data.hasMore,
-            ...spreadIfDefined(data.nextCursor, (v) => ({ nextCursor: v })),
-        }
+        return validateGetTemplatesResponse(data)
     }
 
     async getTemplateCategories(
         args: GetTemplateCategoriesArgs = {},
     ): Promise<GetTemplateCategoriesResponse> {
-        const { data } = await request<RawGetTemplateCategoriesResponse>({
+        const { data } = await request<GetTemplateCategoriesResponse>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
             relativePath: ENDPOINT_REST_TEMPLATES_CATEGORIES,
@@ -178,7 +157,7 @@ export class TemplateClient extends BaseClient {
             customFetch: this.customFetch,
             payload: args,
         })
-        return { categories: validateTemplateCategoryArray(data.categories) }
+        return validateGetTemplateCategoriesResponse(data)
     }
 
     async getTemplatesByIds(args: GetTemplatesByIdsArgs): Promise<GetTemplatesByIdsResponse> {
@@ -195,7 +174,7 @@ export class TemplateClient extends BaseClient {
             throw new TodoistArgumentError('templateIds must contain only non-empty strings.')
         }
 
-        const { data } = await request<RawGetTemplatesByIdsResponse>({
+        const { data } = await request<GetTemplatesByIdsResponse>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
             relativePath: ENDPOINT_REST_TEMPLATES_GET,
@@ -206,24 +185,7 @@ export class TemplateClient extends BaseClient {
                 ...spreadIfDefined(locale, (v) => ({ locale: v })),
             },
         })
-
-        if (
-            data.templates === null ||
-            data.templates === undefined ||
-            typeof data.templates !== 'object' ||
-            Array.isArray(data.templates)
-        ) {
-            throw new TodoistRequestError(
-                'Invalid response from /templates/get: expected `templates` to be an object.',
-            )
-        }
-
-        const validated: Record<string, Template> = {}
-        for (const template of Object.values(data.templates as Record<string, unknown>)) {
-            const valid = validateTemplate(template)
-            validated[valid.id] = valid
-        }
-        return { templates: validated }
+        return validateGetTemplatesByIdsResponse(data)
     }
 
     private validateTemplateResponse(data: Record<string, unknown>) {

@@ -89,3 +89,36 @@ export const TemplateCategorySchema = z.object({
 })
 /** A Contentful-backed category used to group templates in the gallery. */
 export type TemplateCategory = z.infer<typeof TemplateCategorySchema>
+
+export const GetTemplatesResponseSchema = z.object({
+    templates: z.array(TemplateSchema),
+    count: z.number(),
+    hasMore: z.boolean(),
+    nextCursor: z.string().optional(),
+})
+/** Response from listing templates. */
+export type GetTemplatesResponse = z.infer<typeof GetTemplatesResponseSchema>
+
+export const GetTemplateCategoriesResponseSchema = z.object({
+    categories: z.array(TemplateCategorySchema),
+})
+/** Response from listing template categories. */
+export type GetTemplateCategoriesResponse = z.infer<typeof GetTemplateCategoriesResponseSchema>
+
+export const GetTemplatesByIdsResponseSchema = z
+    .object({
+        templates: z.record(z.string(), TemplateSchema),
+    })
+    .transform(({ templates }) => {
+        // The server returns a map keyed by template ID, but the HTTP client's
+        // recursive snake_case → camelCase conversion mangles those keys. Rebuild
+        // the map from each validated template's own `id` so callers get the
+        // original IDs back.
+        const out: Record<string, Template> = {}
+        for (const value of Object.values(templates)) {
+            out[value.id] = value
+        }
+        return { templates: out }
+    })
+/** Response from fetching templates by ID. Unknown IDs are silently omitted. */
+export type GetTemplatesByIdsResponse = z.infer<typeof GetTemplatesByIdsResponseSchema>
