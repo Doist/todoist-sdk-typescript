@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PROJECT_VIEW_STYLES } from '../projects/types'
 
 /** Template type values returned on Template objects. */
 export const TEMPLATE_TYPE_VALUES = ['setup', 'project'] as const
@@ -19,11 +20,6 @@ export type TemplateSourceValue = (typeof TEMPLATE_SOURCE_VALUES)[number]
 export const TEMPLATE_SOURCE_FILTERS = [...TEMPLATE_SOURCE_VALUES, 'workspace', 'all'] as const
 /** Template source accepted as a query filter. */
 export type TemplateSourceFilter = (typeof TEMPLATE_SOURCE_FILTERS)[number]
-
-/** Default view types a template can suggest for an imported project. */
-export const TEMPLATE_VIEW_TYPES = ['list', 'board', 'calendar'] as const
-/** Default view type a template can suggest. */
-export type TemplateViewType = (typeof TEMPLATE_VIEW_TYPES)[number]
 
 export const TemplateCreatorSchema = z.object({
     userId: z.string().nullable().optional(),
@@ -57,7 +53,7 @@ export const TemplateSchema = z.object({
     longDescription: z.string(),
     instructions: z.string().nullable(),
     importUrl: z.string().nullable(),
-    viewType: z.enum(TEMPLATE_VIEW_TYPES).optional(),
+    viewType: z.enum(PROJECT_VIEW_STYLES).optional(),
     thumbnailImage: z.string().nullable(),
     thumbnailImageDark: z.string().nullable(),
     coverImage: z.string().nullable(),

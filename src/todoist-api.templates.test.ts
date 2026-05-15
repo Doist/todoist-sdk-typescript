@@ -13,6 +13,29 @@ function getTarget() {
     return new TodoistApi(DEFAULT_AUTH_TOKEN)
 }
 
+const MOCK_TEMPLATE_API = {
+    id: 'product-launch',
+    name: 'Product launch',
+    template_type: 'project',
+    template_source: 'doist',
+    short_description: 'Ship faster',
+    long_description: 'A reusable checklist for product launches.',
+    instructions: null,
+    import_url: null,
+    view_type: 'list',
+    thumbnail_image: null,
+    thumbnail_image_dark: null,
+    cover_image: null,
+    preview_image: null,
+    template_color: null,
+    background_color: null,
+    background_color_dark: null,
+    creator: { name: 'Doist', position: 'Team', avatar: '' },
+    seo: null,
+    more_resources: [],
+    category_ids: ['productivity'],
+}
+
 describe('TodoistApi template endpoints', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -144,29 +167,6 @@ describe('TodoistApi template endpoints', () => {
     })
 
     describe('getTemplates', () => {
-        const MOCK_TEMPLATE_API = {
-            id: 'product-launch',
-            name: 'Product launch',
-            template_type: 'project',
-            template_source: 'doist',
-            short_description: 'Ship faster',
-            long_description: 'A reusable checklist for product launches.',
-            instructions: null,
-            import_url: null,
-            view_type: 'list',
-            thumbnail_image: null,
-            thumbnail_image_dark: null,
-            cover_image: null,
-            preview_image: null,
-            template_color: null,
-            background_color: null,
-            background_color_dark: null,
-            creator: { name: 'Doist', position: 'Team', avatar: '' },
-            seo: null,
-            more_resources: [],
-            category_ids: ['productivity'],
-        }
-
         test('returns validated, camelCased list with pagination metadata', async () => {
             server.use(
                 http.get(`${getSyncBaseUri()}templates/list`, () => {
@@ -264,31 +264,7 @@ describe('TodoistApi template endpoints', () => {
                 http.get(`${getSyncBaseUri()}templates/get`, ({ request }) => {
                     observedUrl = request.url
                     return HttpResponse.json(
-                        {
-                            templates: {
-                                'product-launch': {
-                                    id: 'product-launch',
-                                    name: 'Product launch',
-                                    template_type: 'project',
-                                    template_source: 'doist',
-                                    short_description: 'Ship faster',
-                                    long_description: 'desc',
-                                    instructions: null,
-                                    import_url: null,
-                                    thumbnail_image: null,
-                                    thumbnail_image_dark: null,
-                                    cover_image: null,
-                                    preview_image: null,
-                                    template_color: null,
-                                    background_color: null,
-                                    background_color_dark: null,
-                                    creator: { name: 'Doist', position: 'Team', avatar: '' },
-                                    seo: null,
-                                    more_resources: [],
-                                    category_ids: [],
-                                },
-                            },
-                        },
+                        { templates: { 'product-launch': MOCK_TEMPLATE_API } },
                         { status: 200 },
                     )
                 }),
@@ -300,13 +276,48 @@ describe('TodoistApi template endpoints', () => {
                 locale: 'en',
             })
 
-            expect(observedUrl).toContain('template_ids=product-launch%2Csprint-planning')
-            expect(observedUrl).toContain('locale=en')
+            const params = new URL(observedUrl).searchParams
+            expect(params.get('template_ids')).toBe('product-launch,sprint-planning')
+            expect(params.get('locale')).toBe('en')
             expect(Object.keys(result.templates)).toEqual(['product-launch'])
             expect(result.templates['product-launch']).toMatchObject({
                 id: 'product-launch',
                 shortDescription: 'Ship faster',
             })
+        })
+
+        test('rejects an empty templateIds array before making a request', async () => {
+            const api = getTarget()
+            await expect(api.getTemplatesByIds({ templateIds: [] })).rejects.toThrow(
+                /non-empty array/,
+            )
+        })
+
+        test('rejects more than 100 templateIds', async () => {
+            const api = getTarget()
+            const tooMany = Array.from({ length: 101 }, (_, i) => `id-${i}`)
+            await expect(api.getTemplatesByIds({ templateIds: tooMany })).rejects.toThrow(
+                /at most 100/,
+            )
+        })
+
+        test('rejects templateIds containing empty strings', async () => {
+            const api = getTarget()
+            await expect(api.getTemplatesByIds({ templateIds: ['valid', ''] })).rejects.toThrow(
+                /non-empty strings/,
+            )
+        })
+
+        test('throws when the response omits the templates field', async () => {
+            server.use(
+                http.get(`${getSyncBaseUri()}templates/get`, () => {
+                    return HttpResponse.json({}, { status: 200 })
+                }),
+            )
+            const api = getTarget()
+            await expect(
+                api.getTemplatesByIds({ templateIds: ['product-launch'] }),
+            ).rejects.toThrow(/expected `templates` to be an object/)
         })
     })
 
