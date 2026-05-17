@@ -3,6 +3,7 @@ import { TodoistApi } from '.'
 import { getSyncBaseUri } from './consts/endpoints'
 import { server, http, HttpResponse } from './test-utils/msw-setup'
 import { DEFAULT_AUTH_TOKEN, DEFAULT_SECTION, DEFAULT_TASK } from './test-utils/test-defaults'
+import { camelCaseKeys } from './utils/case-conversion'
 import { uploadMultipartFile } from './utils/multipart-upload'
 
 // Mock the multipart upload helper
@@ -34,6 +35,14 @@ const MOCK_TEMPLATE_API = {
     seo: null,
     more_resources: [],
     category_ids: ['productivity'],
+}
+
+// Pre-camelCased version for `uploadMultipartFile` mocks (the real helper performs the
+// snake_case → camelCase conversion before resolving). Derived from `MOCK_TEMPLATE_API` so
+// schema changes only need updating in one place.
+const MOCK_TEMPLATE_CAMEL = {
+    ...(camelCaseKeys(MOCK_TEMPLATE_API) as Record<string, unknown>),
+    templateSource: 'user',
 }
 
 describe('TodoistApi template endpoints', () => {
@@ -351,6 +360,291 @@ describe('TodoistApi template endpoints', () => {
             expect(result.templateType).toBe('project')
             expect(result.tasks).toEqual([])
             expect(result.sections).toEqual([])
+        })
+    })
+
+    describe('createUserTemplate', () => {
+        test('POSTs JSON payload and returns validated template', async () => {
+            let observedBody: Record<string, unknown> | undefined
+            server.use(
+                http.post(`${getSyncBaseUri()}templates/user`, async ({ request }) => {
+                    observedBody = (await request.json()) as Record<string, unknown>
+                    return HttpResponse.json(
+                        { ...MOCK_TEMPLATE_API, template_source: 'user' },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.createUserTemplate({
+                templateType: 'project',
+                name: 'My template',
+                description: 'desc',
+                projectId: 'proj_1',
+                color: 'lime_green',
+                forWorkspace: true,
+            })
+
+            expect(observedBody).toEqual({
+                template_type: 'project',
+                name: 'My template',
+                description: 'desc',
+                project_id: 'proj_1',
+                color: 'lime_green',
+                for_workspace: true,
+            })
+            expect(result).toMatchObject({
+                id: 'product-launch',
+                templateSource: 'user',
+                name: 'Product launch',
+            })
+        })
+    })
+
+    describe('updateUserTemplate', () => {
+        test('PUTs only the supplied fields and returns template + status', async () => {
+            let observedUrl = ''
+            let observedBody: Record<string, unknown> | undefined
+            server.use(
+                http.put(
+                    `${getSyncBaseUri()}templates/user/user_template_42`,
+                    async ({ request }) => {
+                        observedUrl = request.url
+                        observedBody = (await request.json()) as Record<string, unknown>
+                        return HttpResponse.json(
+                            {
+                                status: 'ok',
+                                ...MOCK_TEMPLATE_API,
+                                template_source: 'user',
+                                name: 'Renamed',
+                            },
+                            { status: 200 },
+                        )
+                    },
+                ),
+            )
+            const api = getTarget()
+
+            const result = await api.updateUserTemplate('user_template_42', {
+                name: 'Renamed',
+                sharedWithWorkspaceMembers: true,
+            })
+
+            expect(observedUrl).toContain('templates/user/user_template_42')
+            expect(observedBody).toEqual({
+                name: 'Renamed',
+                shared_with_workspace_members: true,
+            })
+            expect(result.status).toBe('ok')
+            expect(result.name).toBe('Renamed')
+            expect(result.templateSource).toBe('user')
+        })
+
+        test('rejects an empty templateId before making a request', async () => {
+            const api = getTarget()
+            await expect(api.updateUserTemplate('', { name: 'x' })).rejects.toThrow(
+                /templateId is required/,
+            )
+        })
+
+        test('URL-encodes templateId path segment', async () => {
+            let observedUrl = ''
+            server.use(
+                http.put(`${getSyncBaseUri()}templates/user/user%2Ftemplate%2F1`, ({ request }) => {
+                    observedUrl = request.url
+                    return HttpResponse.json(
+                        { status: 'ok', ...MOCK_TEMPLATE_API, template_source: 'user' },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            await api.updateUserTemplate('user/template/1', { name: 'x' })
+
+            expect(observedUrl).toContain('templates/user/user%2Ftemplate%2F1')
+        })
+    })
+
+    describe('deleteUserTemplate', () => {
+        test('DELETEs and returns status', async () => {
+            let observedMethod = ''
+            server.use(
+                http.delete(`${getSyncBaseUri()}templates/user/user_template_42`, ({ request }) => {
+                    observedMethod = request.method
+                    return HttpResponse.json({ status: 'ok' }, { status: 200 })
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.deleteUserTemplate('user_template_42')
+
+            expect(observedMethod).toBe('DELETE')
+            expect(result).toEqual({ status: 'ok' })
+        })
+
+        test('rejects an empty templateId before making a request', async () => {
+            const api = getTarget()
+            await expect(api.deleteUserTemplate('')).rejects.toThrow(/templateId is required/)
+        })
+
+        test('URL-encodes templateId path segment', async () => {
+            let observedUrl = ''
+            server.use(
+                http.delete(
+                    `${getSyncBaseUri()}templates/user/user%2Ftemplate%2F1`,
+                    ({ request }) => {
+                        observedUrl = request.url
+                        return HttpResponse.json({ status: 'ok' }, { status: 200 })
+                    },
+                ),
+            )
+            const api = getTarget()
+
+            await api.deleteUserTemplate('user/template/1')
+
+            expect(observedUrl).toContain('templates/user/user%2Ftemplate%2F1')
+        })
+    })
+
+    describe('previewUserTemplateFromFile', () => {
+        test('uploads file, renames items→tasks, concats notes+projectNotes→comments', async () => {
+            const taskNote = {
+                id: 'note_1',
+                content: 'Task note',
+                postedAt: '2026-05-15T00:00:00Z',
+                postedUid: 'u1',
+                itemId: 'task_1',
+                fileAttachment: null,
+                uidsToNotify: null,
+                isDeleted: false,
+                reactions: null,
+            }
+            const projectNote = { ...taskNote, id: 'note_2', itemId: undefined, projectId: 'p1' }
+            mockedUploadMultipartFile.mockResolvedValue({
+                uploadedFileName: 'template.csv',
+                templateType: 'project',
+                projects: [],
+                sections: [DEFAULT_SECTION],
+                items: [DEFAULT_TASK],
+                notes: [taskNote],
+                projectNotes: [projectNote],
+            })
+            const api = getTarget()
+
+            const result = await api.previewUserTemplateFromFile({
+                file: Buffer.from('content'),
+                fileName: 'template.csv',
+            })
+
+            expect(mockedUploadMultipartFile).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    endpoint: 'templates/user/preview_from_file',
+                    additionalFields: {},
+                }),
+            )
+            expect(result.uploadedFileName).toBe('template.csv')
+            expect(result.tasks).toHaveLength(1)
+            expect(result.sections).toHaveLength(1)
+            expect(result.comments).toHaveLength(2)
+            expect(result.comments.map((c) => c.id)).toEqual(['note_1', 'note_2'])
+        })
+    })
+
+    describe('createUserTemplateFromFile', () => {
+        test('uploads file with template metadata and returns validated template', async () => {
+            mockedUploadMultipartFile.mockResolvedValue(MOCK_TEMPLATE_CAMEL)
+            const api = getTarget()
+
+            const result = await api.createUserTemplateFromFile({
+                templateType: 'project',
+                name: 'From file',
+                description: 'desc',
+                color: 30,
+                file: Buffer.from('content'),
+                fileName: 'template.csv',
+            })
+
+            expect(mockedUploadMultipartFile).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    endpoint: 'templates/user/import',
+                    additionalFields: {
+                        template_type: 'project',
+                        name: 'From file',
+                        description: 'desc',
+                        color: '30',
+                    },
+                }),
+            )
+            expect(result).toMatchObject({ id: 'product-launch', templateSource: 'user' })
+        })
+
+        test('passes uploadedFileName through when supplied alongside a file', async () => {
+            mockedUploadMultipartFile.mockResolvedValue(MOCK_TEMPLATE_CAMEL)
+            const api = getTarget()
+
+            await api.createUserTemplateFromFile({
+                templateType: 'project',
+                name: 'From file',
+                description: 'desc',
+                color: 'lime_green',
+                file: Buffer.from('content'),
+                fileName: 'template.csv',
+                uploadedFileName: 'prev-upload.csv',
+            })
+
+            expect(mockedUploadMultipartFile).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    additionalFields: expect.objectContaining({
+                        uploaded_file_name: 'prev-upload.csv',
+                    }),
+                }),
+            )
+        })
+
+        test('sends a JSON POST (no multipart upload) when only uploadedFileName is provided', async () => {
+            let observedBody: Record<string, unknown> | undefined
+            server.use(
+                http.post(`${getSyncBaseUri()}templates/user/import`, async ({ request }) => {
+                    observedBody = (await request.json()) as Record<string, unknown>
+                    return HttpResponse.json(
+                        { ...MOCK_TEMPLATE_API, template_source: 'user' },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.createUserTemplateFromFile({
+                templateType: 'project',
+                name: 'From cached',
+                description: 'desc',
+                color: 'lime_green',
+                uploadedFileName: 'prev-upload.csv',
+            })
+
+            expect(mockedUploadMultipartFile).not.toHaveBeenCalled()
+            expect(observedBody).toEqual({
+                template_type: 'project',
+                name: 'From cached',
+                description: 'desc',
+                color: 'lime_green',
+                uploaded_file_name: 'prev-upload.csv',
+            })
+            expect(result.templateSource).toBe('user')
+        })
+
+        test('rejects when neither file nor uploadedFileName is provided', async () => {
+            const api = getTarget()
+            await expect(
+                api.createUserTemplateFromFile({
+                    templateType: 'project',
+                    name: 'x',
+                    description: 'y',
+                    color: 'lime_green',
+                }),
+            ).rejects.toThrow(/requires either `file` or `uploadedFileName`/)
         })
     })
 })

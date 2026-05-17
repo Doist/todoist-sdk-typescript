@@ -30,11 +30,14 @@ import { SectionSchema } from '../types/sections/types'
 import { type SyncResponse, SyncResponseSchema } from '../types/sync/response'
 import { TaskSchema } from '../types/tasks/types'
 import {
+    DeleteUserTemplateResponseSchema,
     GetTemplateCategoriesResponseSchema,
     GetTemplatesByIdsResponseSchema,
     GetTemplatesResponseSchema,
+    PreviewUserTemplateFromFileResponseSchema,
     TemplateCategorySchema,
     TemplateSchema,
+    UpdateUserTemplateResponseSchema,
 } from '../types/templates/types'
 import { UiExtensionSchema } from '../types/ui-extensions/types'
 import { UserSchema, CurrentUserSchema } from '../types/users/types'
@@ -290,4 +293,16 @@ export const { validate: validateGetTemplateCategoriesResponse } = createValidat
 
 export const { validate: validateGetTemplatesByIdsResponse } = createValidator(
     GetTemplatesByIdsResponseSchema,
+)
+
+export const { validate: validateUpdateUserTemplateResponse } = createValidator(
+    UpdateUserTemplateResponseSchema,
+)
+
+export const { validate: validateDeleteUserTemplateResponse } = createValidator(
+    DeleteUserTemplateResponseSchema,
+)
+
+export const { validate: validatePreviewUserTemplateFromFileResponse } = createValidator(
+    PreviewUserTemplateFromFileResponseSchema,
 )

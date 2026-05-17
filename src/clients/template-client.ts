@@ -7,12 +7,19 @@ import {
     ENDPOINT_REST_TEMPLATES_IMPORT_FROM_ID,
     ENDPOINT_REST_TEMPLATES_LIST,
     ENDPOINT_REST_TEMPLATES_URL,
+    ENDPOINT_REST_TEMPLATES_USER,
+    ENDPOINT_REST_TEMPLATES_USER_IMPORT,
+    ENDPOINT_REST_TEMPLATES_USER_PREVIEW,
+    getUserTemplateEndpoint,
 } from '../consts/endpoints'
 import { request } from '../transport/http-client'
 import { TodoistArgumentError } from '../types/errors'
 import type {
     CreateProjectFromTemplateArgs,
     CreateProjectFromTemplateResponse,
+    CreateUserTemplateArgs,
+    CreateUserTemplateFromFileArgs,
+    DeleteUserTemplateResponse,
     ExportTemplateFileArgs,
     ExportTemplateUrlArgs,
     ExportTemplateUrlResponse,
@@ -25,17 +32,26 @@ import type {
     ImportTemplateFromIdArgs,
     ImportTemplateIntoProjectArgs,
     ImportTemplateResponse,
+    PreviewUserTemplateFromFileArgs,
+    PreviewUserTemplateFromFileResponse,
+    Template,
+    UpdateUserTemplateArgs,
+    UpdateUserTemplateResponse,
 } from '../types/templates'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import { spreadIfDefined } from '../utils/request-helpers'
 import {
     validateCommentArray,
+    validateDeleteUserTemplateResponse,
     validateGetTemplateCategoriesResponse,
     validateGetTemplatesByIdsResponse,
     validateGetTemplatesResponse,
+    validatePreviewUserTemplateFromFileResponse,
     validateProjectArray,
     validateSectionArray,
     validateTaskArray,
+    validateTemplate,
+    validateUpdateUserTemplateResponse,
 } from '../utils/validators'
 import { BaseClient } from './base-client'
 
@@ -186,6 +202,128 @@ export class TemplateClient extends BaseClient {
             },
         })
         return validateGetTemplatesByIdsResponse(data)
+    }
+
+    async createUserTemplate(args: CreateUserTemplateArgs, requestId?: string): Promise<Template> {
+        const { data } = await request<Template>({
+            httpMethod: 'POST',
+            baseUri: this.syncApiBase,
+            relativePath: ENDPOINT_REST_TEMPLATES_USER,
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            payload: args,
+            requestId,
+        })
+        return validateTemplate(data)
+    }
+
+    async updateUserTemplate(
+        templateId: string,
+        args: UpdateUserTemplateArgs = {},
+        requestId?: string,
+    ): Promise<UpdateUserTemplateResponse> {
+        if (!templateId) {
+            throw new TodoistArgumentError('templateId is required.')
+        }
+        const { data } = await request<UpdateUserTemplateResponse>({
+            httpMethod: 'PUT',
+            baseUri: this.syncApiBase,
+            relativePath: getUserTemplateEndpoint(templateId),
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            payload: args,
+            requestId,
+        })
+        return validateUpdateUserTemplateResponse(data)
+    }
+
+    async deleteUserTemplate(
+        templateId: string,
+        requestId?: string,
+    ): Promise<DeleteUserTemplateResponse> {
+        if (!templateId) {
+            throw new TodoistArgumentError('templateId is required.')
+        }
+        const { data } = await request<DeleteUserTemplateResponse>({
+            httpMethod: 'DELETE',
+            baseUri: this.syncApiBase,
+            relativePath: getUserTemplateEndpoint(templateId),
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            requestId,
+        })
+        return validateDeleteUserTemplateResponse(data)
+    }
+
+    async previewUserTemplateFromFile(
+        args: PreviewUserTemplateFromFileArgs,
+        requestId?: string,
+    ): Promise<PreviewUserTemplateFromFileResponse> {
+        const data = await uploadMultipartFile({
+            baseUrl: this.syncApiBase,
+            authToken: this.authToken,
+            endpoint: ENDPOINT_REST_TEMPLATES_USER_PREVIEW,
+            file: args.file,
+            fileName: args.fileName,
+            additionalFields: {},
+            customFetch: this.customFetch,
+            requestId,
+        })
+        return validatePreviewUserTemplateFromFileResponse(data)
+    }
+
+    async createUserTemplateFromFile(
+        args: CreateUserTemplateFromFileArgs,
+        requestId?: string,
+    ): Promise<Template> {
+        const { templateType, name, description, color, file, fileName, uploadedFileName } = args
+        if (file === undefined && uploadedFileName === undefined) {
+            throw new TodoistArgumentError(
+                'createUserTemplateFromFile requires either `file` or `uploadedFileName`.',
+            )
+        }
+
+        // No new upload needed — server reuses the previously uploaded CSV from S3, so
+        // skip multipart and send a regular JSON request.
+        if (file === undefined) {
+            const { data } = await request<Template>({
+                httpMethod: 'POST',
+                baseUri: this.syncApiBase,
+                relativePath: ENDPOINT_REST_TEMPLATES_USER_IMPORT,
+                apiToken: this.authToken,
+                customFetch: this.customFetch,
+                payload: {
+                    templateType,
+                    name,
+                    description,
+                    color,
+                    uploadedFileName,
+                },
+                requestId,
+            })
+            return validateTemplate(data)
+        }
+
+        const additionalFields: Record<string, string> = {
+            template_type: templateType,
+            name,
+            description,
+            color: String(color),
+        }
+        if (uploadedFileName !== undefined) {
+            additionalFields.uploaded_file_name = uploadedFileName
+        }
+        const data = await uploadMultipartFile({
+            baseUrl: this.syncApiBase,
+            authToken: this.authToken,
+            endpoint: ENDPOINT_REST_TEMPLATES_USER_IMPORT,
+            file,
+            fileName,
+            additionalFields,
+            customFetch: this.customFetch,
+            requestId,
+        })
+        return validateTemplate(data)
     }
 
     private validateTemplateResponse(data: Record<string, unknown>) {

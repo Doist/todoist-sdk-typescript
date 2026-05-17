@@ -71,6 +71,12 @@ export const ENDPOINT_REST_TEMPLATES_IMPORT_FROM_ID =
 export const ENDPOINT_REST_TEMPLATES_LIST = 'templates/list'
 export const ENDPOINT_REST_TEMPLATES_CATEGORIES = 'templates/categories'
 export const ENDPOINT_REST_TEMPLATES_GET = 'templates/get'
+export const ENDPOINT_REST_TEMPLATES_USER = 'templates/user'
+export const ENDPOINT_REST_TEMPLATES_USER_PREVIEW = 'templates/user/preview_from_file'
+export const ENDPOINT_REST_TEMPLATES_USER_IMPORT = 'templates/user/import'
+export function getUserTemplateEndpoint(templateId: string): string {
+    return `${ENDPOINT_REST_TEMPLATES_USER}/${encodeURIComponent(templateId)}`
+}
 
 export const ENDPOINT_REST_ACCESS_TOKENS_MIGRATE = 'access_tokens/migrate_personal_token'
 export const ENDPOINT_REST_BACKUPS = 'backups'

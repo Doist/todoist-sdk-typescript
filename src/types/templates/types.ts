@@ -1,5 +1,8 @@
 import { z } from 'zod'
-import { PROJECT_VIEW_STYLES } from '../projects/types'
+import { CommentSchema } from '../comments/types'
+import { ProjectSchema, PROJECT_VIEW_STYLES } from '../projects/types'
+import { SectionSchema } from '../sections/types'
+import { TaskSchema } from '../tasks/types'
 
 /** Template type values returned on Template objects. */
 export const TEMPLATE_TYPE_VALUES = ['setup', 'project'] as const
@@ -122,3 +125,40 @@ export const GetTemplatesByIdsResponseSchema = z
     })
 /** Response from fetching templates by ID. Unknown IDs are silently omitted. */
 export type GetTemplatesByIdsResponse = z.infer<typeof GetTemplatesByIdsResponseSchema>
+
+export const UpdateUserTemplateResponseSchema = TemplateSchema.extend({
+    status: z.literal('ok'),
+})
+/** Response from updating a user template. */
+export type UpdateUserTemplateResponse = z.infer<typeof UpdateUserTemplateResponseSchema>
+
+export const DeleteUserTemplateResponseSchema = z.object({
+    status: z.literal('ok'),
+})
+/** Response from deleting a user template. */
+export type DeleteUserTemplateResponse = z.infer<typeof DeleteUserTemplateResponseSchema>
+
+export const PreviewUserTemplateFromFileResponseSchema = z
+    .object({
+        uploadedFileName: z.string(),
+        templateType: z.enum(TEMPLATE_TYPE_VALUES),
+        projects: z.array(ProjectSchema),
+        sections: z.array(SectionSchema),
+        items: z.array(TaskSchema),
+        notes: z.array(CommentSchema),
+        projectNotes: z.array(CommentSchema),
+    })
+    .transform(({ items, notes, projectNotes, ...rest }) => ({
+        ...rest,
+        // Match the rest of the SDK: server `items` → `tasks`; project-level notes and
+        // task notes are both Comments here, so concatenate into a single `comments` array.
+        tasks: items,
+        comments: [...notes, ...projectNotes],
+    }))
+/**
+ * Response from previewing a user template from an uploaded CSV file.
+ * The `uploadedFileName` can be passed to the import endpoint to skip re-uploading.
+ */
+export type PreviewUserTemplateFromFileResponse = z.infer<
+    typeof PreviewUserTemplateFromFileResponseSchema
+>
