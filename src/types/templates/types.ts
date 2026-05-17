@@ -52,7 +52,7 @@ export const TemplateSchema = z.object({
     shortDescription: z.string(),
     longDescription: z.string(),
     instructions: z.string().nullable(),
-    importUrl: z.string().nullable(),
+    importUrl: z.string().nullable().optional(),
     viewType: z.enum(PROJECT_VIEW_STYLES).optional(),
     thumbnailImage: z.string().nullable(),
     thumbnailImageDark: z.string().nullable(),
