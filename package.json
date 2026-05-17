@@ -41,10 +41,13 @@
         "build:fix-dts": "node scripts/fix-dts-imports.cjs",
         "build:post": "echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
         "build": "npm-run-all clean build:cjs build:esm build:fix-esm build:fix-dts build:post",
-        "attw": "npx @arethetypeswrong/cli --pack --ignore-rules fallback-condition false-esm",
+        "attw": "attw --pack --ignore-rules fallback-condition false-esm",
         "integrity-checks": "npm-run-all clean check test build attw",
         "prepublishOnly": "npm run integrity-checks",
         "prepare": "npm run build"
+    },
+    "overrides": {
+        "fflate": "0.8.2"
     },
     "dependencies": {
         "camelcase": "6.3.0",
@@ -56,6 +59,7 @@
         "zod": "4.3.6"
     },
     "devDependencies": {
+        "@arethetypeswrong/cli": "0.18.2",
         "@semantic-release/changelog": "6.0.3",
         "@semantic-release/git": "10.0.1",
         "conventional-changelog-conventionalcommits": "9.3.1",
