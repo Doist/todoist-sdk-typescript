@@ -1,3 +1,16 @@
+## [10.2.0](https://github.com/Doist/todoist-sdk-typescript/compare/v10.1.5...v10.2.0) (2026-05-18)
+
+### Features
+
+* add goal sync commands and resource types ([#545](https://github.com/Doist/todoist-sdk-typescript/issues/545)) ([c5b7e5c](https://github.com/Doist/todoist-sdk-typescript/commit/c5b7e5cb1811142d522ebf4f9543350de0a3515f))
+* Brings in Goals functionality ([6c964d2](https://github.com/Doist/todoist-sdk-typescript/commit/6c964d2f9b3e28444ab2a7bf69fee42e6c9a6f3a))
+* Goal types and REST methods ([#548](https://github.com/Doist/todoist-sdk-typescript/issues/548)) ([9da70b5](https://github.com/Doist/todoist-sdk-typescript/commit/9da70b570d9acd000d038f5635ebac2c7f9c2b03))
+
+### Bug Fixes
+
+* address PR review feedback on Goals API ([58c127a](https://github.com/Doist/todoist-sdk-typescript/commit/58c127a9aaa40e341fb0dd82375577a9f498222e))
+* normalize Goal progress item→task field names ([#567](https://github.com/Doist/todoist-sdk-typescript/issues/567)) ([d5c60ce](https://github.com/Doist/todoist-sdk-typescript/commit/d5c60cece3759a1eebeaff91442dfd4ded355775))
+
 ## [10.1.5](https://github.com/Doist/todoist-sdk-typescript/compare/v10.1.4...v10.1.5) (2026-05-13)
 
 ### Bug Fixes
