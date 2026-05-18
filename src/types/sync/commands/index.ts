@@ -11,6 +11,15 @@ import type {
 } from './filters'
 import type { FolderAddArgs, FolderUpdateArgs, FolderDeleteArgs } from './folders'
 import type {
+    GoalAddArgs,
+    GoalUpdateArgs,
+    GoalCompleteArgs,
+    GoalUncompleteArgs,
+    GoalDeleteArgs,
+    GoalLinkItemArgs,
+    GoalUnlinkItemArgs,
+} from './goals'
+import type {
     LabelAddArgs,
     LabelRenameArgs,
     LabelUpdateArgs,
@@ -210,6 +219,15 @@ export type SyncCommandsMap = {
     workspace_goal_project_add: WorkspaceGoalProjectAddArgs
     workspace_goal_project_remove: WorkspaceGoalProjectRemoveArgs
 
+    // Goals
+    goal_add: GoalAddArgs
+    goal_update: GoalUpdateArgs
+    goal_complete: GoalCompleteArgs
+    goal_uncomplete: GoalUncompleteArgs
+    goal_delete: GoalDeleteArgs
+    goal_link_item: GoalLinkItemArgs
+    goal_unlink_item: GoalUnlinkItemArgs
+
     // Notifications
     live_notifications_mark_unread: LiveNotificationsMarkUnreadArgs
     live_notifications_mark_read: LiveNotificationsMarkReadArgs
@@ -292,6 +310,7 @@ export * from './workspaces'
 export * from './folders'
 export * from './workspace-filters'
 export * from './workspace-goals'
+export * from './goals'
 export * from './notifications'
 export * from './sharing'
 export * from './view-options'

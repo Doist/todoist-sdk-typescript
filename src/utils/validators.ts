@@ -15,6 +15,7 @@ import {
 } from '../types/apps/types'
 import { BackupSchema } from '../types/backups/types'
 import { AttachmentSchema, CommentSchema } from '../types/comments/types'
+import { GoalSchema } from '../types/goals/types'
 import { IdMappingSchema, MovedIdSchema } from '../types/id-mappings/types'
 import {
     ProjectActivityStatsSchema,
@@ -178,6 +179,9 @@ export const {
 
 export const { validate: validateFolder, validateArray: validateFolderArray } =
     createValidator(FolderSchema)
+
+export const { validate: validateGoal, validateArray: validateGoalArray } =
+    createValidator(GoalSchema)
 
 export const { validate: validateNote, validateArray: validateNoteArray } =
     createValidator(NoteSchema)

@@ -1,4 +1,5 @@
 import { ZodError } from 'zod'
+import { GoalSchema, GoalProgressSchema } from '../../goals/types'
 import { CalendarSchema, CalendarAccountSchema } from './calendars'
 import { CollaboratorSchema, CollaboratorStateSchema } from './collaborators'
 import { CompletedInfoSchema } from './completed-info'
@@ -254,6 +255,85 @@ describe('Sync resource schemas', () => {
             const withExtra = { completedItems: 5, totalItems: 10, percentage: 50 }
             const result = WorkspaceGoalProgressSchema.parse(withExtra)
             expect(result).toHaveProperty('percentage', 50)
+        })
+    })
+
+    describe('GoalSchema', () => {
+        const validGoal = {
+            id: 'goal1',
+            ownerType: 'USER' as const,
+            ownerId: 'user1',
+            name: 'Learn TypeScript',
+            description: null,
+            deadline: null,
+            parentGoalId: null,
+            childOrder: 0,
+            isCompleted: false,
+            completedAt: null,
+            responsibleUid: null,
+            isDeleted: false,
+            creatorUid: 'user1',
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+        }
+
+        test('validates valid data and coerces date fields', () => {
+            const result = GoalSchema.parse(validGoal)
+            expect(result.id).toBe('goal1')
+            expect(result.createdAt).toBeInstanceOf(Date)
+            expect(result.updatedAt).toBeInstanceOf(Date)
+            expect(result.completedAt).toBeNull()
+        })
+
+        test('coerces completedAt string to Date', () => {
+            const completed = { ...validGoal, completedAt: '2024-06-15T12:00:00Z' }
+            const result = GoalSchema.parse(completed)
+            expect(result.completedAt).toBeInstanceOf(Date)
+        })
+
+        test('validates with progress', () => {
+            const withProgress = {
+                ...validGoal,
+                progress: { totalTaskCount: 10, completedTaskCount: 3, percentage: 30 },
+            }
+            const result = GoalSchema.parse(withProgress)
+            expect(result.progress).toEqual({
+                totalTaskCount: 10,
+                completedTaskCount: 3,
+                percentage: 30,
+            })
+        })
+
+        test('throws on invalid data', () => {
+            expect(() => GoalSchema.parse({ id: 'goal1' })).toThrow(ZodError)
+        })
+
+        test('preserves unknown fields via passthrough', () => {
+            const withExtra = { ...validGoal, newField: 'surprise' }
+            const result = GoalSchema.parse(withExtra)
+            expect(result).toHaveProperty('newField', 'surprise')
+        })
+    })
+
+    describe('GoalProgressSchema', () => {
+        test('validates valid data', () => {
+            const data = { totalTaskCount: 10, completedTaskCount: 5, percentage: 50 }
+            expect(GoalProgressSchema.parse(data)).toEqual(data)
+        })
+
+        test('renames *ItemCount fields from REST API to *TaskCount', () => {
+            const data = { totalItemCount: 8, completedItemCount: 3, percentage: 37 }
+            expect(GoalProgressSchema.parse(data)).toEqual({
+                totalTaskCount: 8,
+                completedTaskCount: 3,
+                percentage: 37,
+            })
+        })
+
+        test('preserves unknown fields via passthrough', () => {
+            const data = { totalTaskCount: 10, completedTaskCount: 5, percentage: 50, extra: true }
+            const result = GoalProgressSchema.parse(data)
+            expect(result).toHaveProperty('extra', true)
         })
     })
 

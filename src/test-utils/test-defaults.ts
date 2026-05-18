@@ -11,6 +11,7 @@ import {
     WorkspaceProject,
     Reminder,
     Folder,
+    Goal,
     App,
     AppWithUserCount,
     AppSecrets,
@@ -391,6 +392,37 @@ export const DEFAULT_COLLABORATOR_STATE: CollaboratorState = {
     projectId: DEFAULT_PROJECT_ID,
     state: 'active',
     isDeleted: false,
+}
+
+export const DEFAULT_GOAL_ID = '550e8400-e29b-41d4-a716-446655440000'
+
+export const DEFAULT_GOAL: Goal = {
+    id: DEFAULT_GOAL_ID,
+    ownerType: 'USER',
+    ownerId: DEFAULT_USER_ID,
+    name: 'Ship v2',
+    description: 'Launch the new version',
+    deadline: '2026-04-03',
+    parentGoalId: null,
+    childOrder: 0,
+    isCompleted: false,
+    completedAt: null,
+    responsibleUid: null,
+    isDeleted: false,
+    progress: {
+        totalTaskCount: 5,
+        completedTaskCount: 2,
+        percentage: 40,
+    },
+    creatorUid: DEFAULT_USER_ID,
+    createdAt: defaultDate(),
+    updatedAt: defaultDate(),
+}
+
+export const DEFAULT_GOAL_NO_PROGRESS: Goal = {
+    ...DEFAULT_GOAL,
+    id: 'e5f6g7h8-e29b-41d4-a716-446655440001',
+    progress: undefined,
 }
 
 export const DEFAULT_APP_ID = '42'

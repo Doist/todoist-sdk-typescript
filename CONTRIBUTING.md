@@ -79,6 +79,8 @@ To test features before publishing a stable release:
     git push origin next
     ```
 
+    > **Important:** Always use `git merge` to sync — never rebase `next` onto `main`. Rebasing rewrites commit hashes, which breaks the git tags that semantic-release uses to track published versions. Since npm does not allow republishing the same version number, a rebase can leave the release pipeline in an unrecoverable state.
+
 2. **Develop on a feature branch** based off `next` and open a PR targeting `next`.
 
 3. **Automatic pre-release:** Each PR merge into `next` triggers CI and publishes a pre-release version (e.g., `8.3.0-next.1`) to the `next` dist-tag on npm.

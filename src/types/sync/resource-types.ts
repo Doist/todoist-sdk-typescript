@@ -29,6 +29,7 @@ export const SYNC_RESOURCE_TYPES = [
     'role_actions',
     'folders',
     'workspace_goals',
+    'goals',
     'day_orders',
     'calendars',
     'calendar_accounts',

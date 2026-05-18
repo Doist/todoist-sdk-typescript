@@ -39,6 +39,7 @@ export type GetTasksArgs = {
     parentId?: string
     label?: string
     ids?: string[]
+    goalId?: string
     cursor?: string | null
     limit?: number
 }
