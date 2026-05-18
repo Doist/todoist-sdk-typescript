@@ -1331,42 +1331,110 @@ export class TodoistApi {
 
     // ── Goals ──
 
+    /**
+     * Retrieves a paginated list of goals.
+     *
+     * @param args - Optional filters including owner type, workspace ID, cursor, and limit.
+     * @returns A promise that resolves to a paginated list of goals.
+     */
     async getGoals(args?: GetGoalsArgs): Promise<GetGoalsResponse> {
         return this.goalsClient.getGoals(args)
     }
 
+    /**
+     * Searches for goals matching a query.
+     *
+     * @param args - Search parameters including query string and optional owner type.
+     * @returns A promise that resolves to a paginated list of matching goals.
+     */
     async searchGoals(args: SearchGoalsArgs): Promise<GetGoalsResponse> {
         return this.goalsClient.searchGoals(args)
     }
 
+    /**
+     * Retrieves a single goal by its ID.
+     *
+     * @param id - The unique identifier of the goal.
+     * @returns A promise that resolves to the goal.
+     */
     async getGoal(id: string): Promise<Goal> {
         return this.goalsClient.getGoal(id)
     }
 
+    /**
+     * Creates a new goal.
+     *
+     * @param args - Goal attributes including name and optional workspace, description, deadline, and responsible user.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the created goal.
+     */
     async addGoal(args: AddGoalArgs, requestId?: string): Promise<Goal> {
         return this.goalsClient.addGoal(args, requestId)
     }
 
+    /**
+     * Updates an existing goal.
+     *
+     * @param id - The unique identifier of the goal to update.
+     * @param args - Attributes to update on the goal.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the updated goal.
+     */
     async updateGoal(id: string, args: UpdateGoalArgs, requestId?: string): Promise<Goal> {
         return this.goalsClient.updateGoal(id, args, requestId)
     }
 
+    /**
+     * Deletes a goal by its ID.
+     *
+     * @param id - The unique identifier of the goal to delete.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to `true` if successful.
+     */
     async deleteGoal(id: string, requestId?: string): Promise<boolean> {
         return this.goalsClient.deleteGoal(id, requestId)
     }
 
+    /**
+     * Marks a goal as complete.
+     *
+     * @param id - The unique identifier of the goal to complete.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the updated goal.
+     */
     async completeGoal(id: string, requestId?: string): Promise<Goal> {
         return this.goalsClient.completeGoal(id, requestId)
     }
 
+    /**
+     * Marks a previously completed goal as incomplete.
+     *
+     * @param id - The unique identifier of the goal to uncomplete.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the updated goal.
+     */
     async uncompleteGoal(id: string, requestId?: string): Promise<Goal> {
         return this.goalsClient.uncompleteGoal(id, requestId)
     }
 
+    /**
+     * Links a task to a goal so it contributes to goal progress.
+     *
+     * @param args - The goal ID and task ID to link.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the updated goal.
+     */
     async linkTaskToGoal(args: TaskLinkingArgs, requestId?: string): Promise<Goal> {
         return this.goalsClient.linkTaskToGoal(args, requestId)
     }
 
+    /**
+     * Unlinks a previously linked task from a goal.
+     *
+     * @param args - The goal ID and task ID to unlink.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to `true` if successful.
+     */
     async unlinkTaskFromGoal(args: TaskLinkingArgs, requestId?: string): Promise<boolean> {
         return this.goalsClient.unlinkTaskFromGoal(args, requestId)
     }

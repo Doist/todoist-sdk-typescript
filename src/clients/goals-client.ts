@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import {
     ENDPOINT_REST_GOALS,
     ENDPOINT_REST_GOALS_SEARCH,
@@ -17,7 +16,7 @@ import type {
     UpdateGoalArgs,
 } from '../types/goals'
 import { generatePath } from '../utils/request-helpers'
-import { validateGoal, validateGoalArray } from '../utils/validators'
+import { IdSchema, validateGoal, validateGoalArray } from '../utils/validators'
 import { BaseClient } from './base-client'
 
 /**
@@ -62,7 +61,7 @@ export class GoalsClient extends BaseClient {
     }
 
     async getGoal(id: string): Promise<Goal> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Goal>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -87,7 +86,7 @@ export class GoalsClient extends BaseClient {
     }
 
     async updateGoal(id: string, args: UpdateGoalArgs, requestId?: string): Promise<Goal> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Goal>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -101,7 +100,7 @@ export class GoalsClient extends BaseClient {
     }
 
     async deleteGoal(id: string, requestId?: string): Promise<boolean> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request({
             httpMethod: 'DELETE',
             baseUri: this.syncApiBase,
@@ -114,7 +113,7 @@ export class GoalsClient extends BaseClient {
     }
 
     async completeGoal(id: string, requestId?: string): Promise<Goal> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Goal>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -127,7 +126,7 @@ export class GoalsClient extends BaseClient {
     }
 
     async uncompleteGoal(id: string, requestId?: string): Promise<Goal> {
-        z.string().parse(id)
+        IdSchema.parse(id)
         const response = await request<Goal>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -140,8 +139,8 @@ export class GoalsClient extends BaseClient {
     }
 
     async linkTaskToGoal({ goalId, taskId }: TaskLinkingArgs, requestId?: string): Promise<Goal> {
-        z.string().parse(goalId)
-        z.string().parse(taskId)
+        IdSchema.parse(goalId)
+        IdSchema.parse(taskId)
         const response = await request<Goal>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
@@ -158,8 +157,8 @@ export class GoalsClient extends BaseClient {
         { goalId, taskId }: TaskLinkingArgs,
         requestId?: string,
     ): Promise<boolean> {
-        z.string().parse(goalId)
-        z.string().parse(taskId)
+        IdSchema.parse(goalId)
+        IdSchema.parse(taskId)
         const response = await request({
             httpMethod: 'DELETE',
             baseUri: this.syncApiBase,

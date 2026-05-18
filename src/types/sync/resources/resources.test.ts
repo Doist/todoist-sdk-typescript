@@ -321,6 +321,15 @@ describe('Sync resource schemas', () => {
             expect(GoalProgressSchema.parse(data)).toEqual(data)
         })
 
+        test('renames *ItemCount fields from REST API to *TaskCount', () => {
+            const data = { totalItemCount: 8, completedItemCount: 3, percentage: 37 }
+            expect(GoalProgressSchema.parse(data)).toEqual({
+                totalTaskCount: 8,
+                completedTaskCount: 3,
+                percentage: 37,
+            })
+        })
+
         test('preserves unknown fields via passthrough', () => {
             const data = { totalTaskCount: 10, completedTaskCount: 5, percentage: 50, extra: true }
             const result = GoalProgressSchema.parse(data)

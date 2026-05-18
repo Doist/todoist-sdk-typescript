@@ -69,12 +69,33 @@ describe('TodoistApi goal endpoints', () => {
             const { results, nextCursor } = await api.getGoals()
 
             expect(results).toEqual([DEFAULT_GOAL])
-            expect(results[0]?.progress).toEqual({
-                totalTaskCount: 5,
-                completedTaskCount: 2,
-                percentage: 40,
-            })
             expect(nextCursor).toBe('abc')
+        })
+
+        test('serializes filter args onto request URL', async () => {
+            let capturedUrl: URL | undefined
+            server.use(
+                http.get(`${getSyncBaseUri()}${ENDPOINT_REST_GOALS}`, ({ request }) => {
+                    capturedUrl = new URL(request.url)
+                    return HttpResponse.json(
+                        { results: [RAW_GOAL_RESPONSE], next_cursor: null },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            await api.getGoals({
+                workspaceId: '100',
+                ownerType: 'USER',
+                cursor: 'abc',
+                limit: 25,
+            })
+
+            expect(capturedUrl?.searchParams.get('workspace_id')).toBe('100')
+            expect(capturedUrl?.searchParams.get('owner_type')).toBe('USER')
+            expect(capturedUrl?.searchParams.get('cursor')).toBe('abc')
+            expect(capturedUrl?.searchParams.get('limit')).toBe('25')
         })
 
         test('passes through goals without progress', async () => {
@@ -188,12 +209,7 @@ describe('TodoistApi goal endpoints', () => {
 
             const goal = await api.completeGoal(DEFAULT_GOAL_ID)
 
-            expect(goal.isCompleted).toBe(true)
-            expect(goal.progress).toEqual({
-                totalTaskCount: 5,
-                completedTaskCount: 2,
-                percentage: 40,
-            })
+            expect(goal).toEqual({ ...DEFAULT_GOAL, isCompleted: true })
         })
     })
 
@@ -214,11 +230,15 @@ describe('TodoistApi goal endpoints', () => {
     })
 
     describe('linkTaskToGoal', () => {
-        test('returns goal after linking task', async () => {
+        test('returns goal after linking task and maps taskId to item_id in payload', async () => {
+            let capturedBody: unknown
             server.use(
                 http.post(
                     `${getSyncBaseUri()}${ENDPOINT_REST_GOALS}/${DEFAULT_GOAL_ID}/${GOAL_TASKS}`,
-                    () => HttpResponse.json(RAW_GOAL_RESPONSE, { status: 200 }),
+                    async ({ request }) => {
+                        capturedBody = await request.json()
+                        return HttpResponse.json(RAW_GOAL_RESPONSE, { status: 200 })
+                    },
                 ),
             )
             const api = getTarget()
@@ -229,6 +249,7 @@ describe('TodoistApi goal endpoints', () => {
             })
 
             expect(goal).toEqual(DEFAULT_GOAL)
+            expect(capturedBody).toEqual({ item_id: DEFAULT_TASK_ID })
         })
     })
 
