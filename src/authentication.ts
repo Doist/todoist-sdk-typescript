@@ -28,6 +28,8 @@ export const PERMISSIONS = [
     'data:delete',
     'project:delete',
     'backups:read',
+    'billing:read',
+    'billing:read_write',
     'dev:app_console',
 ] as const
 /**
