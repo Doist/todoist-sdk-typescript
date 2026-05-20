@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { WORKSPACE_PLAN_STATUSES } from '../workspaces/types'
+
 /** Available subscription statuses. */
 export const BILLING_SUBSCRIPTION_STATUSES = [
     'none',
@@ -38,11 +40,6 @@ export const TAX_BEHAVIORS = ['exclusive', 'inclusive', 'unspecified'] as const
 /** Tax behavior for a plan price. */
 export type TaxBehavior = (typeof TAX_BEHAVIORS)[number]
 
-/** Available Pro plan statuses. */
-export const PRO_PLAN_STATUSES = ['Active', 'Downgraded', 'Cancelled', 'NeverSubscribed'] as const
-/** Subscription status of a Pro plan. */
-export type ProPlanStatus = (typeof PRO_PLAN_STATUSES)[number]
-
 export const BillingPlanPriceSchema = z.object({
     amount: z.string(),
     rawAmount: z.number(),
@@ -74,7 +71,7 @@ export type SubscriptionInfo = z.infer<typeof SubscriptionInfoSchema>
 export const FormattedPriceSchema = z.object({
     currency: z.string(),
     unitAmount: z.number().int(),
-    taxBehavior: z.string(),
+    taxBehavior: z.enum(TAX_BEHAVIORS),
 })
 
 /** A single price within a billing-cycle listing. */
@@ -89,7 +86,7 @@ export const PriceListingSchema = z.object({
 export type PriceListing = z.infer<typeof PriceListingSchema>
 
 export const ProPlanDetailsSchema = z.object({
-    currentPlanStatus: z.enum(PRO_PLAN_STATUSES),
+    currentPlanStatus: z.enum(WORKSPACE_PLAN_STATUSES),
     downgradeAt: z.string().nullable(),
     priceList: z.array(PriceListingSchema),
 })
@@ -104,3 +101,29 @@ export const PricesResponseSchema = z.object({
 
 /** Available Pro and Teams prices. */
 export type PricesResponse = z.infer<typeof PricesResponseSchema>
+
+/**
+ * Monthly and yearly amounts for a single currency. Each amount is a number in
+ * the currency's smallest unit, or a localized formatted string when the
+ * `pricing` endpoint is called with `formatted: true`.
+ */
+export const PricingTermsSchema = z.object({
+    monthly: z.union([z.number(), z.string()]),
+    yearly: z.union([z.number(), z.string()]),
+})
+
+/** Monthly/yearly amounts for one currency. */
+export type PricingTerms = z.infer<typeof PricingTermsSchema>
+
+/**
+ * Response of the `pricing` endpoint: a mix of version-pointer strings
+ * (`latestPro`, `latestBiz`, `sessionPro`, `sessionBiz`) and version keys
+ * (`v1`, `v2`, …) each mapping plan name → currency code → {@link PricingTerms}.
+ */
+export const PricingResponseSchema = z.record(
+    z.string(),
+    z.union([z.string(), z.record(z.string(), z.record(z.string(), PricingTermsSchema))]),
+)
+
+/** Current and legacy Pro/Teams pricing keyed by version. */
+export type PricingResponse = z.infer<typeof PricingResponseSchema>

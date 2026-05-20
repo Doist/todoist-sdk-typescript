@@ -18,6 +18,7 @@ import {
     SubscriptionInfoSchema,
     ProPlanDetailsSchema,
     PricesResponseSchema,
+    PricingResponseSchema,
 } from '../types/billing/types'
 import { AttachmentSchema, CommentSchema } from '../types/comments/types'
 import { GoalSchema } from '../types/goals/types'
@@ -195,6 +196,8 @@ export const { validate: validateSubscriptionInfo } = createValidator(Subscripti
 export const { validate: validateProPlanDetails } = createValidator(ProPlanDetailsSchema)
 
 export const { validate: validatePrices } = createValidator(PricesResponseSchema)
+
+export const { validate: validatePricing } = createValidator(PricingResponseSchema)
 
 export const { validate: validateNote, validateArray: validateNoteArray } =
     createValidator(NoteSchema)

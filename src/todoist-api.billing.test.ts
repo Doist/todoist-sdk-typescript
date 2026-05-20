@@ -332,22 +332,33 @@ describe('TodoistApi billing endpoints', () => {
     })
 
     describe('createWorkspaceBillingPortalSession', () => {
-        test('returns billing portal url', async () => {
+        test('sends snake_cased body and returns billing portal url', async () => {
+            let capturedBody: unknown
             server.use(
-                http.post(`${getSyncBaseUri()}${ENDPOINT_WORKSPACE_BILLING_PORTAL}`, () =>
-                    HttpResponse.json(
-                        { billing_portal_url: 'https://billing.stripe.com/ws' },
-                        { status: 200 },
-                    ),
+                http.post(
+                    `${getSyncBaseUri()}${ENDPOINT_WORKSPACE_BILLING_PORTAL}`,
+                    async ({ request }) => {
+                        capturedBody = await request.json()
+                        return HttpResponse.json(
+                            { billing_portal_url: 'https://billing.stripe.com/ws' },
+                            { status: 200 },
+                        )
+                    },
                 ),
             )
 
             const result = await getTarget().createWorkspaceBillingPortalSession({
                 workspaceId: '42',
                 returnUrl: 'https://todoist.com/app/settings',
+                flowType: 'payment_method_update',
             })
 
             expect(result).toEqual({ billingPortalUrl: 'https://billing.stripe.com/ws' })
+            expect(capturedBody).toEqual({
+                workspace_id: '42',
+                return_url: 'https://todoist.com/app/settings',
+                flow_type: 'payment_method_update',
+            })
         })
     })
 
@@ -407,19 +418,40 @@ describe('TodoistApi billing endpoints', () => {
     })
 
     describe('getPricing', () => {
-        test('passes formatted query param and returns raw payload', async () => {
+        test('passes formatted query param and returns version-keyed pricing', async () => {
             let capturedUrl: URL | undefined
             server.use(
                 http.get(`${getSyncBaseUri()}${ENDPOINT_PRICING}`, ({ request }) => {
                     capturedUrl = new URL(request.url)
-                    return HttpResponse.json({ pro: { monthly: 600 } }, { status: 200 })
+                    return HttpResponse.json(
+                        {
+                            latest_pro: 'v25',
+                            latest_biz: 'v25',
+                            session_pro: 'v25',
+                            session_biz: 'v25',
+                            v25: {
+                                pro: { usd: { monthly: 400, yearly: 2900 } },
+                                biz: { usd: { monthly: 800, yearly: 7200 } },
+                            },
+                        },
+                        { status: 200 },
+                    )
                 }),
             )
 
             const result = await getTarget().getPricing({ formatted: true })
 
             expect(capturedUrl?.searchParams.get('formatted')).toBe('true')
-            expect(result).toEqual({ pro: { monthly: 600 } })
+            expect(result).toEqual({
+                latestPro: 'v25',
+                latestBiz: 'v25',
+                sessionPro: 'v25',
+                sessionBiz: 'v25',
+                v25: {
+                    pro: { usd: { monthly: 400, yearly: 2900 } },
+                    biz: { usd: { monthly: 800, yearly: 7200 } },
+                },
+            })
         })
     })
 })

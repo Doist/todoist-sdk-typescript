@@ -19,6 +19,7 @@ import type {
     CheckoutSessionResponse,
     GetPricingArgs,
     PricesResponse,
+    PricingResponse,
     ProBillingPortalArgs,
     ProPlanDetails,
     StartProTrialArgs,
@@ -29,6 +30,7 @@ import type {
     WorkspaceBillingPortalArgs,
 } from '../types/billing'
 import {
+    validatePricing,
     validatePrices,
     validateProPlanDetails,
     validateSubscriptionInfo,
@@ -63,7 +65,7 @@ export class BillingClient extends BaseClient {
             payload: args,
             requestId: requestId,
         })
-        return { billingPortalUrl: response.data.billingPortalUrl }
+        return response.data
     }
 
     async reactivatePlan(requestId?: string): Promise<SubscriptionInfo> {
@@ -91,7 +93,7 @@ export class BillingClient extends BaseClient {
             payload: args,
             requestId: requestId,
         })
-        return { checkoutSessionUrl: response.data.checkoutSessionUrl }
+        return response.data
     }
 
     async startProTrial(
@@ -107,7 +109,7 @@ export class BillingClient extends BaseClient {
             payload: args,
             requestId: requestId,
         })
-        return { checkoutSessionUrl: response.data.checkoutSessionUrl }
+        return response.data
     }
 
     async createProBillingPortalSession(
@@ -123,7 +125,7 @@ export class BillingClient extends BaseClient {
             payload: args,
             requestId: requestId,
         })
-        return { billingPortalUrl: response.data.billingPortalUrl }
+        return response.data
     }
 
     async getProPlanDetails(): Promise<ProPlanDetails> {
@@ -150,7 +152,7 @@ export class BillingClient extends BaseClient {
             payload: args,
             requestId: requestId,
         })
-        return { checkoutSessionUrl: response.data.checkoutSessionUrl }
+        return response.data
     }
 
     async startWorkspaceTrial(
@@ -166,7 +168,7 @@ export class BillingClient extends BaseClient {
             payload: args,
             requestId: requestId,
         })
-        return { checkoutSessionUrl: response.data.checkoutSessionUrl }
+        return response.data
     }
 
     async createWorkspaceBillingPortalSession(
@@ -182,7 +184,7 @@ export class BillingClient extends BaseClient {
             payload: args,
             requestId: requestId,
         })
-        return { billingPortalUrl: response.data.billingPortalUrl }
+        return response.data
     }
 
     async getPrices(): Promise<PricesResponse> {
@@ -196,8 +198,8 @@ export class BillingClient extends BaseClient {
         return validatePrices(response.data)
     }
 
-    async getPricing(args?: GetPricingArgs): Promise<Record<string, unknown>> {
-        const response = await request<Record<string, unknown>>({
+    async getPricing(args?: GetPricingArgs): Promise<PricingResponse> {
+        const response = await request<PricingResponse>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
             relativePath: ENDPOINT_PRICING,
@@ -205,6 +207,6 @@ export class BillingClient extends BaseClient {
             customFetch: this.customFetch,
             payload: args,
         })
-        return response.data
+        return validatePricing(response.data)
     }
 }

@@ -49,6 +49,7 @@ import type {
     CheckoutSessionResponse,
     GetPricingArgs,
     PricesResponse,
+    PricingResponse,
     ProBillingPortalArgs,
     ProPlanDetails,
     StartProTrialArgs,
@@ -1619,9 +1620,9 @@ export class TodoistApi {
      * Requires the `billing:read` scope.
      *
      * @param args - Optional flag to request formatted pricing.
-     * @returns A promise that resolves to the raw pricing payload.
+     * @returns A promise that resolves to current and legacy pricing keyed by version.
      */
-    async getPricing(args?: GetPricingArgs): Promise<Record<string, unknown>> {
+    async getPricing(args?: GetPricingArgs): Promise<PricingResponse> {
         return this.billingClient.getPricing(args)
     }
 
