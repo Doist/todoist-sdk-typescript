@@ -12,24 +12,28 @@ export type CancelPlanArgs = {
     returnUrl?: string
 }
 
-/** Arguments for upgrading to a Pro plan. */
-export type UpgradeToProArgs = {
+/** Common arguments for any Stripe checkout (upgrade or trial) request. */
+export type CheckoutArgs = {
     currency: string
     billingCycle: BillingCycle
     successUrl: string
     cancelUrl: string
+}
+
+/** Optional promotion/partnership attribution shared by upgrade requests. */
+export type UpgradeOptions = {
     promotionCode?: string | null
-    trialPeriodDays?: number | null
     partnershipId?: string | null
 }
 
+/** Arguments for upgrading to a Pro plan. */
+export type UpgradeToProArgs = CheckoutArgs &
+    UpgradeOptions & {
+        trialPeriodDays?: number | null
+    }
+
 /** Arguments for starting a Pro trial. */
-export type StartProTrialArgs = {
-    currency: string
-    billingCycle: BillingCycle
-    successUrl: string
-    cancelUrl: string
-}
+export type StartProTrialArgs = CheckoutArgs
 
 /** Arguments for opening the Pro billing portal. */
 export type ProBillingPortalArgs = {
@@ -39,23 +43,14 @@ export type ProBillingPortalArgs = {
 }
 
 /** Arguments for upgrading a workspace. */
-export type UpgradeWorkspaceArgs = {
-    workspaceId: string
-    currency: string
-    billingCycle: BillingCycle
-    successUrl: string
-    cancelUrl: string
-    promotionCode?: string | null
-    partnershipId?: string | null
-}
+export type UpgradeWorkspaceArgs = CheckoutArgs &
+    UpgradeOptions & {
+        workspaceId: string
+    }
 
 /** Arguments for starting a workspace trial. */
-export type StartWorkspaceTrialArgs = {
+export type StartWorkspaceTrialArgs = CheckoutArgs & {
     workspaceId: string
-    currency: string
-    billingCycle: BillingCycle
-    successUrl: string
-    cancelUrl: string
 }
 
 /** Arguments for opening the workspace billing portal. */

@@ -116,14 +116,26 @@ export const PricingTermsSchema = z.object({
 export type PricingTerms = z.infer<typeof PricingTermsSchema>
 
 /**
- * Response of the `pricing` endpoint: a mix of version-pointer strings
- * (`latestPro`, `latestBiz`, `sessionPro`, `sessionBiz`) and version keys
- * (`v1`, `v2`, …) each mapping plan name → currency code → {@link PricingTerms}.
+ * A pricing version entry: plan name (`pro` / `biz`) → currency code →
+ * {@link PricingTerms}.
  */
-export const PricingResponseSchema = z.record(
-    z.string(),
-    z.union([z.string(), z.record(z.string(), z.record(z.string(), PricingTermsSchema))]),
-)
+export const PricingVersionSchema = z.record(z.string(), z.record(z.string(), PricingTermsSchema))
+
+/** Prices for one pricing version, keyed by plan then currency. */
+export type PricingVersion = z.infer<typeof PricingVersionSchema>
+
+/**
+ * Response of the `pricing` endpoint: fixed version-pointer string fields plus
+ * dynamic version keys (`v1`, `v2`, …), each a {@link PricingVersion}.
+ */
+export const PricingResponseSchema = z
+    .object({
+        latestPro: z.string(),
+        latestBiz: z.string(),
+        sessionPro: z.string(),
+        sessionBiz: z.string(),
+    })
+    .catchall(PricingVersionSchema)
 
 /** Current and legacy Pro/Teams pricing keyed by version. */
 export type PricingResponse = z.infer<typeof PricingResponseSchema>

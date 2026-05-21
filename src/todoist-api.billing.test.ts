@@ -389,6 +389,9 @@ describe('TodoistApi billing endpoints', () => {
         test('returns formatted string amounts when requested', async () => {
             mockGet(ENDPOINT_PRICING, {
                 latest_pro: 'v25',
+                latest_biz: 'v25',
+                session_pro: 'v25',
+                session_biz: 'v25',
                 v25: { pro: { usd: { monthly: '$4', yearly: '$29' } } },
             })
 
@@ -396,6 +399,9 @@ describe('TodoistApi billing endpoints', () => {
 
             expect(result).toEqual({
                 latestPro: 'v25',
+                latestBiz: 'v25',
+                sessionPro: 'v25',
+                sessionBiz: 'v25',
                 v25: { pro: { usd: { monthly: '$4', yearly: '$29' } } },
             })
         })
