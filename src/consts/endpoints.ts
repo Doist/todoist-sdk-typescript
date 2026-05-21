@@ -103,6 +103,20 @@ export const ENDPOINT_WORKSPACE_LOGO = 'workspaces/logo'
 export const ENDPOINT_WORKSPACE_PLAN_DETAILS = 'workspaces/plan_details'
 export const ENDPOINT_WORKSPACE_USERS = 'workspaces/users'
 
+// Billing endpoints
+export const ENDPOINT_PAYMENTS_SUBSCRIPTION_INFO = 'payments/get_subscription_info'
+export const ENDPOINT_PAYMENTS_CANCEL_PLAN = 'payments/cancel_plan_with_redirect_to_stripe'
+export const ENDPOINT_PAYMENTS_REACTIVATE_PLAN = 'payments/reactivate_plan'
+export const ENDPOINT_PRO_UPGRADE = 'pro/upgrade'
+export const ENDPOINT_PRO_TRIAL = 'pro/trial'
+export const ENDPOINT_PRO_BILLING_PORTAL = 'pro/billing_portal'
+export const ENDPOINT_PRO_PLAN_DETAILS = 'pro/plan_details'
+export const ENDPOINT_WORKSPACE_UPGRADE = 'workspaces/upgrade'
+export const ENDPOINT_WORKSPACE_TRIAL = 'workspaces/trial'
+export const ENDPOINT_WORKSPACE_BILLING_PORTAL = 'workspaces/billing_portal'
+export const ENDPOINT_PRICES = 'prices'
+export const ENDPOINT_PRICING = 'pricing'
+
 // Workspace invitation actions (require invite_code parameter)
 export function getWorkspaceInvitationAcceptEndpoint(inviteCode: string): string {
     return `workspaces/invitations/${inviteCode}/accept`

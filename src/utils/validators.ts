@@ -14,6 +14,12 @@ import {
     UserAuthorizationSchema,
 } from '../types/apps/types'
 import { BackupSchema } from '../types/backups/types'
+import {
+    SubscriptionInfoSchema,
+    ProPlanDetailsSchema,
+    PricesResponseSchema,
+    PricingResponseSchema,
+} from '../types/billing/types'
 import { AttachmentSchema, CommentSchema } from '../types/comments/types'
 import { GoalSchema } from '../types/goals/types'
 import { IdMappingSchema, MovedIdSchema } from '../types/id-mappings/types'
@@ -182,6 +188,16 @@ export const { validate: validateFolder, validateArray: validateFolderArray } =
 
 export const { validate: validateGoal, validateArray: validateGoalArray } =
     createValidator(GoalSchema)
+
+// Billing validators
+
+export const { validate: validateSubscriptionInfo } = createValidator(SubscriptionInfoSchema)
+
+export const { validate: validateProPlanDetails } = createValidator(ProPlanDetailsSchema)
+
+export const { validate: validatePrices } = createValidator(PricesResponseSchema)
+
+export const { validate: validatePricing } = createValidator(PricingResponseSchema)
 
 export const { validate: validateNote, validateArray: validateNoteArray } =
     createValidator(NoteSchema)

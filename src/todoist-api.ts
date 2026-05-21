@@ -1,6 +1,7 @@
 import { ActivityClient } from './clients/activity-client'
 import { AppClient } from './clients/app-client'
 import { BackupClient } from './clients/backup-client'
+import { BillingClient } from './clients/billing-client'
 import { CommentClient } from './clients/comment-client'
 import { EmailClient } from './clients/email-client'
 import { FolderClient } from './clients/folder-client'
@@ -42,6 +43,22 @@ import type {
     UserAuthorization,
 } from './types/apps'
 import { Backup, GetBackupsArgs, DownloadBackupArgs } from './types/backups'
+import type {
+    BillingPortalUrlResponse,
+    CancelPlanArgs,
+    CheckoutSessionResponse,
+    GetPricingArgs,
+    PricesResponse,
+    PricingResponse,
+    ProBillingPortalArgs,
+    ProPlanDetails,
+    StartProTrialArgs,
+    StartWorkspaceTrialArgs,
+    SubscriptionInfo,
+    UpgradeToProArgs,
+    UpgradeWorkspaceArgs,
+    WorkspaceBillingPortalArgs,
+} from './types/billing'
 import {
     Attachment,
     Comment,
@@ -258,6 +275,7 @@ export class TodoistApi {
     private readonly productivityClient: ProductivityClient
     private readonly workspaceClient: WorkspaceClient
     private readonly goalsClient: GoalsClient
+    private readonly billingClient: BillingClient
     private readonly appClient: AppClient
     private readonly uiExtensionClient: UiExtensionClient
 
@@ -303,6 +321,7 @@ export class TodoistApi {
         this.productivityClient = new ProductivityClient(clientDeps)
         this.workspaceClient = new WorkspaceClient(clientDeps)
         this.goalsClient = new GoalsClient(clientDeps)
+        this.billingClient = new BillingClient(clientDeps)
         this.appClient = new AppClient(clientDeps)
         this.uiExtensionClient = new UiExtensionClient(clientDeps)
     }
@@ -1437,6 +1456,174 @@ export class TodoistApi {
      */
     async unlinkTaskFromGoal(args: TaskLinkingArgs, requestId?: string): Promise<boolean> {
         return this.goalsClient.unlinkTaskFromGoal(args, requestId)
+    }
+
+    // ── Billing ──
+
+    /**
+     * Retrieves the current user's subscription state.
+     *
+     * Requires the `billing:read` scope.
+     *
+     * @returns A promise that resolves to the user's subscription info.
+     */
+    async getSubscriptionInfo(): Promise<SubscriptionInfo> {
+        return this.billingClient.getSubscriptionInfo()
+    }
+
+    /**
+     * Starts a hosted cancellation flow for the current user's plan.
+     *
+     * Requires the `billing:read_write` scope.
+     *
+     * @param args - Optional cancellation reason details and return URL.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the billing portal redirect URL.
+     */
+    async cancelPlan(args?: CancelPlanArgs, requestId?: string): Promise<BillingPortalUrlResponse> {
+        return this.billingClient.cancelPlan(args, requestId)
+    }
+
+    /**
+     * Reactivates a previously canceled subscription.
+     *
+     * Requires the `billing:read_write` scope.
+     *
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the fresh subscription info after reactivation.
+     */
+    async reactivatePlan(requestId?: string): Promise<SubscriptionInfo> {
+        return this.billingClient.reactivatePlan(requestId)
+    }
+
+    /**
+     * Creates a Stripe checkout session to upgrade the current user to Pro.
+     *
+     * Requires the `billing:read_write` scope.
+     *
+     * @param args - Currency, billing cycle, redirect URLs, and optional promotion/trial details.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the checkout session URL.
+     */
+    async upgradeToPro(
+        args: UpgradeToProArgs,
+        requestId?: string,
+    ): Promise<CheckoutSessionResponse> {
+        return this.billingClient.upgradeToPro(args, requestId)
+    }
+
+    /**
+     * Creates a Stripe checkout session to start a Pro trial.
+     *
+     * Requires the `billing:read_write` scope.
+     *
+     * @param args - Currency, billing cycle, and redirect URLs.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the checkout session URL.
+     */
+    async startProTrial(
+        args: StartProTrialArgs,
+        requestId?: string,
+    ): Promise<CheckoutSessionResponse> {
+        return this.billingClient.startProTrial(args, requestId)
+    }
+
+    /**
+     * Creates a one-time Stripe billing portal session for the current user's Pro plan.
+     *
+     * Requires the `billing:read_write` scope.
+     *
+     * @param args - Return URL and optional flow type / promotion code.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the billing portal URL.
+     */
+    async createProBillingPortalSession(
+        args: ProBillingPortalArgs,
+        requestId?: string,
+    ): Promise<BillingPortalUrlResponse> {
+        return this.billingClient.createProBillingPortalSession(args, requestId)
+    }
+
+    /**
+     * Retrieves the current user's Pro plan and billing details.
+     *
+     * Requires the `billing:read` scope.
+     *
+     * @returns A promise that resolves to the Pro plan details.
+     */
+    async getProPlanDetails(): Promise<ProPlanDetails> {
+        return this.billingClient.getProPlanDetails()
+    }
+
+    /**
+     * Creates a Stripe checkout session to upgrade a workspace.
+     *
+     * Requires the `billing:read_write` scope.
+     *
+     * @param args - Workspace ID, currency, billing cycle, redirect URLs, and optional promotion details.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the checkout session URL.
+     */
+    async upgradeWorkspace(
+        args: UpgradeWorkspaceArgs,
+        requestId?: string,
+    ): Promise<CheckoutSessionResponse> {
+        return this.billingClient.upgradeWorkspace(args, requestId)
+    }
+
+    /**
+     * Creates a Stripe checkout session to start a workspace trial.
+     *
+     * Requires the `billing:read_write` scope.
+     *
+     * @param args - Workspace ID, currency, billing cycle, and redirect URLs.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the checkout session URL.
+     */
+    async startWorkspaceTrial(
+        args: StartWorkspaceTrialArgs,
+        requestId?: string,
+    ): Promise<CheckoutSessionResponse> {
+        return this.billingClient.startWorkspaceTrial(args, requestId)
+    }
+
+    /**
+     * Creates a one-time Stripe billing portal session for a workspace.
+     *
+     * Requires the `billing:read_write` scope.
+     *
+     * @param args - Workspace ID, return URL, and optional flow type.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the billing portal URL.
+     */
+    async createWorkspaceBillingPortalSession(
+        args: WorkspaceBillingPortalArgs,
+        requestId?: string,
+    ): Promise<BillingPortalUrlResponse> {
+        return this.billingClient.createWorkspaceBillingPortalSession(args, requestId)
+    }
+
+    /**
+     * Retrieves available Pro and Teams prices.
+     *
+     * Requires the `billing:read` scope.
+     *
+     * @returns A promise that resolves to the available prices.
+     */
+    async getPrices(): Promise<PricesResponse> {
+        return this.billingClient.getPrices()
+    }
+
+    /**
+     * Retrieves pricing information.
+     *
+     * Requires the `billing:read` scope.
+     *
+     * @param args - Optional flag to request formatted pricing.
+     * @returns A promise that resolves to current and legacy pricing keyed by version.
+     */
+    async getPricing(args?: GetPricingArgs): Promise<PricingResponse> {
+        return this.billingClient.getPricing(args)
     }
 
     // ── Backups ──
