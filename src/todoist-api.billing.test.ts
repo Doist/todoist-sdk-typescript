@@ -14,11 +14,43 @@ import {
     ENDPOINT_PRICES,
     ENDPOINT_PRICING,
 } from './consts/endpoints'
+import type { DefaultBodyType } from 'msw'
+
 import { server, http, HttpResponse } from './test-utils/msw-setup'
 import { DEFAULT_AUTH_TOKEN } from './test-utils/test-defaults'
 
 function getTarget() {
     return new TodoistApi(DEFAULT_AUTH_TOKEN)
+}
+
+/**
+ * Mocks a POST endpoint with a 200 JSON response and returns an accessor for
+ * the captured (parsed) request body, so write tests can assert serialization.
+ */
+function mockPost(endpoint: string, response: DefaultBodyType): () => unknown {
+    let capturedBody: unknown
+    server.use(
+        http.post(`${getSyncBaseUri()}${endpoint}`, async ({ request }) => {
+            capturedBody = await request.json().catch(() => undefined)
+            return HttpResponse.json(response, { status: 200 })
+        }),
+    )
+    return () => capturedBody
+}
+
+/**
+ * Mocks a GET endpoint with a 200 JSON response and returns an accessor for the
+ * captured request URL, so read tests can assert query parameters.
+ */
+function mockGet(endpoint: string, response: DefaultBodyType): () => URL | undefined {
+    let capturedUrl: URL | undefined
+    server.use(
+        http.get(`${getSyncBaseUri()}${endpoint}`, ({ request }) => {
+            capturedUrl = new URL(request.url)
+            return HttpResponse.json(response, { status: 200 })
+        }),
+    )
+    return () => capturedUrl
 }
 
 const RAW_SUBSCRIPTION_INFO = {
@@ -64,11 +96,7 @@ const EXPECTED_SUBSCRIPTION_INFO = {
 describe('TodoistApi billing endpoints', () => {
     describe('getSubscriptionInfo', () => {
         test('returns parsed subscription info', async () => {
-            server.use(
-                http.post(`${getSyncBaseUri()}${ENDPOINT_PAYMENTS_SUBSCRIPTION_INFO}`, () =>
-                    HttpResponse.json(RAW_SUBSCRIPTION_INFO, { status: 200 }),
-                ),
-            )
+            mockPost(ENDPOINT_PAYMENTS_SUBSCRIPTION_INFO, RAW_SUBSCRIPTION_INFO)
 
             const result = await getTarget().getSubscriptionInfo()
 
@@ -76,21 +104,14 @@ describe('TodoistApi billing endpoints', () => {
         })
 
         test('tolerates null planPrice and invoiceCreditBalance', async () => {
-            server.use(
-                http.post(`${getSyncBaseUri()}${ENDPOINT_PAYMENTS_SUBSCRIPTION_INFO}`, () =>
-                    HttpResponse.json(
-                        {
-                            ...RAW_SUBSCRIPTION_INFO,
-                            status: 'none',
-                            plan: 'free',
-                            expiration_date: null,
-                            plan_price: null,
-                            invoice_credit_balance: null,
-                        },
-                        { status: 200 },
-                    ),
-                ),
-            )
+            mockPost(ENDPOINT_PAYMENTS_SUBSCRIPTION_INFO, {
+                ...RAW_SUBSCRIPTION_INFO,
+                status: 'none',
+                plan: 'free',
+                expiration_date: null,
+                plan_price: null,
+                invoice_credit_balance: null,
+            })
 
             const result = await getTarget().getSubscriptionInfo()
 
@@ -102,19 +123,9 @@ describe('TodoistApi billing endpoints', () => {
 
     describe('cancelPlan', () => {
         test('sends reason fields and returns billing portal url', async () => {
-            let capturedBody: unknown
-            server.use(
-                http.post(
-                    `${getSyncBaseUri()}${ENDPOINT_PAYMENTS_CANCEL_PLAN}`,
-                    async ({ request }) => {
-                        capturedBody = await request.json()
-                        return HttpResponse.json(
-                            { billing_portal_url: 'https://billing.stripe.com/cancel' },
-                            { status: 200 },
-                        )
-                    },
-                ),
-            )
+            const getBody = mockPost(ENDPOINT_PAYMENTS_CANCEL_PLAN, {
+                billing_portal_url: 'https://billing.stripe.com/cancel',
+            })
 
             const result = await getTarget().cancelPlan({
                 reasonFlag: 'too_expensive',
@@ -124,7 +135,7 @@ describe('TodoistApi billing endpoints', () => {
             })
 
             expect(result).toEqual({ billingPortalUrl: 'https://billing.stripe.com/cancel' })
-            expect(capturedBody).toEqual({
+            expect(getBody()).toEqual({
                 reason_flag: 'too_expensive',
                 reason_description: "It's too expensive",
                 reason_text: 'No longer used',
@@ -135,11 +146,7 @@ describe('TodoistApi billing endpoints', () => {
 
     describe('reactivatePlan', () => {
         test('returns parsed subscription info', async () => {
-            server.use(
-                http.post(`${getSyncBaseUri()}${ENDPOINT_PAYMENTS_REACTIVATE_PLAN}`, () =>
-                    HttpResponse.json(RAW_SUBSCRIPTION_INFO, { status: 200 }),
-                ),
-            )
+            mockPost(ENDPOINT_PAYMENTS_REACTIVATE_PLAN, RAW_SUBSCRIPTION_INFO)
 
             const result = await getTarget().reactivatePlan()
 
@@ -149,16 +156,9 @@ describe('TodoistApi billing endpoints', () => {
 
     describe('upgradeToPro', () => {
         test('sends snake_cased body and returns checkout session url', async () => {
-            let capturedBody: unknown
-            server.use(
-                http.post(`${getSyncBaseUri()}${ENDPOINT_PRO_UPGRADE}`, async ({ request }) => {
-                    capturedBody = await request.json()
-                    return HttpResponse.json(
-                        { checkout_session_url: 'https://checkout.stripe.com/pro' },
-                        { status: 200 },
-                    )
-                }),
-            )
+            const getBody = mockPost(ENDPOINT_PRO_UPGRADE, {
+                checkout_session_url: 'https://checkout.stripe.com/pro',
+            })
 
             const result = await getTarget().upgradeToPro({
                 currency: 'USD',
@@ -170,7 +170,7 @@ describe('TodoistApi billing endpoints', () => {
             })
 
             expect(result).toEqual({ checkoutSessionUrl: 'https://checkout.stripe.com/pro' })
-            expect(capturedBody).toEqual({
+            expect(getBody()).toEqual({
                 currency: 'USD',
                 billing_cycle: 'yearly',
                 success_url: 'https://todoist.com/success',
@@ -182,15 +182,10 @@ describe('TodoistApi billing endpoints', () => {
     })
 
     describe('startProTrial', () => {
-        test('returns checkout session url', async () => {
-            server.use(
-                http.post(`${getSyncBaseUri()}${ENDPOINT_PRO_TRIAL}`, () =>
-                    HttpResponse.json(
-                        { checkout_session_url: 'https://checkout.stripe.com/trial' },
-                        { status: 200 },
-                    ),
-                ),
-            )
+        test('sends snake_cased body and returns checkout session url', async () => {
+            const getBody = mockPost(ENDPOINT_PRO_TRIAL, {
+                checkout_session_url: 'https://checkout.stripe.com/trial',
+            })
 
             const result = await getTarget().startProTrial({
                 currency: 'USD',
@@ -200,24 +195,20 @@ describe('TodoistApi billing endpoints', () => {
             })
 
             expect(result).toEqual({ checkoutSessionUrl: 'https://checkout.stripe.com/trial' })
+            expect(getBody()).toEqual({
+                currency: 'USD',
+                billing_cycle: 'monthly',
+                success_url: 'https://todoist.com/success',
+                cancel_url: 'https://todoist.com/cancel',
+            })
         })
     })
 
     describe('createProBillingPortalSession', () => {
         test('sends return url and returns billing portal url', async () => {
-            let capturedBody: unknown
-            server.use(
-                http.post(
-                    `${getSyncBaseUri()}${ENDPOINT_PRO_BILLING_PORTAL}`,
-                    async ({ request }) => {
-                        capturedBody = await request.json()
-                        return HttpResponse.json(
-                            { billing_portal_url: 'https://billing.stripe.com/pro' },
-                            { status: 200 },
-                        )
-                    },
-                ),
-            )
+            const getBody = mockPost(ENDPOINT_PRO_BILLING_PORTAL, {
+                billing_portal_url: 'https://billing.stripe.com/pro',
+            })
 
             const result = await getTarget().createProBillingPortalSession({
                 returnUrl: 'https://todoist.com/app/settings',
@@ -225,7 +216,7 @@ describe('TodoistApi billing endpoints', () => {
             })
 
             expect(result).toEqual({ billingPortalUrl: 'https://billing.stripe.com/pro' })
-            expect(capturedBody).toEqual({
+            expect(getBody()).toEqual({
                 return_url: 'https://todoist.com/app/settings',
                 flow_type: 'payment_method_update',
             })
@@ -234,29 +225,16 @@ describe('TodoistApi billing endpoints', () => {
 
     describe('getProPlanDetails', () => {
         test('returns parsed pro plan details', async () => {
-            server.use(
-                http.get(`${getSyncBaseUri()}${ENDPOINT_PRO_PLAN_DETAILS}`, () =>
-                    HttpResponse.json(
-                        {
-                            current_plan_status: 'Active',
-                            downgrade_at: null,
-                            price_list: [
-                                {
-                                    billing_cycle: 'monthly',
-                                    prices: [
-                                        {
-                                            currency: 'USD',
-                                            unit_amount: 600,
-                                            tax_behavior: 'exclusive',
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
-                        { status: 200 },
-                    ),
-                ),
-            )
+            mockGet(ENDPOINT_PRO_PLAN_DETAILS, {
+                current_plan_status: 'Active',
+                downgrade_at: null,
+                price_list: [
+                    {
+                        billing_cycle: 'monthly',
+                        prices: [{ currency: 'USD', unit_amount: 600, tax_behavior: 'exclusive' }],
+                    },
+                ],
+            })
 
             const result = await getTarget().getProPlanDetails()
 
@@ -274,20 +252,10 @@ describe('TodoistApi billing endpoints', () => {
     })
 
     describe('upgradeWorkspace', () => {
-        test('sends workspace id and returns checkout session url', async () => {
-            let capturedBody: unknown
-            server.use(
-                http.post(
-                    `${getSyncBaseUri()}${ENDPOINT_WORKSPACE_UPGRADE}`,
-                    async ({ request }) => {
-                        capturedBody = await request.json()
-                        return HttpResponse.json(
-                            { checkout_session_url: 'https://checkout.stripe.com/ws' },
-                            { status: 200 },
-                        )
-                    },
-                ),
-            )
+        test('sends snake_cased body and returns checkout session url', async () => {
+            const getBody = mockPost(ENDPOINT_WORKSPACE_UPGRADE, {
+                checkout_session_url: 'https://checkout.stripe.com/ws',
+            })
 
             const result = await getTarget().upgradeWorkspace({
                 workspaceId: '42',
@@ -298,7 +266,7 @@ describe('TodoistApi billing endpoints', () => {
             })
 
             expect(result).toEqual({ checkoutSessionUrl: 'https://checkout.stripe.com/ws' })
-            expect(capturedBody).toEqual({
+            expect(getBody()).toEqual({
                 workspace_id: '42',
                 currency: 'USD',
                 billing_cycle: 'yearly',
@@ -309,15 +277,10 @@ describe('TodoistApi billing endpoints', () => {
     })
 
     describe('startWorkspaceTrial', () => {
-        test('returns checkout session url', async () => {
-            server.use(
-                http.post(`${getSyncBaseUri()}${ENDPOINT_WORKSPACE_TRIAL}`, () =>
-                    HttpResponse.json(
-                        { checkout_session_url: 'https://checkout.stripe.com/ws-trial' },
-                        { status: 200 },
-                    ),
-                ),
-            )
+        test('sends snake_cased body and returns checkout session url', async () => {
+            const getBody = mockPost(ENDPOINT_WORKSPACE_TRIAL, {
+                checkout_session_url: 'https://checkout.stripe.com/ws-trial',
+            })
 
             const result = await getTarget().startWorkspaceTrial({
                 workspaceId: '42',
@@ -328,24 +291,21 @@ describe('TodoistApi billing endpoints', () => {
             })
 
             expect(result).toEqual({ checkoutSessionUrl: 'https://checkout.stripe.com/ws-trial' })
+            expect(getBody()).toEqual({
+                workspace_id: '42',
+                currency: 'USD',
+                billing_cycle: 'monthly',
+                success_url: 'https://todoist.com/success',
+                cancel_url: 'https://todoist.com/cancel',
+            })
         })
     })
 
     describe('createWorkspaceBillingPortalSession', () => {
         test('sends snake_cased body and returns billing portal url', async () => {
-            let capturedBody: unknown
-            server.use(
-                http.post(
-                    `${getSyncBaseUri()}${ENDPOINT_WORKSPACE_BILLING_PORTAL}`,
-                    async ({ request }) => {
-                        capturedBody = await request.json()
-                        return HttpResponse.json(
-                            { billing_portal_url: 'https://billing.stripe.com/ws' },
-                            { status: 200 },
-                        )
-                    },
-                ),
-            )
+            const getBody = mockPost(ENDPOINT_WORKSPACE_BILLING_PORTAL, {
+                billing_portal_url: 'https://billing.stripe.com/ws',
+            })
 
             const result = await getTarget().createWorkspaceBillingPortalSession({
                 workspaceId: '42',
@@ -354,7 +314,7 @@ describe('TodoistApi billing endpoints', () => {
             })
 
             expect(result).toEqual({ billingPortalUrl: 'https://billing.stripe.com/ws' })
-            expect(capturedBody).toEqual({
+            expect(getBody()).toEqual({
                 workspace_id: '42',
                 return_url: 'https://todoist.com/app/settings',
                 flow_type: 'payment_method_update',
@@ -364,39 +324,20 @@ describe('TodoistApi billing endpoints', () => {
 
     describe('getPrices', () => {
         test('returns parsed prices', async () => {
-            server.use(
-                http.get(`${getSyncBaseUri()}${ENDPOINT_PRICES}`, () =>
-                    HttpResponse.json(
-                        {
-                            pro: [
-                                {
-                                    billing_cycle: 'yearly',
-                                    prices: [
-                                        {
-                                            currency: 'USD',
-                                            unit_amount: 6000,
-                                            tax_behavior: 'exclusive',
-                                        },
-                                    ],
-                                },
-                            ],
-                            teams: [
-                                {
-                                    billing_cycle: 'monthly',
-                                    prices: [
-                                        {
-                                            currency: 'USD',
-                                            unit_amount: 800,
-                                            tax_behavior: 'inclusive',
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
-                        { status: 200 },
-                    ),
-                ),
-            )
+            mockGet(ENDPOINT_PRICES, {
+                pro: [
+                    {
+                        billing_cycle: 'yearly',
+                        prices: [{ currency: 'USD', unit_amount: 6000, tax_behavior: 'exclusive' }],
+                    },
+                ],
+                teams: [
+                    {
+                        billing_cycle: 'monthly',
+                        prices: [{ currency: 'USD', unit_amount: 800, tax_behavior: 'inclusive' }],
+                    },
+                ],
+            })
 
             const result = await getTarget().getPrices()
 
@@ -419,29 +360,20 @@ describe('TodoistApi billing endpoints', () => {
 
     describe('getPricing', () => {
         test('passes formatted query param and returns version-keyed pricing', async () => {
-            let capturedUrl: URL | undefined
-            server.use(
-                http.get(`${getSyncBaseUri()}${ENDPOINT_PRICING}`, ({ request }) => {
-                    capturedUrl = new URL(request.url)
-                    return HttpResponse.json(
-                        {
-                            latest_pro: 'v25',
-                            latest_biz: 'v25',
-                            session_pro: 'v25',
-                            session_biz: 'v25',
-                            v25: {
-                                pro: { usd: { monthly: 400, yearly: 2900 } },
-                                biz: { usd: { monthly: 800, yearly: 7200 } },
-                            },
-                        },
-                        { status: 200 },
-                    )
-                }),
-            )
+            const getUrl = mockGet(ENDPOINT_PRICING, {
+                latest_pro: 'v25',
+                latest_biz: 'v25',
+                session_pro: 'v25',
+                session_biz: 'v25',
+                v25: {
+                    pro: { usd: { monthly: 400, yearly: 2900 } },
+                    biz: { usd: { monthly: 800, yearly: 7200 } },
+                },
+            })
 
             const result = await getTarget().getPricing({ formatted: true })
 
-            expect(capturedUrl?.searchParams.get('formatted')).toBe('true')
+            expect(getUrl()?.searchParams.get('formatted')).toBe('true')
             expect(result).toEqual({
                 latestPro: 'v25',
                 latestBiz: 'v25',
@@ -451,6 +383,20 @@ describe('TodoistApi billing endpoints', () => {
                     pro: { usd: { monthly: 400, yearly: 2900 } },
                     biz: { usd: { monthly: 800, yearly: 7200 } },
                 },
+            })
+        })
+
+        test('returns formatted string amounts when requested', async () => {
+            mockGet(ENDPOINT_PRICING, {
+                latest_pro: 'v25',
+                v25: { pro: { usd: { monthly: '$4', yearly: '$29' } } },
+            })
+
+            const result = await getTarget().getPricing({ formatted: true })
+
+            expect(result).toEqual({
+                latestPro: 'v25',
+                v25: { pro: { usd: { monthly: '$4', yearly: '$29' } } },
             })
         })
     })
