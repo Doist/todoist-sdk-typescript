@@ -1,3 +1,9 @@
+## [10.3.0](https://github.com/Doist/todoist-sdk-typescript/compare/v10.2.0...v10.3.0) (2026-05-21)
+
+### Features
+
+* add billing client and billing OAuth scopes ([#608](https://github.com/Doist/todoist-sdk-typescript/issues/608)) ([3edb04a](https://github.com/Doist/todoist-sdk-typescript/commit/3edb04af4a5842534483c03ed88f50526122b8e3))
+
 ## [10.2.0](https://github.com/Doist/todoist-sdk-typescript/compare/v10.1.5...v10.2.0) (2026-05-18)
 
 ### Features
