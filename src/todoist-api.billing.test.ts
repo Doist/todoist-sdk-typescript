@@ -1,3 +1,4 @@
+import type { DefaultBodyType } from 'msw'
 import { TodoistApi } from '.'
 import {
     getSyncBaseUri,
@@ -14,7 +15,6 @@ import {
     ENDPOINT_PRICES,
     ENDPOINT_PRICING,
 } from './consts/endpoints'
-import type { DefaultBodyType } from 'msw'
 
 import { server, http, HttpResponse } from './test-utils/msw-setup'
 import { DEFAULT_AUTH_TOKEN } from './test-utils/test-defaults'
