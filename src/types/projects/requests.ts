@@ -98,12 +98,18 @@ export type GetProjectCollaboratorsArgs = {
     limit?: number
 }
 
+export type ProjectCollaborator = {
+    id: string
+    name: string
+    email: string | null
+}
+
 /**
  * Response from retrieving project collaborators.
  * @see https://developer.todoist.com/api/v1/#tag/Projects/operation/get_project_collaborators_api_v1_projects__project_id__collaborators_get
  */
 export type GetProjectCollaboratorsResponse = {
-    results: User[]
+    results: ProjectCollaborator[]
     nextCursor: string | null
 }
 

@@ -59,6 +59,14 @@ describe('Sync resource schemas', () => {
             expect(CollaboratorSchema.parse(validCollaborator)).toEqual(validCollaborator)
         })
 
+        test('accepts hidden collaborator email', () => {
+            const hiddenEmailCollaborator = { ...validCollaborator, email: null }
+
+            expect(CollaboratorSchema.parse(hiddenEmailCollaborator)).toEqual(
+                hiddenEmailCollaborator,
+            )
+        })
+
         test('throws on invalid data', () => {
             expect(() => CollaboratorSchema.parse({ id: '456' })).toThrow(ZodError)
         })
