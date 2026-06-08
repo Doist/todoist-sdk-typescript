@@ -8,6 +8,11 @@
             "matchPackageNames": ["undici"],
             "enabled": false,
             "description": "Pin undici to 7.24.8 - block renovate updates to avoid the Node 26 regression in newer 7.x releases"
+        },
+        {
+            "matchPackageNames": ["oxlint", "oxfmt"],
+            "groupName": "ox toolchain",
+            "description": "Group oxlint and oxfmt updates into a single PR"
         }
     ]
 }
