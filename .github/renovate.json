@@ -2,5 +2,12 @@
     "extends": [
         "github>doist/renovate-config:integrations-base",
         "github>doist/renovate-config:integrations-automerge"
+    ],
+    "packageRules": [
+        {
+            "matchPackageNames": ["undici"],
+            "enabled": false,
+            "description": "Pin undici to 7.24.8 - block renovate updates to avoid the Node 26 regression in newer 7.x releases"
+        }
     ]
 }
