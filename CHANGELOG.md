@@ -1,3 +1,9 @@
+## [10.3.2](https://github.com/Doist/todoist-sdk-typescript/compare/v10.3.1...v10.3.2) (2026-06-09)
+
+### Bug Fixes
+
+* build a working dispatcher on runtimes without undici's decompress interceptor (e.g. Bun) ([#616](https://github.com/Doist/todoist-sdk-typescript/issues/616)) ([3bcaeb2](https://github.com/Doist/todoist-sdk-typescript/commit/3bcaeb2b4037338b6eebf70fc3b99c7da8ca6985))
+
 ## [10.3.1](https://github.com/Doist/todoist-sdk-typescript/compare/v10.3.0...v10.3.1) (2026-06-08)
 
 ### Bug Fixes
