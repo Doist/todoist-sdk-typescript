@@ -76,6 +76,31 @@ describe('http-dispatcher', () => {
             await new Promise<void>((resolve) => httpServer.close(() => resolve()))
         }
     })
+
+    test('skips the decompress interceptor when the runtime undici lacks it (e.g. Bun)', async () => {
+        // Bun reports `process.versions.node` but ships a partial undici whose
+        // `interceptors.decompress` is absent and whose dispatchers have no
+        // `.compose`. Building the dispatcher must not throw there.
+        vi.resetModules()
+        vi.doMock('undici', () => ({
+            EnvHttpProxyAgent: class {
+                dispatch() {}
+                async close() {}
+            },
+            interceptors: {},
+        }))
+
+        try {
+            const { getDefaultDispatcher: getDispatcher } = await import('./http-dispatcher')
+            const dispatcher = await getDispatcher()
+
+            expect(dispatcher).toBeDefined()
+            expect(typeof dispatcher?.dispatch).toBe('function')
+        } finally {
+            vi.doUnmock('undici')
+            vi.resetModules()
+        }
+    })
 })
 
 describe('suppressExperimentalWarningsSync', () => {

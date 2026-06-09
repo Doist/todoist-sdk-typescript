@@ -44,6 +44,18 @@ async function createDefaultDispatcher(): Promise<Dispatcher> {
     // outside Node, so this branch only runs when undici is safe to load.
     const { EnvHttpProxyAgent, interceptors } = await import('undici')
 
+    const agent = new EnvHttpProxyAgent(KEEP_ALIVE_OPTIONS)
+
+    // Some runtimes report `process.versions.node` (so `isNodeEnvironment()`
+    // passes) but ship only a partial undici: `interceptors.decompress` is
+    // absent and dispatchers have no `.compose`. Bun is the common case. There
+    // the proxy agent alone is enough — Bun's `fetch` decompresses
+    // gzip/deflate/br/zstd natively — so skip the interceptor instead of
+    // crashing on the missing API.
+    if (typeof interceptors.decompress !== 'function') {
+        return agent
+    }
+
     // Compose the response-decompression interceptor so gzip/deflate/br/zstd
     // bodies are decoded before consumers parse them. Required on Node 24+:
     // attaching any custom dispatcher to the global `fetch` strips the
@@ -52,7 +64,7 @@ async function createDefaultDispatcher(): Promise<Dispatcher> {
     // See https://github.com/Doist/todoist-cli/issues/318.
     const decompress = suppressExperimentalWarningsSync(() => interceptors.decompress())
 
-    return new EnvHttpProxyAgent(KEEP_ALIVE_OPTIONS).compose(decompress)
+    return agent.compose(decompress)
 }
 
 // undici emits an `ExperimentalWarning` the first time `interceptors.decompress()`
