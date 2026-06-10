@@ -1271,9 +1271,14 @@ export class TodoistApi {
      * or a direct file URL string. Returns the raw Response object so the caller
      * can read the body in the appropriate format (.arrayBuffer(), .text(), etc.).
      *
+     * Only known Todoist attachment hosts are allowed: the authenticated
+     * `files.todoist.com` origin (which receives the Bearer token) and the
+     * attachment CDN origins (fetched without the token). Other URLs are rejected.
+     *
      * @param commentOrUrl - A Comment object with a file attachment, or a file URL string.
      * @returns The raw fetch Response for the file content.
-     * @throws Error if a Comment is provided without a file attachment or file URL.
+     * @throws Error if a Comment is provided without a file attachment or file URL,
+     *   or if the URL is not on a known Todoist attachment host.
      *
      * @example
      * ```typescript

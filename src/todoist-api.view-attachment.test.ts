@@ -152,33 +152,68 @@ describe('TodoistApi viewAttachment', () => {
             expect(response.ok).toBe(true)
         })
 
-        test('allows subdomains of todoist.com', async () => {
-            const url = 'https://cdn.todoist.com/uploads/file.png'
+        test('allows BunnyCDN URLs without sending the auth token', async () => {
+            const url = 'https://todoist.b-cdn.net/uploads/file.png'
             server.use(
-                http.get(url, () => {
+                http.get(url, ({ request }) => {
+                    captureRequest({ request, body: null })
                     return new HttpResponse('data', { status: 200 })
                 }),
             )
 
             const api = new TodoistApi('test-token')
             const response = await api.viewAttachment(url)
+
             expect(response.ok).toBe(true)
+            expect(getLastRequest()?.headers['authorization']).toBeUndefined()
         })
 
-        test('rejects non-todoist.com URLs', async () => {
+        test('allows CloudFront URLs without sending the auth token', async () => {
+            const url = 'https://d1ysz50cxb9zwl.cloudfront.net/uploads/file.png'
+            server.use(
+                http.get(url, ({ request }) => {
+                    captureRequest({ request, body: null })
+                    return new HttpResponse('data', { status: 200 })
+                }),
+            )
+
+            const api = new TodoistApi('test-token')
+            const response = await api.viewAttachment(url)
+
+            expect(response.ok).toBe(true)
+            expect(getLastRequest()?.headers['authorization']).toBeUndefined()
+        })
+
+        test('rejects api.todoist.com URLs', async () => {
+            const api = new TodoistApi('test-token')
+
+            await expect(
+                api.viewAttachment('https://api.todoist.com/api/v1/tasks'),
+            ).rejects.toThrow('Attachment URLs must be on a known Todoist attachment host')
+        })
+
+        test('rejects other todoist.com subdomains', async () => {
+            const api = new TodoistApi('test-token')
+
+            await expect(
+                api.viewAttachment('https://cdn.todoist.com/uploads/file.png'),
+            ).rejects.toThrow('Attachment URLs must be on a known Todoist attachment host')
+        })
+
+        test('rejects non-todoist URLs', async () => {
             const api = new TodoistApi('test-token')
 
             await expect(api.viewAttachment('https://evil.com/steal-token')).rejects.toThrow(
-                'Attachment URLs must be on a todoist.com domain',
+                'Attachment URLs must be on a known Todoist attachment host',
             )
         })
 
-        test('rejects URLs with todoist.com as a suffix of another domain', async () => {
+        test('rejects URLs with a known host as a suffix of another domain', async () => {
             const api = new TodoistApi('test-token')
 
-            await expect(api.viewAttachment('https://nottodoist.com/file.png')).rejects.toThrow(
-                'Attachment URLs must be on a todoist.com domain',
-            )
+            await expect(
+                api.viewAttachment('https://files.todoist.com.evil.com/file.png'),
+            ).rejects.toThrow('Attachment URLs must be on a known Todoist attachment host')
         })
     })
 

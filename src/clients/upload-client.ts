@@ -9,6 +9,19 @@ import { validateAttachment } from '../utils/validators'
 import { BaseClient } from './base-client'
 
 /**
+ * First-party origin that serves attachment downloads behind Bearer auth.
+ * It redirects to the CDN; on the cross-origin hop the runtime drops the
+ * Authorization header, so the token never reaches the CDN.
+ */
+const AUTHENTICATED_ATTACHMENT_HOST = 'files.todoist.com'
+
+/**
+ * CDN origins that serve attachments via pre-signed URLs. These are
+ * third-party infrastructure and must never receive the auth token.
+ */
+const CDN_ATTACHMENT_HOSTS = new Set(['todoist.b-cdn.net', 'd1ysz50cxb9zwl.cloudfront.net'])
+
+/**
  * Internal sub-client handling upload + attachment endpoints
  * (file upload, upload delete, attachment view).
  *
@@ -62,15 +75,18 @@ export class UploadClient extends BaseClient {
             fileUrl = commentOrUrl.fileAttachment.fileUrl
         }
 
-        // Validate the URL belongs to Todoist to prevent leaking the auth token
+        // Only allow known attachment origins, and only attach the auth token to the
+        // first-party authenticated host. This prevents the token leaking to other
+        // todoist.com hosts (e.g. api.todoist.com) or to third-party CDN infrastructure.
         const urlHostname = new URL(fileUrl).hostname
-        if (!urlHostname.endsWith('.todoist.com')) {
-            throw new Error('Attachment URLs must be on a todoist.com domain')
+        const isAuthenticatedHost = urlHostname === AUTHENTICATED_ATTACHMENT_HOST
+        if (!isAuthenticatedHost && !CDN_ATTACHMENT_HOSTS.has(urlHostname)) {
+            throw new Error('Attachment URLs must be on a known Todoist attachment host')
         }
 
         const fetchOptions: RequestInit = {
             method: 'GET',
-            headers: { Authorization: `Bearer ${this.authToken}` },
+            headers: isAuthenticatedHost ? { Authorization: `Bearer ${this.authToken}` } : {},
         }
 
         if (this.customFetch) {
