@@ -1,3 +1,9 @@
+## [10.3.3](https://github.com/Doist/todoist-sdk-typescript/compare/v10.3.2...v10.3.3) (2026-06-10)
+
+### Bug Fixes
+
+* restrict viewAttachment to known attachment hosts ([#618](https://github.com/Doist/todoist-sdk-typescript/issues/618)) ([cc9a3f1](https://github.com/Doist/todoist-sdk-typescript/commit/cc9a3f1e908ea83dad6e00de98d452a52feaea05))
+
 ## [10.3.2](https://github.com/Doist/todoist-sdk-typescript/compare/v10.3.1...v10.3.2) (2026-06-09)
 
 ### Bug Fixes
