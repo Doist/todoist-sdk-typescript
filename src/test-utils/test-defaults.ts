@@ -216,6 +216,7 @@ export const DEFAULT_SECTION: Section = {
     updatedAt: new Date('2025-03-28T14:01:23.334885Z'),
     archivedAt: null,
     name: DEFAULT_SECTION_NAME,
+    description: null,
     sectionOrder: DEFAULT_ORDER,
     isArchived: false,
     isDeleted: false,

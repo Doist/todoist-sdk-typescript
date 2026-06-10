@@ -33,12 +33,17 @@ export const SECTION_WEBHOOK_EVENTS = [
  * payloads that deliver it as `null` or omit the key entirely — tombstones
  * and never-updated sections come through without an `updated_at` value.
  * The result is normalised to `Date | null` so consumers don't have to
- * handle three shapes. Surfaces the computed `url` so the exposed shape
- * matches {@link Section}.
+ * handle three shapes. `description` is similarly tolerated (older webhook
+ * payloads may omit it) and normalised to `string | null`. Surfaces the
+ * computed `url` so the exposed shape matches {@link Section}.
  */
 export const WebhookSectionSchema = SectionBaseSchema.extend({
     updatedAt: z.coerce
         .date()
+        .nullish()
+        .transform((value) => value ?? null),
+    description: z
+        .string()
         .nullish()
         .transform((value) => value ?? null),
 }).transform((data) => ({
