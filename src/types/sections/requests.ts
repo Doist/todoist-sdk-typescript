@@ -1,4 +1,5 @@
-import type { RequireAtLeastOne, SearchArgs } from '../common'
+import type { RequireAtLeastOne } from 'type-fest'
+import type { SearchArgs } from '../common'
 import type { Section } from './types'
 
 /**
@@ -42,10 +43,10 @@ export type AddSectionArgs = {
  * @see https://developer.todoist.com/api/v1/#tag/Sections/operation/update_section_api_v1_sections__section_id__post
  */
 export type UpdateSectionArgs = RequireAtLeastOne<{
-    name?: string
+    name: string
     /**
      * Updated section description (Markdown). Pass `null` to clear it. Omit the
      * field to keep it unchanged.
      */
-    description?: string | null
+    description: string | null
 }>
