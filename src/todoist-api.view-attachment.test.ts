@@ -152,33 +152,68 @@ describe('TodoistApi viewAttachment', () => {
             expect(response.ok).toBe(true)
         })
 
-        test('allows subdomains of todoist.com', async () => {
-            const url = 'https://cdn.todoist.com/uploads/file.png'
+        test('allows BunnyCDN URLs without sending the auth token', async () => {
+            const url = 'https://todoist.b-cdn.net/uploads/file.png'
             server.use(
-                http.get(url, () => {
+                http.get(url, ({ request }) => {
+                    captureRequest({ request, body: null })
                     return new HttpResponse('data', { status: 200 })
                 }),
             )
 
             const api = new TodoistApi('test-token')
             const response = await api.viewAttachment(url)
+
             expect(response.ok).toBe(true)
+            expect(getLastRequest()?.headers['authorization']).toBeUndefined()
         })
 
-        test('rejects non-todoist.com URLs', async () => {
+        test('allows CloudFront URLs without sending the auth token', async () => {
+            const url = 'https://d1ysz50cxb9zwl.cloudfront.net/uploads/file.png'
+            server.use(
+                http.get(url, ({ request }) => {
+                    captureRequest({ request, body: null })
+                    return new HttpResponse('data', { status: 200 })
+                }),
+            )
+
+            const api = new TodoistApi('test-token')
+            const response = await api.viewAttachment(url)
+
+            expect(response.ok).toBe(true)
+            expect(getLastRequest()?.headers['authorization']).toBeUndefined()
+        })
+
+        test('rejects api.todoist.com URLs', async () => {
+            const api = new TodoistApi('test-token')
+
+            await expect(
+                api.viewAttachment('https://api.todoist.com/api/v1/tasks'),
+            ).rejects.toThrow('Attachment URLs must be on a known Todoist attachment host')
+        })
+
+        test('rejects other todoist.com subdomains', async () => {
+            const api = new TodoistApi('test-token')
+
+            await expect(
+                api.viewAttachment('https://cdn.todoist.com/uploads/file.png'),
+            ).rejects.toThrow('Attachment URLs must be on a known Todoist attachment host')
+        })
+
+        test('rejects non-todoist URLs', async () => {
             const api = new TodoistApi('test-token')
 
             await expect(api.viewAttachment('https://evil.com/steal-token')).rejects.toThrow(
-                'Attachment URLs must be on a todoist.com domain',
+                'Attachment URLs must be on a known Todoist attachment host',
             )
         })
 
-        test('rejects URLs with todoist.com as a suffix of another domain', async () => {
+        test('rejects URLs with a known host as a suffix of another domain', async () => {
             const api = new TodoistApi('test-token')
 
-            await expect(api.viewAttachment('https://nottodoist.com/file.png')).rejects.toThrow(
-                'Attachment URLs must be on a todoist.com domain',
-            )
+            await expect(
+                api.viewAttachment('https://files.todoist.com.evil.com/file.png'),
+            ).rejects.toThrow('Attachment URLs must be on a known Todoist attachment host')
         })
     })
 
@@ -203,8 +238,114 @@ describe('TodoistApi viewAttachment', () => {
             expect(mockCustomFetch).toHaveBeenCalledWith(FILE_URL, {
                 method: 'GET',
                 headers: { Authorization: 'Bearer test-token' },
+                redirect: 'manual',
             })
             expect(await response.text()).toBe('custom fetch content')
+        })
+
+        test('omits the auth token for CDN URLs', async () => {
+            const cdnUrl = 'https://todoist.b-cdn.net/uploads/file.png'
+            const mockCustomFetch =
+                vi.fn<(url: string, init?: RequestInit) => Promise<CustomFetchResponse>>()
+            mockCustomFetch.mockResolvedValue({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                headers: { 'content-type': 'image/png' },
+                text: () => Promise.resolve(''),
+                json: () => Promise.resolve({}),
+                arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+            })
+
+            const api = new TodoistApi('test-token', { customFetch: mockCustomFetch })
+            await api.viewAttachment(cdnUrl)
+
+            expect(mockCustomFetch).toHaveBeenCalledWith(cdnUrl, {
+                method: 'GET',
+                headers: {},
+                redirect: 'manual',
+            })
+        })
+
+        test('follows a cross-origin redirect without forwarding the auth token', async () => {
+            const cdnUrl = 'https://todoist.b-cdn.net/uploads/file.png'
+            const mockCustomFetch =
+                vi.fn<(url: string, init?: RequestInit) => Promise<CustomFetchResponse>>()
+            // files.todoist.com responds with a redirect to the CDN...
+            mockCustomFetch.mockResolvedValueOnce({
+                ok: false,
+                status: 302,
+                statusText: 'Found',
+                headers: { location: cdnUrl },
+                text: () => Promise.resolve(''),
+                json: () => Promise.resolve({}),
+            })
+            // ...and the CDN serves the file.
+            mockCustomFetch.mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                headers: { 'content-type': 'image/png' },
+                text: () => Promise.resolve(''),
+                json: () => Promise.resolve({}),
+                arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+            })
+
+            const api = new TodoistApi('test-token', { customFetch: mockCustomFetch })
+            const response = await api.viewAttachment(FILE_URL)
+
+            expect(mockCustomFetch).toHaveBeenNthCalledWith(1, FILE_URL, {
+                method: 'GET',
+                headers: { Authorization: 'Bearer test-token' },
+                redirect: 'manual',
+            })
+            // The hop to the CDN must not carry the token.
+            expect(mockCustomFetch).toHaveBeenNthCalledWith(2, cdnUrl, {
+                method: 'GET',
+                headers: {},
+                redirect: 'manual',
+            })
+            expect(response.ok).toBe(true)
+        })
+
+        test('falls back to normal redirect following for opaque redirects', async () => {
+            const mockCustomFetch =
+                vi.fn<(url: string, init?: RequestInit) => Promise<CustomFetchResponse>>()
+            // An opaque redirect (e.g. undici): status 0, no readable Location.
+            mockCustomFetch.mockResolvedValueOnce({
+                ok: false,
+                status: 0,
+                statusText: '',
+                headers: {},
+                text: () => Promise.resolve(''),
+                json: () => Promise.resolve({}),
+            })
+            // The fallback request (normal following) returns the file.
+            mockCustomFetch.mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                headers: { 'content-type': 'image/png' },
+                text: () => Promise.resolve(''),
+                json: () => Promise.resolve({}),
+                arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+            })
+
+            const api = new TodoistApi('test-token', { customFetch: mockCustomFetch })
+            const response = await api.viewAttachment(FILE_URL)
+
+            expect(mockCustomFetch).toHaveBeenNthCalledWith(1, FILE_URL, {
+                method: 'GET',
+                headers: { Authorization: 'Bearer test-token' },
+                redirect: 'manual',
+            })
+            // Fallback re-issues without redirect: 'manual', relying on the
+            // runtime to strip auth on the cross-origin hop.
+            expect(mockCustomFetch).toHaveBeenNthCalledWith(2, FILE_URL, {
+                method: 'GET',
+                headers: { Authorization: 'Bearer test-token' },
+            })
+            expect(response.ok).toBe(true)
         })
 
         test('returns binary arrayBuffer from custom fetch byte-for-byte', async () => {

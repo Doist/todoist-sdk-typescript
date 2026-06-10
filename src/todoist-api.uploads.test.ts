@@ -13,7 +13,7 @@ const mockedFs = vi.mocked(fs)
 describe('TodoistApi uploads', () => {
     describe('uploadFile', () => {
         const mockUploadResult = {
-            fileUrl: 'https://cdn.todoist.com/uploads/test-file.pdf',
+            fileUrl: 'https://files.todoist.com/uploads/test-file.pdf',
             fileName: 'test-file.pdf',
             fileSize: 1024,
             fileType: 'application/pdf',
@@ -179,7 +179,7 @@ describe('TodoistApi uploads', () => {
             const api = new TodoistApi('token')
 
             const result = await api.deleteUpload({
-                fileUrl: 'https://cdn.todoist.com/uploads/test-file.pdf',
+                fileUrl: 'https://files.todoist.com/uploads/test-file.pdf',
             })
 
             const capturedRequest = getLastRequest()
@@ -187,7 +187,7 @@ describe('TodoistApi uploads', () => {
             expect(capturedRequest?.method).toBe('DELETE')
             expect(capturedRequest?.headers['authorization']).toBe('Bearer token')
             expect(capturedRequest?.body).toEqual({
-                file_url: 'https://cdn.todoist.com/uploads/test-file.pdf',
+                file_url: 'https://files.todoist.com/uploads/test-file.pdf',
             })
             expect(result).toBe(true)
         })
@@ -211,7 +211,7 @@ describe('TodoistApi uploads', () => {
 
             const result = await api.deleteUpload(
                 {
-                    fileUrl: 'https://cdn.todoist.com/uploads/test-file.pdf',
+                    fileUrl: 'https://files.todoist.com/uploads/test-file.pdf',
                 },
                 requestId,
             )
@@ -222,7 +222,7 @@ describe('TodoistApi uploads', () => {
             expect(capturedRequest?.headers['authorization']).toBe('Bearer token')
             expect(capturedRequest?.headers['x-request-id']).toBe(requestId)
             expect(capturedRequest?.body).toEqual({
-                file_url: 'https://cdn.todoist.com/uploads/test-file.pdf',
+                file_url: 'https://files.todoist.com/uploads/test-file.pdf',
             })
             expect(result).toBe(true)
         })
