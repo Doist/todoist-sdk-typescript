@@ -8,11 +8,26 @@ import {
 } from './consts/endpoints'
 import { server, http, HttpResponse } from './test-utils/msw-setup'
 import { DEFAULT_AUTH_TOKEN, DEFAULT_SECTION } from './test-utils/test-defaults'
+import type { UpdateSectionArgs } from './types/sections/requests'
 import { getSectionUrl } from './utils/url-helpers'
 
 function getTarget() {
     return new TodoistApi(DEFAULT_AUTH_TOKEN)
 }
+
+describe('UpdateSectionArgs type contract', () => {
+    test('rejects empty / all-undefined updates while allowing a name or null clear', () => {
+        // @ts-expect-error an empty update would serialize to an empty body
+        const empty: UpdateSectionArgs = {}
+        // @ts-expect-error an all-undefined update would serialize to an empty body
+        const allUndefined: UpdateSectionArgs = { name: undefined }
+        const nameOnly: UpdateSectionArgs = { name: 'Renamed' }
+        const clear: UpdateSectionArgs = { description: null }
+        // Reference each so the @ts-expect-error lines are the only contract here.
+        const cases = [empty, allUndefined, nameOnly, clear]
+        expect(cases).toHaveLength(4)
+    })
+})
 
 describe('TodoistApi section endpoints', () => {
     describe('getSection', () => {

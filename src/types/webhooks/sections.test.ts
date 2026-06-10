@@ -58,6 +58,15 @@ describe('section:* payloads', () => {
         expect(payload.eventData.description).toBeNull()
     })
 
+    test('tolerates an explicit null description', () => {
+        const payload = parseWebhookPayload(
+            envelope('section:added', rawSection({ description: null })),
+        )
+        if (payload.eventName !== 'section:added') throw new Error('expected section:added')
+
+        expect(payload.eventData.description).toBeNull()
+    })
+
     test('section:deleted tolerates a null updatedAt', () => {
         const payload = parseWebhookPayload(
             envelope(
