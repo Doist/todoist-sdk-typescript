@@ -29,11 +29,24 @@ import {
     DEFAULT_NOTE,
     DEFAULT_WORKSPACE_PROJECT,
 } from './test-utils/test-defaults'
+import type { UpdateProjectArgs } from './types/projects/requests'
 import { getProjectUrl } from './utils/url-helpers'
 
 function getTarget() {
     return new TodoistApi(DEFAULT_AUTH_TOKEN)
 }
+
+describe('UpdateProjectArgs type contract', () => {
+    test('rejects a null description (projects clear with "", not null)', () => {
+        // Projects use NULL_KEEPS_UNCHANGED: clearing is an empty string, and
+        // `null` would mean "leave unchanged" — so the type must not accept it.
+        // @ts-expect-error description is `string | undefined`, not nullable
+        const nulled: UpdateProjectArgs = { description: null }
+        const cleared: UpdateProjectArgs = { description: '' }
+        const cases = [nulled, cleared]
+        expect(cases).toHaveLength(2)
+    })
+})
 
 describe('TodoistApi project endpoints', () => {
     describe('getProject', () => {
