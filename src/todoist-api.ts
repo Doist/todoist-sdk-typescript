@@ -1256,7 +1256,7 @@ export class TodoistApi {
      * @example
      * ```typescript
      * await api.deleteUpload({
-     *   fileUrl: 'https://cdn.todoist.com/...'
+     *   fileUrl: 'https://files.todoist.com/...'
      * })
      * ```
      */

@@ -1,7 +1,7 @@
 import { ENDPOINT_REST_UPLOADS } from '../consts/endpoints'
 import { isSuccess, request } from '../transport/http-client'
 import type { Attachment, Comment } from '../types/comments'
-import type { FileResponse } from '../types/http'
+import type { CustomFetch, CustomFetchResponse, FileResponse } from '../types/http'
 import type { DeleteUploadArgs, UploadFileArgs } from '../types/uploads'
 import { wrapAsFileResponse } from '../utils/file-response'
 import { uploadMultipartFile } from '../utils/multipart-upload'
@@ -20,6 +20,72 @@ const AUTHENTICATED_ATTACHMENT_HOST = 'files.todoist.com'
  * third-party infrastructure and must never receive the auth token.
  */
 const CDN_ATTACHMENT_HOSTS = new Set(['todoist.b-cdn.net', 'd1ysz50cxb9zwl.cloudfront.net'])
+
+const MAX_ATTACHMENT_REDIRECTS = 5
+
+/**
+ * Builds the request headers for an attachment fetch, attaching the Bearer
+ * token only when the URL is on the first-party authenticated host.
+ */
+function buildAttachmentAuthHeaders(url: string, authToken: string): Record<string, string> {
+    return new URL(url).hostname === AUTHENTICATED_ATTACHMENT_HOST
+        ? { Authorization: `Bearer ${authToken}` }
+        : {}
+}
+
+/**
+ * Fetches an attachment through a caller-supplied `customFetch` while
+ * guaranteeing the auth token is never sent across origins.
+ *
+ * A `customFetch` is an arbitrary implementation that may not honour the Fetch
+ * standard's rule of stripping `Authorization` on cross-origin redirects (older
+ * `node-fetch`, for example, does not). Because `files.todoist.com` redirects
+ * downloads to the CDN, a naive implementation could forward the token there.
+ * We therefore drive redirects with `redirect: 'manual'` and follow them
+ * ourselves, dropping the auth header whenever the origin changes.
+ *
+ * Implementations that hide the redirect behind an opaque response (status `0`,
+ * e.g. undici and browsers) can't be followed manually; for those we re-issue
+ * with normal redirect following and rely on the Fetch standard's cross-origin
+ * auth stripping, which those runtimes implement.
+ */
+async function customFetchFollowingRedirects(
+    customFetch: CustomFetch,
+    startUrl: string,
+    authToken: string,
+): Promise<CustomFetchResponse> {
+    let currentUrl = startUrl
+    let headers = buildAttachmentAuthHeaders(currentUrl, authToken)
+
+    for (let redirects = 0; redirects < MAX_ATTACHMENT_REDIRECTS; redirects++) {
+        const response = await customFetch(currentUrl, {
+            method: 'GET',
+            headers,
+            redirect: 'manual',
+        })
+
+        const location = response.headers['location']
+        const isReadableRedirect =
+            response.status >= 300 && response.status < 400 && Boolean(location)
+
+        if (!isReadableRedirect) {
+            // Opaque redirect (the impl hid the Location, e.g. undici): re-issue
+            // with normal following and trust the runtime to strip auth cross-origin.
+            if (response.status === 0) {
+                return customFetch(currentUrl, { method: 'GET', headers })
+            }
+            return response
+        }
+
+        const nextUrl = new URL(location as string, currentUrl)
+        if (nextUrl.origin !== new URL(currentUrl).origin) {
+            headers = {}
+        }
+        currentUrl = nextUrl.toString()
+    }
+
+    throw new Error('Too many redirects while fetching attachment')
+}
 
 /**
  * Internal sub-client handling upload + attachment endpoints
@@ -84,13 +150,15 @@ export class UploadClient extends BaseClient {
             throw new Error('Attachment URLs must be on a known Todoist attachment host')
         }
 
-        const fetchOptions: RequestInit = {
-            method: 'GET',
-            headers: isAuthenticatedHost ? { Authorization: `Bearer ${this.authToken}` } : {},
-        }
-
         if (this.customFetch) {
-            const response = await this.customFetch(fileUrl, fetchOptions)
+            // customFetch may not strip auth on cross-origin redirects, so we
+            // follow the files.todoist.com -> CDN hop ourselves to avoid leaking
+            // the token. See customFetchFollowingRedirects for details.
+            const response = await customFetchFollowingRedirects(
+                this.customFetch,
+                fileUrl,
+                this.authToken,
+            )
 
             if (!response.ok) {
                 throw new Error(
@@ -101,6 +169,12 @@ export class UploadClient extends BaseClient {
             return wrapAsFileResponse(response, 'viewAttachment')
         }
 
+        // Built-in fetch (undici) strips Authorization on cross-origin redirects
+        // per the Fetch standard, so the files.todoist.com -> CDN hop is safe here.
+        const fetchOptions: RequestInit = {
+            method: 'GET',
+            headers: isAuthenticatedHost ? { Authorization: `Bearer ${this.authToken}` } : {},
+        }
         const response = await fetch(fileUrl, fetchOptions)
 
         if (!response.ok) {
