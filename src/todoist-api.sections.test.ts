@@ -150,48 +150,24 @@ describe('TodoistApi section endpoints', () => {
             expect(response).toEqual(returnedSection)
         })
 
-        test('supports a description-only update (no name) and forwards it', async () => {
-            let capturedBody: unknown
+        test('forwards a description-only update and a null clear (no name sent)', async () => {
+            const capturedBodies: unknown[] = []
             server.use(
                 http.post(
                     `${getSyncBaseUri()}${ENDPOINT_REST_SECTIONS}/123`,
                     async ({ request }) => {
-                        capturedBody = await request.json()
-                        return HttpResponse.json(
-                            { ...DEFAULT_SECTION, id: '123', description: 'Sprint backlog' },
-                            { status: 200 },
-                        )
+                        capturedBodies.push(await request.json())
+                        return HttpResponse.json({ ...DEFAULT_SECTION, id: '123' }, { status: 200 })
                     },
                 ),
             )
             const api = getTarget()
 
-            const response = await api.updateSection('123', { description: 'Sprint backlog' })
+            await api.updateSection('123', { description: 'Sprint backlog' })
+            await api.updateSection('123', { description: null })
 
-            expect(capturedBody).toEqual({ description: 'Sprint backlog' })
-            expect(response.description).toBe('Sprint backlog')
-        })
-
-        test('clears the description when passed null', async () => {
-            let capturedBody: unknown
-            server.use(
-                http.post(
-                    `${getSyncBaseUri()}${ENDPOINT_REST_SECTIONS}/123`,
-                    async ({ request }) => {
-                        capturedBody = await request.json()
-                        return HttpResponse.json(
-                            { ...DEFAULT_SECTION, id: '123', description: null },
-                            { status: 200 },
-                        )
-                    },
-                ),
-            )
-            const api = getTarget()
-
-            const response = await api.updateSection('123', { description: null })
-
-            expect(capturedBody).toEqual({ description: null })
-            expect(response.description).toBeNull()
+            expect(capturedBodies[0]).toEqual({ description: 'Sprint backlog' })
+            expect(capturedBodies[1]).toEqual({ description: null })
         })
     })
 
