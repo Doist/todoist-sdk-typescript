@@ -14,6 +14,7 @@ export const SectionBaseSchema = z.object({
     updatedAt: z.coerce.date(),
     archivedAt: z.coerce.date().nullable(),
     name: z.string(),
+    description: z.string().nullable(),
     sectionOrder: z.number().int(),
     isArchived: z.boolean(),
     isDeleted: z.boolean(),

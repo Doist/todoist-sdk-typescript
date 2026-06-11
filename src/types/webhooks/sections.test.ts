@@ -41,6 +41,32 @@ describe('section:* payloads', () => {
         expect(payload.eventData.name).toBe('Renamed')
     })
 
+    test('surfaces a section description when present', () => {
+        const payload = parseWebhookPayload(
+            envelope('section:updated', rawSection({ description: 'Sprint notes' })),
+        )
+        if (payload.eventName !== 'section:updated') throw new Error('expected section:updated')
+
+        expect(payload.eventData.description).toBe('Sprint notes')
+    })
+
+    test('tolerates a missing description key (normalises to null)', () => {
+        // rawSection() omits description, mirroring leaner webhook payloads.
+        const payload = parseWebhookPayload(envelope('section:added', rawSection()))
+        if (payload.eventName !== 'section:added') throw new Error('expected section:added')
+
+        expect(payload.eventData.description).toBeNull()
+    })
+
+    test('tolerates an explicit null description', () => {
+        const payload = parseWebhookPayload(
+            envelope('section:added', rawSection({ description: null })),
+        )
+        if (payload.eventName !== 'section:added') throw new Error('expected section:added')
+
+        expect(payload.eventData.description).toBeNull()
+    })
+
     test('section:deleted tolerates a null updatedAt', () => {
         const payload = parseWebhookPayload(
             envelope(

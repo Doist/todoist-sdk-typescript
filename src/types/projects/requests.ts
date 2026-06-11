@@ -71,6 +71,8 @@ export type AddProjectArgs = {
     isFavorite?: boolean
     viewStyle?: ProjectViewStyle
     workspaceId?: string
+    /** Optional description for the project (Markdown). */
+    description?: string
 }
 
 /**
@@ -82,6 +84,11 @@ export type UpdateProjectArgs = {
     color?: ColorKey
     isFavorite?: boolean
     viewStyle?: ProjectViewStyle
+    /**
+     * Updated project description (Markdown). Pass an empty string to clear it.
+     * Omit this field to keep it unchanged.
+     */
+    description?: string
     /**
      * Folder to move the project into. Only supported for workspace projects.
      * Pass `null` to clear the value. Omit this field to keep it unchanged.

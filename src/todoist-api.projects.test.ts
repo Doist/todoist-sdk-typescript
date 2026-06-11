@@ -29,11 +29,24 @@ import {
     DEFAULT_NOTE,
     DEFAULT_WORKSPACE_PROJECT,
 } from './test-utils/test-defaults'
+import type { UpdateProjectArgs } from './types/projects/requests'
 import { getProjectUrl } from './utils/url-helpers'
 
 function getTarget() {
     return new TodoistApi(DEFAULT_AUTH_TOKEN)
 }
+
+describe('UpdateProjectArgs type contract', () => {
+    test('rejects a null description (projects clear with "", not null)', () => {
+        // Projects use NULL_KEEPS_UNCHANGED: clearing is an empty string, and
+        // `null` would mean "leave unchanged" — so the type must not accept it.
+        // @ts-expect-error description is `string | undefined`, not nullable
+        const nulled: UpdateProjectArgs = { description: null }
+        const cleared: UpdateProjectArgs = { description: '' }
+        const cases = [nulled, cleared]
+        expect(cases).toHaveLength(2)
+    })
+})
 
 describe('TodoistApi project endpoints', () => {
     describe('getProject', () => {
@@ -125,6 +138,21 @@ describe('TodoistApi project endpoints', () => {
 
             expect(project).toEqual(DEFAULT_PROJECT)
         })
+
+        test('forwards description in the request body', async () => {
+            let capturedBody: unknown
+            server.use(
+                http.post(`${getSyncBaseUri()}${ENDPOINT_REST_PROJECTS}`, async ({ request }) => {
+                    capturedBody = await request.json()
+                    return HttpResponse.json(DEFAULT_PROJECT, { status: 200 })
+                }),
+            )
+            const api = getTarget()
+
+            await api.addProject({ ...DEFAULT_ADD_PROJECT_ARGS, description: 'Quarterly OKRs' })
+
+            expect(capturedBody).toMatchObject({ description: 'Quarterly OKRs' })
+        })
     })
 
     describe('updateProject', () => {
@@ -170,6 +198,26 @@ describe('TodoistApi project endpoints', () => {
 
             expect(capturedBodies[0]).toEqual({ folder_id: '42' })
             expect(capturedBodies[1]).toEqual({ folder_id: null })
+        })
+
+        test('forwards description, sending an empty string to clear it', async () => {
+            const capturedBodies: unknown[] = []
+            server.use(
+                http.post(
+                    `${getSyncBaseUri()}${ENDPOINT_REST_PROJECTS}/123`,
+                    async ({ request }) => {
+                        capturedBodies.push(await request.json())
+                        return HttpResponse.json(DEFAULT_WORKSPACE_PROJECT, { status: 200 })
+                    },
+                ),
+            )
+            const api = getTarget()
+
+            await api.updateProject('123', { description: 'Updated scope' })
+            await api.updateProject('123', { description: '' })
+
+            expect(capturedBodies[0]).toEqual({ description: 'Updated scope' })
+            expect(capturedBodies[1]).toEqual({ description: '' })
         })
     })
 

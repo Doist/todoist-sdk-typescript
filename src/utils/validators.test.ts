@@ -138,6 +138,13 @@ describe('validators', () => {
                 validateSection(INVALID_SECTION)
             }).toThrow(ZodError)
         })
+
+        test('validation rejects a section missing description (non-webhook reads are strict)', () => {
+            const { description: _description, ...withoutDescription } = DEFAULT_SECTION
+            expect(() => {
+                validateSection(withoutDescription)
+            }).toThrow(ZodError)
+        })
     })
 
     describe('validateSectionArray', () => {
