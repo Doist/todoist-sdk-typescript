@@ -1,3 +1,9 @@
+## [10.4.0](https://github.com/Doist/todoist-sdk-typescript/compare/v10.3.3...v10.4.0) (2026-06-11)
+
+### Features
+
+* **sections,projects:** model description on read and write types ([#620](https://github.com/Doist/todoist-sdk-typescript/issues/620)) ([f319d96](https://github.com/Doist/todoist-sdk-typescript/commit/f319d96732946656c663fbd0b38933c2c42799ee))
+
 ## [10.3.3](https://github.com/Doist/todoist-sdk-typescript/compare/v10.3.2...v10.3.3) (2026-06-10)
 
 ### Bug Fixes
