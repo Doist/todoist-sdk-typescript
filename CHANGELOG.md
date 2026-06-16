@@ -1,3 +1,9 @@
+## [10.4.1](https://github.com/Doist/todoist-sdk-typescript/compare/v10.4.0...v10.4.1) (2026-06-16)
+
+### Bug Fixes
+
+* **deps:** update dependency form-data to v4.0.6 [security] ([#628](https://github.com/Doist/todoist-sdk-typescript/issues/628)) ([bab950a](https://github.com/Doist/todoist-sdk-typescript/commit/bab950a402586530b0612fc81c87271e1362bd17))
+
 ## [10.4.0](https://github.com/Doist/todoist-sdk-typescript/compare/v10.3.3...v10.4.0) (2026-06-11)
 
 ### Features
