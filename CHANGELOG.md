@@ -1,3 +1,9 @@
+## [10.5.0](https://github.com/Doist/todoist-sdk-typescript/compare/v10.4.1...v10.5.0) (2026-06-18)
+
+### Features
+
+* add refreshAuthToken helper for refreshing access tokens ([#629](https://github.com/Doist/todoist-sdk-typescript/issues/629)) ([3401736](https://github.com/Doist/todoist-sdk-typescript/commit/3401736f3c10a8c3dfd4149ee0a5057682964def))
+
 ## [10.4.1](https://github.com/Doist/todoist-sdk-typescript/compare/v10.4.0...v10.4.1) (2026-06-16)
 
 ### Bug Fixes
