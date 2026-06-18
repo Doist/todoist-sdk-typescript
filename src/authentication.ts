@@ -110,6 +110,20 @@ export type AuthTokenRequestArgs = {
 export type AuthTokenResponse = {
     accessToken: string
     tokenType: string
+    /** Refresh token, when the authorization server issues one. */
+    refreshToken?: string
+    /** Access token lifetime in seconds, when provided. */
+    expiresIn?: number
+}
+
+/**
+ * Parameters required to exchange a refresh token for a new access token.
+ * @see https://developer.todoist.com/api/v1/#tag/Authorization/OAuth
+ */
+export type RefreshTokenRequestArgs = {
+    clientId: string
+    clientSecret: string
+    refreshToken: string
 }
 
 /**
@@ -268,6 +282,70 @@ export async function getAuthToken(
         const err = error as TodoistRequestError
         throw new TodoistRequestError(
             'Authentication token exchange failed.',
+            err.httpStatusCode,
+            err.responseData,
+        )
+    }
+}
+
+/**
+ * Exchanges a refresh token for a new access token using the OAuth2
+ * `refresh_token` grant.
+ *
+ * @example
+ * ```typescript
+ * const { accessToken, refreshToken } = await refreshAuthToken({
+ *   clientId: 'your-client-id',
+ *   clientSecret: 'your-client-secret',
+ *   refreshToken: storedRefreshToken,
+ * })
+ * ```
+ *
+ * @returns The refreshed token. The response may include a new `refreshToken`
+ * (rotated by the server); persist it in place of the previous one when present.
+ * @throws {@link TodoistRequestError} If the refresh fails
+ */
+export async function refreshAuthToken(
+    args: RefreshTokenRequestArgs,
+    options?: AuthOptions,
+): Promise<AuthTokenResponse> {
+    if (typeof options === 'string') {
+        throw new TypeError(
+            'Passing baseUrl as a string is no longer supported. Use an options object instead: refreshAuthToken(args, { baseUrl })',
+        )
+    }
+    const baseUrl = options?.baseUrl
+    const customFetch = options?.customFetch
+
+    try {
+        const response = await request<AuthTokenResponse>({
+            httpMethod: 'POST',
+            baseUri: getAuthBaseUri(baseUrl),
+            relativePath: ENDPOINT_GET_TOKEN,
+            apiToken: undefined,
+            payload: {
+                clientId: args.clientId,
+                clientSecret: args.clientSecret,
+                refreshToken: args.refreshToken,
+                grantType: 'refresh_token',
+            },
+            customFetch,
+        })
+
+        if (response.status !== 200 || !response.data?.accessToken) {
+            throw new TodoistRequestError(
+                'Authentication token refresh failed.',
+                response.status,
+                response.data,
+            )
+        }
+
+        return response.data
+    } catch (error) {
+        // Re-throw with custom message for authentication failures
+        const err = error as TodoistRequestError
+        throw new TodoistRequestError(
+            'Authentication token refresh failed.',
             err.httpStatusCode,
             err.responseData,
         )

@@ -104,6 +104,21 @@ await revokeToken(args, {
 const { accessToken } = await getAuthToken(args, baseUrl)
 ```
 
+When the authorization server issues a `refreshToken`, use `refreshAuthToken`
+to obtain a new access token once the current one expires, without sending the
+user back through the authorization flow:
+
+```typescript
+const refreshed = await refreshAuthToken({
+    clientId: 'your-client-id',
+    clientSecret: 'your-client-secret',
+    refreshToken: storedRefreshToken,
+})
+
+// The server may rotate the refresh token — persist refreshed.refreshToken
+// when present, otherwise keep using the previous one.
+```
+
 ### Important Notes
 
 - All existing transforms (snake_case ↔ camelCase) work automatically with custom fetch
