@@ -110,6 +110,32 @@ export type AuthTokenRequestArgs = {
 export type AuthTokenResponse = {
     accessToken: string
     tokenType: string
+    /**
+     * Refresh token for use with {@link refreshAuthToken}.
+     *
+     * Only present when the OAuth app has refresh tokens enabled — the default
+     * for new apps, and immutable once on. Apps without it receive a long-lived
+     * access token and no refresh token.
+     */
+    refreshToken?: string
+    /** Access token lifetime in seconds. */
+    expiresIn?: number
+    /** Space-separated granted scopes, when returned. */
+    scope?: string
+}
+
+/**
+ * Parameters required to exchange a refresh token for a new access token.
+ * @see https://developer.todoist.com/api/v1/#tag/Authorization/OAuth
+ */
+export type RefreshTokenRequestArgs = {
+    clientId: string
+    /**
+     * Client secret. Required for confidential clients; omit for public clients
+     * registered with `tokenEndpointAuthMethod: 'none'`.
+     */
+    clientSecret?: string
+    refreshToken: string
 }
 
 /**
@@ -232,6 +258,38 @@ export function getAuthorizationUrl({
  * @returns The access token response
  * @throws {@link TodoistRequestError} If the token exchange fails
  */
+/**
+ * Posts a payload to the OAuth token endpoint and returns the token response,
+ * mapping any failure to a {@link TodoistRequestError} with `errorMessage`.
+ * Shared by {@link getAuthToken} and {@link refreshAuthToken}.
+ */
+async function requestAuthToken(
+    payload: Record<string, unknown>,
+    errorMessage: string,
+    options?: AuthOptions,
+): Promise<AuthTokenResponse> {
+    try {
+        const response = await request<AuthTokenResponse>({
+            httpMethod: 'POST',
+            baseUri: getAuthBaseUri(options?.baseUrl),
+            relativePath: ENDPOINT_GET_TOKEN,
+            apiToken: undefined,
+            payload,
+            customFetch: options?.customFetch,
+        })
+
+        if (response.status !== 200 || !response.data?.accessToken) {
+            throw new TodoistRequestError(errorMessage, response.status, response.data)
+        }
+
+        return response.data
+    } catch (error) {
+        // Re-throw with custom message for authentication failures
+        const err = error as TodoistRequestError
+        throw new TodoistRequestError(errorMessage, err.httpStatusCode, err.responseData)
+    }
+}
+
 export async function getAuthToken(
     args: AuthTokenRequestArgs,
     options?: AuthOptions,
@@ -241,37 +299,49 @@ export async function getAuthToken(
             'Passing baseUrl as a string is no longer supported. Use an options object instead: getAuthToken(args, { baseUrl })',
         )
     }
-    const baseUrl = options?.baseUrl
-    const customFetch = options?.customFetch
 
-    try {
-        const response = await request<AuthTokenResponse>({
-            httpMethod: 'POST',
-            baseUri: getAuthBaseUri(baseUrl),
-            relativePath: ENDPOINT_GET_TOKEN,
-            apiToken: undefined,
-            payload: args,
-            customFetch,
-        })
+    return requestAuthToken({ ...args }, 'Authentication token exchange failed.', options)
+}
 
-        if (response.status !== 200 || !response.data?.accessToken) {
-            throw new TodoistRequestError(
-                'Authentication token exchange failed.',
-                response.status,
-                response.data,
-            )
-        }
-
-        return response.data
-    } catch (error) {
-        // Re-throw with custom message for authentication failures
-        const err = error as TodoistRequestError
-        throw new TodoistRequestError(
-            'Authentication token exchange failed.',
-            err.httpStatusCode,
-            err.responseData,
-        )
+/**
+ * Exchanges a refresh token for a new access token using the OAuth2
+ * `refresh_token` grant.
+ *
+ * Only relevant for OAuth apps that have refresh tokens enabled (the default for
+ * new apps). Apps without them never receive a `refreshToken` from
+ * {@link getAuthToken}, so they have nothing to pass here — their access tokens
+ * are long-lived instead.
+ *
+ * Omit `clientSecret` for public clients registered with
+ * `tokenEndpointAuthMethod: 'none'`.
+ *
+ * @example
+ * ```typescript
+ * const { accessToken, refreshToken } = await refreshAuthToken({
+ *   clientId: 'your-client-id',
+ *   clientSecret: 'your-client-secret',
+ *   refreshToken: storedRefreshToken,
+ * })
+ * ```
+ *
+ * @returns The refreshed token. The server rotates the refresh token, so the
+ * response carries a new `refreshToken` — persist it in place of the old one.
+ * @throws {@link TodoistRequestError} If the refresh fails
+ */
+export async function refreshAuthToken(
+    args: RefreshTokenRequestArgs,
+    options?: AuthOptions,
+): Promise<AuthTokenResponse> {
+    const payload: Record<string, unknown> = {
+        clientId: args.clientId,
+        refreshToken: args.refreshToken,
+        grantType: 'refresh_token',
     }
+    if (args.clientSecret !== undefined) {
+        payload.clientSecret = args.clientSecret
+    }
+
+    return requestAuthToken(payload, 'Authentication token refresh failed.', options)
 }
 
 /**
