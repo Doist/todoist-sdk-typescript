@@ -119,6 +119,11 @@ const refreshed = await refreshAuthToken({
 // when present, otherwise keep using the previous one.
 ```
 
+> **Note:** Refresh tokens are only issued to OAuth apps that have them enabled.
+> This is on by default for new apps; legacy apps must opt in. Apps without
+> refresh tokens receive a non-expiring access token, so `getAuthToken` returns
+> no `refreshToken`/`expiresIn` and there is nothing to refresh.
+
 ### Important Notes
 
 - All existing transforms (snake_case ↔ camelCase) work automatically with custom fetch

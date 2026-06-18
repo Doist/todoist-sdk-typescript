@@ -110,9 +110,15 @@ export type AuthTokenRequestArgs = {
 export type AuthTokenResponse = {
     accessToken: string
     tokenType: string
-    /** Refresh token, when the authorization server issues one. */
+    /**
+     * Refresh token for use with {@link refreshAuthToken}.
+     *
+     * Only present when the OAuth app has refresh tokens enabled. New apps have
+     * this on by default; legacy apps must opt in. Apps without it receive a
+     * non-expiring access token and no `refreshToken`/`expiresIn`.
+     */
     refreshToken?: string
-    /** Access token lifetime in seconds, when provided. */
+    /** Access token lifetime in seconds. Present only when the app issues refresh tokens. */
     expiresIn?: number
 }
 
@@ -291,6 +297,11 @@ export async function getAuthToken(
 /**
  * Exchanges a refresh token for a new access token using the OAuth2
  * `refresh_token` grant.
+ *
+ * Only relevant for OAuth apps that have refresh tokens enabled (default for
+ * new apps; legacy apps must opt in). Apps without refresh tokens never receive
+ * a `refreshToken` from {@link getAuthToken}, so they have nothing to pass here —
+ * their access tokens do not expire.
  *
  * @example
  * ```typescript
