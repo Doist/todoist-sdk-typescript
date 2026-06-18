@@ -193,6 +193,28 @@ describe('authentication', () => {
             expect(tokenResponse.accessToken).toEqual('ANewToken')
         })
 
+        test('omits client_secret for public clients', async () => {
+            let capturedBody: unknown = null
+
+            server.use(
+                http.post('https://todoist.com/oauth/access_token', async ({ request }) => {
+                    capturedBody = await request.json()
+                    return HttpResponse.json(
+                        { accessToken: 'ANewToken', tokenType: 'Bearer' },
+                        { status: 200 },
+                    )
+                }),
+            )
+
+            await refreshAuthToken({ clientId: 'SomeId', refreshToken: 'ARefreshToken' })
+
+            expect(capturedBody).toEqual({
+                client_id: 'SomeId',
+                refresh_token: 'ARefreshToken',
+                grant_type: 'refresh_token',
+            })
+        })
+
         test('throws error if non 200 response', async () => {
             const failureStatus = 400
             server.use(
@@ -209,6 +231,29 @@ describe('authentication', () => {
                 assertInstance(e, TodoistRequestError)
                 expect(e.message).toEqual('Authentication token refresh failed.')
                 expect(e.httpStatusCode).toEqual(failureStatus)
+            }
+        })
+
+        test('throws error if token not present in response', async () => {
+            const missingTokenResponse = {
+                accessToken: undefined,
+                tokenType: undefined,
+            }
+
+            server.use(
+                http.post('https://todoist.com/oauth/access_token', () => {
+                    return HttpResponse.json(missingTokenResponse, { status: 200 })
+                }),
+            )
+
+            expect.assertions(2)
+
+            try {
+                await refreshAuthToken(defaultRefreshRequest)
+            } catch (e: unknown) {
+                assertInstance(e, TodoistRequestError)
+                expect(e.message).toEqual('Authentication token refresh failed.')
+                expect(e.responseData).toEqual(missingTokenResponse)
             }
         })
     })
