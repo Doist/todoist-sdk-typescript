@@ -3,7 +3,7 @@ import { WorkspaceRoleSchema } from '../../workspaces/types'
 
 export const CollaboratorSchema = z.looseObject({
     id: z.string(),
-    email: z.string(),
+    email: z.string().nullable(),
     fullName: z.string(),
     timezone: z.string(),
     imageId: z.string().nullable(),
