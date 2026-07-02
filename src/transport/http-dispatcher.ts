@@ -1,5 +1,8 @@
 import type { Dispatcher } from 'undici'
 
+// undici's own `fetch`, typed from the same package the dispatcher comes from.
+type UndiciFetch = typeof import('undici').fetch
+
 // Use effectively-disabled keep-alive so short-lived CLI processes do not stay
 // open waiting on idle sockets. Undici requires positive values, so we use 1ms.
 const KEEP_ALIVE_OPTIONS = {
@@ -7,42 +10,88 @@ const KEEP_ALIVE_OPTIONS = {
     keepAliveMaxTimeout: 1,
 }
 
-let defaultDispatcherPromise: Promise<Dispatcher> | undefined
+/**
+ * A dispatcher and the `fetch` that must be used with it. `fetch` is undici's
+ * own `fetch` on the full-undici Node path, or `undefined` (meaning: use the
+ * global `fetch`) on the Bun path. The two are cached together so callers can
+ * never observe a dispatcher paired with a mismatched `fetch` — see
+ * {@link getDefaultFetch} for why the pairing matters.
+ */
+type DefaultTransport = { dispatcher: Dispatcher; fetch: UndiciFetch | undefined }
 
-export function getDefaultDispatcher(): Promise<Dispatcher | undefined> {
+let defaultTransport: DefaultTransport | undefined
+let defaultTransportPromise: Promise<DefaultTransport> | undefined
+
+/**
+ * The default dispatcher and its paired `fetch`, as a single value so the two
+ * are always read consistently. Resolves to `undefined` outside Node (browser/
+ * edge), where callers use the global `fetch` with no dispatcher.
+ */
+export function getDefaultTransport(): Promise<DefaultTransport | undefined> {
     if (!isNodeEnvironment()) {
         return Promise.resolve(undefined)
     }
 
-    if (!defaultDispatcherPromise) {
-        defaultDispatcherPromise = createDefaultDispatcher().catch((error) => {
-            defaultDispatcherPromise = undefined
-            throw error
-        })
+    if (!defaultTransportPromise) {
+        defaultTransportPromise = createDefaultTransport()
+            .then((transport) => {
+                defaultTransport = transport
+                return transport
+            })
+            .catch((error) => {
+                defaultTransport = undefined
+                defaultTransportPromise = undefined
+                throw error
+            })
     }
 
-    return defaultDispatcherPromise
+    return defaultTransportPromise
+}
+
+export async function getDefaultDispatcher(): Promise<Dispatcher | undefined> {
+    return (await getDefaultTransport())?.dispatcher
+}
+
+/**
+ * The `fetch` implementation that must be used with the default dispatcher.
+ * Returns undici's own `fetch` on the full-undici Node path, or `undefined`
+ * (meaning: use the global `fetch`) in the browser/edge/Bun paths.
+ *
+ * Node's global `fetch` is backed by whatever undici version ships inside that
+ * Node release (6.x on Node 22 … 8.x on Node 26). Our dispatcher — and its
+ * `decompress` interceptor — comes from the npm `undici` package, which is a
+ * different version. Handing an npm-undici dispatcher to a mismatched built-in
+ * client makes gzip responses fail mid-stream with `terminated`. Sourcing
+ * `fetch` from the same npm `undici` keeps the whole request path on one
+ * version and removes the split.
+ *
+ * Only meaningful after {@link getDefaultTransport} has resolved, which is the
+ * one place that populates it.
+ */
+export function getDefaultFetch(): UndiciFetch | undefined {
+    return defaultTransport?.fetch
 }
 
 export async function resetDefaultDispatcherForTests(): Promise<void> {
-    if (!defaultDispatcherPromise) {
+    if (!defaultTransportPromise) {
         return
     }
 
-    const dispatcherPromise = defaultDispatcherPromise
-    defaultDispatcherPromise = undefined
+    const transportPromise = defaultTransportPromise
+    defaultTransport = undefined
+    defaultTransportPromise = undefined
 
-    await dispatcherPromise.then(
-        (dispatcher) => dispatcher.close(),
+    await transportPromise.then(
+        (transport) => transport.dispatcher.close(),
         () => undefined,
     )
 }
 
-async function createDefaultDispatcher(): Promise<Dispatcher> {
+async function createDefaultTransport(): Promise<DefaultTransport> {
     // Dynamic import so non-Node consumers (browser, edge runtimes) don't pull
-    // undici into their bundle. `getDefaultDispatcher` already short-circuits
+    // undici into their bundle. `getDefaultTransport` already short-circuits
     // outside Node, so this branch only runs when undici is safe to load.
-    const { EnvHttpProxyAgent, interceptors } = await import('undici')
+    const { EnvHttpProxyAgent, interceptors, fetch: undiciFetch } = await import('undici')
 
     const agent = new EnvHttpProxyAgent(KEEP_ALIVE_OPTIONS)
 
@@ -53,7 +102,9 @@ async function createDefaultDispatcher(): Promise<Dispatcher> {
     // gzip/deflate/br/zstd natively — so skip the interceptor instead of
     // crashing on the missing API.
     if (typeof interceptors.decompress !== 'function') {
-        return agent
+        // Bun: pair the agent with the global `fetch` (undefined), which
+        // decompresses natively.
+        return { dispatcher: agent, fetch: undefined }
     }
 
     // Compose the response-decompression interceptor so gzip/deflate/br/zstd
@@ -64,7 +115,12 @@ async function createDefaultDispatcher(): Promise<Dispatcher> {
     // See https://github.com/Doist/todoist-cli/issues/318.
     const decompress = suppressExperimentalWarningsSync(() => interceptors.decompress())
 
-    return agent.compose(decompress)
+    // Pair undici's own `fetch` with this dispatcher so the request client and
+    // the dispatcher stay on one undici version (see `getDefaultFetch`). The
+    // global `fetch` is backed by a different, Node-bundled undici; mixing the
+    // two makes the decompress interceptor terminate gzip responses on some
+    // Node versions.
+    return { dispatcher: agent.compose(decompress), fetch: undiciFetch }
 }
 
 // undici emits an `ExperimentalWarning` the first time `interceptors.decompress()`

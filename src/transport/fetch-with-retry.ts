@@ -1,6 +1,6 @@
 import type { CustomFetch, CustomFetchResponse, HttpResponse, RetryConfig } from '../types/http'
 import { isNetworkError } from '../types/http'
-import { getDefaultDispatcher } from './http-dispatcher'
+import { getDefaultTransport } from './http-dispatcher'
 
 /**
  * Default retry configuration matching the original axios-retry behavior
@@ -138,18 +138,29 @@ export async function fetchWithRetry<T = unknown>(args: {
                     timeout,
                 })
             } else {
-                const dispatcher = await getDefaultDispatcher()
+                // Read the dispatcher and its paired `fetch` as one value so
+                // they can never be mismatched. On Node, `fetch` is undici's
+                // own — paired with the dispatcher — so the request client and
+                // dispatcher stay on one undici version; otherwise the
+                // `decompress` interceptor terminates gzip responses when the
+                // global `fetch`'s bundled undici differs. Browser/edge (and
+                // Bun) have no paired `fetch` and fall back to the global one.
+                const transport = await getDefaultTransport()
                 const nativeFetchOptions = {
                     ...fetchOptions,
                     signal: requestSignal,
                 }
 
-                if (dispatcher !== undefined) {
+                if (transport?.dispatcher !== undefined) {
                     // @ts-expect-error - dispatcher is a valid option for Node.js fetch but not in the TS types
-                    nativeFetchOptions.dispatcher = dispatcher
+                    nativeFetchOptions.dispatcher = transport.dispatcher
                 }
 
-                const nativeResponse = await fetch(url, nativeFetchOptions)
+                // undici's `fetch` and the global `fetch` are the same function
+                // at runtime but carry different (undici vs DOM) types. Call
+                // through the global signature, which matches the options above.
+                const fetchImpl = (transport?.fetch ?? fetch) as typeof fetch
+                const nativeResponse = await fetchImpl(url, nativeFetchOptions)
                 fetchResponse = convertResponseToCustomFetch(nativeResponse)
             }
 

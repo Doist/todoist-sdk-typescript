@@ -1,7 +1,18 @@
+import type { Dispatcher } from 'undici'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import type { CustomFetch, CustomFetchResponse } from '../types/http'
 import { fetchWithRetry } from './fetch-with-retry'
 import * as httpDispatcher from './http-dispatcher'
+
+// This file controls the transport directly, so opt out of the suite-wide
+// seam installed in `test-utils/msw-setup.ts`.
+vi.unmock('./http-dispatcher')
+
+// A minimal dispatcher for tests that exercise the built-in fetch path with a
+// dispatcher present but no paired undici fetch (so the global fetch is used).
+function fakeDispatcher(): Dispatcher {
+    return { dispatch() {}, close: async () => {} } as unknown as Dispatcher
+}
 
 describe('fetchWithRetry', () => {
     const originalFetch = global.fetch
@@ -25,11 +36,16 @@ describe('fetchWithRetry', () => {
         )
         global.fetch = fetchMock
 
+        const dispatcher = fakeDispatcher()
+        vi.spyOn(httpDispatcher, 'getDefaultTransport').mockResolvedValue({
+            dispatcher,
+            fetch: undefined,
+        })
+
         const response = await fetchWithRetry<{ ok: boolean }>({
             url: 'https://api.todoist.com/api/v1/tasks',
             options: { method: 'GET' },
         })
-        const dispatcher = await httpDispatcher.getDefaultDispatcher()
 
         expect(fetchMock).toHaveBeenCalledTimes(1)
         expect(fetchMock).toHaveBeenCalledWith(
@@ -42,11 +58,42 @@ describe('fetchWithRetry', () => {
         expect(response.data).toEqual({ ok: true })
     })
 
+    test('prefers undici’s paired fetch over the global fetch', async () => {
+        const globalFetchMock = vi.fn<typeof fetch>()
+        global.fetch = globalFetchMock
+
+        const nodeFetch = vi.fn<typeof fetch>()
+        nodeFetch.mockResolvedValue(
+            new Response(JSON.stringify({ ok: true }), {
+                status: 200,
+                statusText: 'OK',
+                headers: { 'content-type': 'application/json' },
+            }),
+        )
+        const dispatcher = fakeDispatcher()
+        vi.spyOn(httpDispatcher, 'getDefaultTransport').mockResolvedValue({
+            dispatcher,
+            fetch: nodeFetch as unknown as typeof import('undici').fetch,
+        })
+
+        const response = await fetchWithRetry<{ ok: boolean }>({
+            url: 'https://api.todoist.com/api/v1/tasks',
+            options: { method: 'GET' },
+        })
+
+        expect(nodeFetch).toHaveBeenCalledWith(
+            'https://api.todoist.com/api/v1/tasks',
+            expect.objectContaining({ method: 'GET', dispatcher }),
+        )
+        expect(globalFetchMock).not.toHaveBeenCalled()
+        expect(response.data).toEqual({ ok: true })
+    })
+
     test('prefers customFetch over the built-in fetch path', async () => {
         const fetchMock = vi.fn<typeof fetch>()
         global.fetch = fetchMock
 
-        const getDefaultDispatcherSpy = vi.spyOn(httpDispatcher, 'getDefaultDispatcher')
+        const getDefaultTransportSpy = vi.spyOn(httpDispatcher, 'getDefaultTransport')
         const customFetch = vi.fn<CustomFetch>()
         customFetch.mockResolvedValue(createResponse('{"ok":true}'))
 
@@ -60,7 +107,7 @@ describe('fetchWithRetry', () => {
             customFetch,
         })
 
-        expect(getDefaultDispatcherSpy).not.toHaveBeenCalled()
+        expect(getDefaultTransportSpy).not.toHaveBeenCalled()
         expect(customFetch).toHaveBeenCalledTimes(1)
         expect(customFetch).toHaveBeenCalledWith(
             'https://api.todoist.com/api/v1/tasks',
@@ -124,6 +171,11 @@ describe('fetchWithRetry', () => {
             )
         global.fetch = fetchMock
 
+        vi.spyOn(httpDispatcher, 'getDefaultTransport').mockResolvedValue({
+            dispatcher: fakeDispatcher(),
+            fetch: undefined,
+        })
+
         const requestPromise = fetchWithRetry<{ ok: boolean }>({
             url: 'https://api.todoist.com/api/v1/tasks',
             options: { method: 'GET', timeout: 20 },
@@ -164,7 +216,10 @@ describe('fetchWithRetry', () => {
         )
         global.fetch = fetchMock
 
-        const getDefaultDispatcherSpy = vi.spyOn(httpDispatcher, 'getDefaultDispatcher')
+        const dispatcher = fakeDispatcher()
+        const getDefaultTransportSpy = vi
+            .spyOn(httpDispatcher, 'getDefaultTransport')
+            .mockResolvedValue({ dispatcher, fetch: undefined })
 
         const requestPromise = fetchWithRetry({
             url: 'https://api.todoist.com/api/v1/tasks',
@@ -179,11 +234,11 @@ describe('fetchWithRetry', () => {
 
         await requestExpectation
 
-        expect(getDefaultDispatcherSpy).toHaveBeenCalled()
+        expect(getDefaultTransportSpy).toHaveBeenCalled()
         expect(fetchMock).toHaveBeenCalledWith(
             'https://api.todoist.com/api/v1/tasks',
             expect.objectContaining({
-                dispatcher: expect.anything(),
+                dispatcher,
                 signal: expect.any(AbortSignal),
             }),
         )
