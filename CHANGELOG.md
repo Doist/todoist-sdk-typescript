@@ -1,3 +1,9 @@
+## [10.5.1](https://github.com/Doist/todoist-sdk-typescript/compare/v10.5.0...v10.5.1) (2026-07-02)
+
+### Bug Fixes
+
+* use undici's own fetch to avoid version mismatch on Node 26 ([#634](https://github.com/Doist/todoist-sdk-typescript/issues/634)) ([7fd57c9](https://github.com/Doist/todoist-sdk-typescript/commit/7fd57c91eebd79dbea7d009b04c75521d40a26f0))
+
 ## [10.5.0](https://github.com/Doist/todoist-sdk-typescript/compare/v10.4.1...v10.5.0) (2026-06-18)
 
 ### Features
