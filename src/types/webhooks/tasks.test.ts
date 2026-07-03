@@ -21,7 +21,6 @@ describe('item:* payloads', () => {
         if (payload.eventName !== 'item:added') throw new Error('expected item:added')
 
         expect(payload.eventData).not.toHaveProperty('noteCount')
-        expect(payload.eventData).not.toHaveProperty('goalIds')
         expect(payload.eventData).not.toHaveProperty('completedByUid')
     })
 

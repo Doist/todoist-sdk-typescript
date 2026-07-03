@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-import { GoalSchema } from '../goals/types'
 import { LabelSchema } from '../labels/types'
 import { ProjectSchema } from '../projects/types'
 import { SectionSchema } from '../sections/types'
@@ -14,7 +13,6 @@ import {
     NoteSchema,
     TooltipsSchema,
     WorkspaceFilterSchema,
-    WorkspaceGoalSchema,
     CalendarSchema,
     CalendarAccountSchema,
     ReminderSchema,
@@ -71,8 +69,6 @@ export const SyncResponseSchema = z.looseObject({
     projectViewOptionsDefaults: z.array(ProjectViewOptionsDefaultsSchema).optional(),
     roleActions: z.array(z.record(z.string(), z.unknown())).optional(),
     folders: z.array(FolderSchema).optional(),
-    goals: z.array(GoalSchema).optional(),
-    workspaceGoals: z.array(WorkspaceGoalSchema).optional(),
     dayOrders: z.record(z.string(), z.number()).optional(),
     calendars: z.array(CalendarSchema).optional(),
     calendarAccounts: z.array(CalendarAccountSchema).optional(),

@@ -11,15 +11,6 @@ import type {
 } from './filters'
 import type { FolderAddArgs, FolderUpdateArgs, FolderDeleteArgs } from './folders'
 import type {
-    GoalAddArgs,
-    GoalUpdateArgs,
-    GoalCompleteArgs,
-    GoalUncompleteArgs,
-    GoalDeleteArgs,
-    GoalLinkItemArgs,
-    GoalUnlinkItemArgs,
-} from './goals'
-import type {
     LabelAddArgs,
     LabelRenameArgs,
     LabelUpdateArgs,
@@ -97,13 +88,6 @@ import type {
     WorkspaceFilterUpdateOrdersArgs,
     WorkspaceFilterDeleteArgs,
 } from './workspace-filters'
-import type {
-    WorkspaceGoalAddArgs,
-    WorkspaceGoalUpdateArgs,
-    WorkspaceGoalDeleteArgs,
-    WorkspaceGoalProjectAddArgs,
-    WorkspaceGoalProjectRemoveArgs,
-} from './workspace-goals'
 import type {
     WorkspaceAddArgs,
     WorkspaceUpdateArgs,
@@ -212,22 +196,6 @@ export type SyncCommandsMap = {
     workspace_filter_update_orders: WorkspaceFilterUpdateOrdersArgs
     workspace_filter_delete: WorkspaceFilterDeleteArgs
 
-    // Workspace Goals
-    workspace_goal_add: WorkspaceGoalAddArgs
-    workspace_goal_update: WorkspaceGoalUpdateArgs
-    workspace_goal_delete: WorkspaceGoalDeleteArgs
-    workspace_goal_project_add: WorkspaceGoalProjectAddArgs
-    workspace_goal_project_remove: WorkspaceGoalProjectRemoveArgs
-
-    // Goals
-    goal_add: GoalAddArgs
-    goal_update: GoalUpdateArgs
-    goal_complete: GoalCompleteArgs
-    goal_uncomplete: GoalUncompleteArgs
-    goal_delete: GoalDeleteArgs
-    goal_link_item: GoalLinkItemArgs
-    goal_unlink_item: GoalUnlinkItemArgs
-
     // Notifications
     live_notifications_mark_unread: LiveNotificationsMarkUnreadArgs
     live_notifications_mark_read: LiveNotificationsMarkReadArgs
@@ -309,8 +277,6 @@ export * from './reminders'
 export * from './workspaces'
 export * from './folders'
 export * from './workspace-filters'
-export * from './workspace-goals'
-export * from './goals'
 export * from './notifications'
 export * from './sharing'
 export * from './view-options'
