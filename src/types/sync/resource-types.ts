@@ -28,8 +28,6 @@ export const SYNC_RESOURCE_TYPES = [
     'project_view_options_defaults',
     'role_actions',
     'folders',
-    'workspace_goals',
-    'goals',
     'day_orders',
     'calendars',
     'calendar_accounts',

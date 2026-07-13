@@ -21,7 +21,6 @@ import {
     PricingResponseSchema,
 } from '../types/billing/types'
 import { AttachmentSchema, CommentSchema } from '../types/comments/types'
-import { GoalSchema } from '../types/goals/types'
 import { IdMappingSchema, MovedIdSchema } from '../types/id-mappings/types'
 import {
     ProjectActivityStatsSchema,
@@ -56,7 +55,6 @@ import {
     NoteSchema,
     TooltipsSchema,
     WorkspaceFilterSchema,
-    WorkspaceGoalSchema,
     CalendarSchema,
     CalendarAccountSchema,
     ReminderSchema,
@@ -186,9 +184,6 @@ export const {
 export const { validate: validateFolder, validateArray: validateFolderArray } =
     createValidator(FolderSchema)
 
-export const { validate: validateGoal, validateArray: validateGoalArray } =
-    createValidator(GoalSchema)
-
 // Billing validators
 
 export const { validate: validateSubscriptionInfo } = createValidator(SubscriptionInfoSchema)
@@ -206,9 +201,6 @@ export const { validate: validateTooltips } = createValidator(TooltipsSchema)
 
 export const { validate: validateWorkspaceFilter, validateArray: validateWorkspaceFilterArray } =
     createValidator(WorkspaceFilterSchema)
-
-export const { validate: validateWorkspaceGoal, validateArray: validateWorkspaceGoalArray } =
-    createValidator(WorkspaceGoalSchema)
 
 export const { validate: validateCalendar, validateArray: validateCalendarArray } =
     createValidator(CalendarSchema)

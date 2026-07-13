@@ -37,7 +37,6 @@ export function rawTask(overrides: Record<string, unknown> = {}): Record<string,
         description: '',
         note_count: 0,
         day_order: -1,
-        goal_ids: [],
         url: 'https://app.todoist.com/app/task/6XR4GqQQCW6Gv9h4',
         ...overrides,
     }
