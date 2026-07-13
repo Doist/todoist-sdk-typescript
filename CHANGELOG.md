@@ -1,3 +1,13 @@
+## [11.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v10.5.1...v11.0.0) (2026-07-13)
+
+### ⚠ BREAKING CHANGES
+
+* Removal of Goals (BETA)
+
+### Features
+
+* Removal of Goals (BETA) ([a9425c2](https://github.com/Doist/todoist-sdk-typescript/commit/a9425c2915e7b02e3ca47fe5a8d6b15a06c30123))
+
 ## [10.5.1](https://github.com/Doist/todoist-sdk-typescript/compare/v10.5.0...v10.5.1) (2026-07-02)
 
 ### Bug Fixes
