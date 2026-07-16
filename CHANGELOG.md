@@ -1,3 +1,13 @@
+## [12.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v11.0.0...v12.0.0) (2026-07-16)
+
+### ⚠ BREAKING CHANGES
+
+* require node >=24, test on 24 & 26, support npm >=11 (#638)
+
+### Features
+
+* require node >=24, test on 24 & 26, support npm >=11 ([#638](https://github.com/Doist/todoist-sdk-typescript/issues/638)) ([6d850d7](https://github.com/Doist/todoist-sdk-typescript/commit/6d850d73e0fe3581f9bf3ae565beffc0565f180b))
+
 ## [11.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v10.5.1...v11.0.0) (2026-07-13)
 
 ### ⚠ BREAKING CHANGES
