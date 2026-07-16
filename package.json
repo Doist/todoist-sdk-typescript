@@ -23,7 +23,8 @@
     },
     "sideEffects": false,
     "engines": {
-        "node": ">=20.18.1"
+        "node": ">=24",
+        "npm": ">=11"
     },
     "scripts": {
         "clean": "rimraf dist",
