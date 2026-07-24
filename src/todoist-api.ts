@@ -160,6 +160,12 @@ import {
     ExportTemplateUrlResponse,
     CreateProjectFromTemplateArgs,
     CreateProjectFromTemplateResponse,
+    GetTemplateCategoriesArgs,
+    GetTemplateCategoriesResponse,
+    GetTemplatesArgs,
+    GetTemplatesByIdsArgs,
+    GetTemplatesByIdsResponse,
+    GetTemplatesResponse,
     ImportTemplateIntoProjectArgs,
     ImportTemplateFromIdArgs,
     ImportTemplateResponse,
@@ -1642,6 +1648,44 @@ export class TodoistApi {
         requestId?: string,
     ): Promise<ImportTemplateResponse> {
         return this.templateClient.importTemplateFromId(args, requestId)
+    }
+
+    /**
+     * Lists templates from the Todoist gallery.
+     *
+     * The default source (`doist`) and `/categories` / `/get` for Contentful IDs require no
+     * authentication. Filtering by `user`, `workspace`, or `all` requires a token with the
+     * `data:read_write` scope.
+     *
+     * @param args - Optional filters (type, source, locale, pagination, search, category).
+     * @returns Paginated list of templates with `nextCursor` when `hasMore` is true.
+     */
+    async getTemplates(args: GetTemplatesArgs = {}): Promise<GetTemplatesResponse> {
+        return this.templateClient.getTemplates(args)
+    }
+
+    /**
+     * Lists the Contentful categories used to group gallery templates.
+     *
+     * @param args - Optional template type filter and locale.
+     * @returns The list of template categories.
+     */
+    async getTemplateCategories(
+        args: GetTemplateCategoriesArgs = {},
+    ): Promise<GetTemplateCategoriesResponse> {
+        return this.templateClient.getTemplateCategories(args)
+    }
+
+    /**
+     * Fetches one or more templates by ID. Unknown IDs are silently omitted.
+     *
+     * Authentication is required if any ID belongs to a user template.
+     *
+     * @param args - Template IDs (1..100) and optional locale.
+     * @returns A map of template ID to Template.
+     */
+    async getTemplatesByIds(args: GetTemplatesByIdsArgs): Promise<GetTemplatesByIdsResponse> {
+        return this.templateClient.getTemplatesByIds(args)
     }
 
     /* Workspace methods */

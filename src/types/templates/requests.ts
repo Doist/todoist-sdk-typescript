@@ -2,6 +2,7 @@ import type { Comment } from '../comments/types'
 import type { PersonalProject, WorkspaceProject } from '../projects/types'
 import type { Section } from '../sections/types'
 import type { Task } from '../tasks/types'
+import type { TemplateSourceFilter, TemplateTypeFilter } from './types'
 
 /**
  * Arguments for exporting a project as a template file.
@@ -97,4 +98,47 @@ export type ImportTemplateResponse = {
     sections: Section[]
     tasks: Task[]
     comments: Comment[]
+}
+
+/**
+ * Arguments for listing templates from the gallery.
+ * @see Undocumented; lives at `GET /api/v1/templates/list`.
+ */
+export type GetTemplatesArgs = {
+    /** Filter by template type (default `project`). */
+    templateType?: TemplateTypeFilter
+    /** Filter by template source (default `doist`). `user`/`workspace`/`all` require auth. */
+    templateSource?: TemplateSourceFilter
+    /** ISO locale used to resolve Contentful content (default `en`). */
+    locale?: string
+    /** Page size, 1..100 (default 100). */
+    limit?: number
+    /** Opaque cursor returned in `nextCursor` from a previous page. */
+    cursor?: string | null
+    /** Free-text search across template name/description. */
+    query?: string
+    /** Restrict to a single Contentful category. */
+    categoryId?: string
+}
+
+/**
+ * Arguments for listing template categories.
+ * @see Undocumented; lives at `GET /api/v1/templates/categories`.
+ */
+export type GetTemplateCategoriesArgs = {
+    /** Filter by template type (default `project`). */
+    templateType?: TemplateTypeFilter
+    /** ISO locale (default `en`). */
+    locale?: string
+}
+
+/**
+ * Arguments for fetching one or more templates by ID.
+ * @see Undocumented; lives at `GET /api/v1/templates/get`.
+ */
+export type GetTemplatesByIdsArgs = {
+    /** 1..100 template IDs. Mixing Contentful and user IDs forces auth. */
+    templateIds: string[]
+    /** ISO locale (default `en`). */
+    locale?: string
 }
