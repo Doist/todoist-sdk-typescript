@@ -102,7 +102,6 @@ describe('TodoistApi workspaces', () => {
                     userEmail: 'admin@example.com',
                     workspaceId: '456',
                     role: 'ADMIN' as const,
-                    isExistingUser: true,
                 },
             ]
             server.use(
@@ -137,7 +136,6 @@ describe('TodoistApi workspaces', () => {
             userEmail: 'user@example.com',
             workspaceId: '789',
             role: 'MEMBER' as const,
-            isExistingUser: false,
         }
 
         test('deletes workspace invitation', async () => {
@@ -163,7 +161,6 @@ describe('TodoistApi workspaces', () => {
             userEmail: 'user@example.com',
             workspaceId: '789',
             role: 'GUEST' as const,
-            isExistingUser: true,
         }
 
         test('accepts workspace invitation', async () => {
@@ -186,7 +183,6 @@ describe('TodoistApi workspaces', () => {
             userEmail: 'user@example.com',
             workspaceId: '789',
             role: 'ADMIN' as const,
-            isExistingUser: false,
         }
 
         test('rejects workspace invitation', async () => {

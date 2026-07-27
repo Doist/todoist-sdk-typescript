@@ -47,7 +47,6 @@ export const WorkspaceInvitationSchema = z.object({
     userEmail: z.string(),
     workspaceId: z.string(),
     role: WorkspaceRoleSchema,
-    isExistingUser: z.boolean(),
 })
 
 /**
