@@ -1,3 +1,13 @@
+## [13.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v12.0.0...v13.0.0) (2026-07-27)
+
+### ⚠ BREAKING CHANGES
+
+* **workspaces:** remove invitation `isExistingUser` (#650)
+
+### Bug Fixes
+
+* **workspaces:** remove invitation `isExistingUser` ([#650](https://github.com/Doist/todoist-sdk-typescript/issues/650)) ([1eb8205](https://github.com/Doist/todoist-sdk-typescript/commit/1eb8205365ea463ee54ab3e75ec98ef5be44a083))
+
 ## [12.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v11.0.0...v12.0.0) (2026-07-16)
 
 ### ⚠ BREAKING CHANGES
