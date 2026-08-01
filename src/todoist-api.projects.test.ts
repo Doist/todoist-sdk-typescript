@@ -22,7 +22,6 @@ import {
     DEFAULT_PROJECT_ID,
     DEFAULT_TASK,
     DEFAULT_SECTION,
-    DEFAULT_RAW_COMMENT,
     DEFAULT_FOLDER,
     DEFAULT_COLLABORATOR,
     DEFAULT_COLLABORATOR_STATE,
@@ -388,33 +387,51 @@ describe('TodoistApi project endpoints', () => {
     })
 
     describe('getFullProject', () => {
+        const fullProjectUrl = `${getSyncBaseUri()}${ENDPOINT_REST_PROJECTS}/123/${ENDPOINT_REST_PROJECT_FULL}`
+        const rawCollaborator = {
+            id: DEFAULT_COLLABORATOR.id,
+            email: DEFAULT_COLLABORATOR.email,
+            full_name: DEFAULT_COLLABORATOR.fullName,
+            timezone: DEFAULT_COLLABORATOR.timezone,
+            image_id: DEFAULT_COLLABORATOR.imageId,
+        }
+        const baseFullData = {
+            project: null,
+            comments_count: 0,
+            tasks: [],
+            sections: [],
+        }
+
+        function respondWith(data: Record<string, unknown>) {
+            server.use(http.get(fullProjectUrl, () => HttpResponse.json(data, { status: 200 })))
+        }
+
         test('returns full project data from rest client', async () => {
-            const fullData = {
+            respondWith({
                 project: DEFAULT_PROJECT,
-                commentsCount: 5,
+                comments_count: 5,
                 tasks: [DEFAULT_TASK],
                 sections: [DEFAULT_SECTION],
-                collaborators: [DEFAULT_USER],
-                notes: [DEFAULT_RAW_COMMENT],
-            }
-            server.use(
-                http.get(
-                    `${getSyncBaseUri()}${ENDPOINT_REST_PROJECTS}/123/${ENDPOINT_REST_PROJECT_FULL}`,
-                    () => {
-                        return HttpResponse.json(fullData, { status: 200 })
-                    },
-                ),
-            )
+                collaborators: [rawCollaborator],
+            })
             const api = getTarget()
 
             const result = await api.getFullProject('123')
 
             expect(result.project).toEqual(DEFAULT_PROJECT)
             expect(result.commentsCount).toBe(5)
-            expect(result.tasks).toHaveLength(1)
-            expect(result.sections).toHaveLength(1)
-            expect(result.collaborators).toHaveLength(1)
-            expect(result.notes).toHaveLength(1)
+            expect(result.tasks).toEqual([DEFAULT_TASK])
+            expect(result.sections).toEqual([DEFAULT_SECTION])
+            expect(result.collaborators).toEqual([DEFAULT_USER])
+            expect(result.notes).toEqual([])
+        })
+
+        test('rejects a raw collaborator missing full_name', async () => {
+            const collaborator = { ...rawCollaborator, full_name: undefined }
+            respondWith({ ...baseFullData, collaborators: [collaborator], notes: [] })
+            const api = getTarget()
+
+            await expect(api.getFullProject('123')).rejects.toThrow()
         })
     })
 
