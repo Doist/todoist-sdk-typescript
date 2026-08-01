@@ -296,7 +296,7 @@ export class ProjectClient extends BaseClient {
                     name: collaborator.fullName,
                 }),
             ),
-            notes: validateCommentArray(data.notes ?? []),
+            notes: validateCommentArray(data.notes === undefined ? [] : data.notes),
         }
     }
 

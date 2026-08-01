@@ -426,6 +426,13 @@ describe('TodoistApi project endpoints', () => {
             expect(result.notes).toEqual([])
         })
 
+        test('rejects null notes', async () => {
+            respondWith({ ...baseFullData, collaborators: [], notes: null })
+            const api = getTarget()
+
+            await expect(api.getFullProject('123')).rejects.toThrow()
+        })
+
         test('rejects a raw collaborator missing full_name', async () => {
             const collaborator = { ...rawCollaborator, full_name: undefined }
             respondWith({ ...baseFullData, collaborators: [collaborator], notes: [] })
