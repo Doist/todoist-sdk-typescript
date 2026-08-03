@@ -46,6 +46,7 @@ import {
     validateProjectArray,
     validateSectionArray,
     validateTaskArray,
+    validateUser,
     validateUserArray,
     validateWorkspaceProject,
     validateWorkspaceProjectArray,
@@ -288,8 +289,14 @@ export class ProjectClient extends BaseClient {
             commentsCount: data.commentsCount as number,
             tasks: validateTaskArray(data.tasks as unknown[]),
             sections: validateSectionArray(data.sections as unknown[]),
-            collaborators: validateUserArray(data.collaborators as unknown[]),
-            notes: validateCommentArray(data.notes as unknown[]),
+            collaborators: validateCollaboratorArray(data.collaborators).map((collaborator) =>
+                validateUser({
+                    id: collaborator.id,
+                    email: collaborator.email,
+                    name: collaborator.fullName,
+                }),
+            ),
+            notes: validateCommentArray(data.notes === undefined ? [] : data.notes),
         }
     }
 
