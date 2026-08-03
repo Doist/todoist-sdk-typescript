@@ -69,7 +69,7 @@ export class TaskClient extends BaseClient {
             customFetch: this.customFetch,
             payload: {
                 ...args,
-                ...(args.ids ? { ids: args.ids.join(',') } : {}),
+                ...spreadIfDefined(args.ids, (ids) => ({ ids: ids.join(',') })),
             },
         })
 
