@@ -112,7 +112,7 @@ export const ProjectInsightSchema = z.object({
 export type ProjectInsight = z.infer<typeof ProjectInsightSchema>
 
 export const WorkspaceInsightsSchema = z.object({
-    folderId: z.string().nullable(),
+    folderId: z.string().nullable().optional(),
     projectInsights: z.array(ProjectInsightSchema),
 })
 /** Workspace insights grouped by folder. */
