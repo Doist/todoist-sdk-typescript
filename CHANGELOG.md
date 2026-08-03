@@ -1,3 +1,9 @@
+## [13.0.1](https://github.com/Doist/todoist-sdk-typescript/compare/v13.0.0...v13.0.1) (2026-08-03)
+
+### Bug Fixes
+
+* normalize full project collaborators ([#652](https://github.com/Doist/todoist-sdk-typescript/issues/652)) ([7712c5d](https://github.com/Doist/todoist-sdk-typescript/commit/7712c5dc7a558fa725f92604646ddbdac6cd23c2))
+
 ## [13.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v12.0.0...v13.0.0) (2026-07-27)
 
 ### ⚠ BREAKING CHANGES
