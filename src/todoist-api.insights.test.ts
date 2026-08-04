@@ -168,6 +168,23 @@ describe('TodoistApi insights endpoints', () => {
     })
 
     describe('getWorkspaceInsights', () => {
+        test('accepts responses that omit folderId', async () => {
+            const mockResponse = {
+                project_insights: [],
+            }
+            server.use(
+                http.get(`${getSyncBaseUri()}workspaces/456/insights`, () => {
+                    return HttpResponse.json(mockResponse, { status: 200 })
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.getWorkspaceInsights('456')
+
+            expect(result.folderId).toBeUndefined()
+            expect(result.projectInsights).toEqual([])
+        })
+
         test('returns workspace insights from rest client', async () => {
             const mockResponse = {
                 folder_id: null,
