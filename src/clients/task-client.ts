@@ -67,7 +67,10 @@ export class TaskClient extends BaseClient {
             relativePath: ENDPOINT_REST_TASKS,
             apiToken: this.authToken,
             customFetch: this.customFetch,
-            payload: args,
+            payload: {
+                ...args,
+                ...spreadIfDefined(args.ids, (ids) => ({ ids: ids.join(',') })),
+            },
         })
 
         return {

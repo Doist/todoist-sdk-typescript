@@ -441,6 +441,21 @@ describe('TodoistApi task endpoints', () => {
             expect(results).toEqual(tasks)
             expect(nextCursor).toBe('123')
         })
+
+        test('serializes IDs as a comma-separated query parameter', async () => {
+            let capturedUrl = ''
+            server.use(
+                http.get(`${getSyncBaseUri()}${ENDPOINT_REST_TASKS}`, ({ request }) => {
+                    capturedUrl = request.url
+                    return HttpResponse.json({ results: [], nextCursor: null }, { status: 200 })
+                }),
+            )
+            const api = getTarget()
+
+            await api.getTasks({ ids: ['id-one', 'id-two'] })
+
+            expect(new URL(capturedUrl).searchParams.get('ids')).toBe('id-one,id-two')
+        })
     })
 
     describe('getTasksByFilter', () => {
