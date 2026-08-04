@@ -1,3 +1,10 @@
+## [13.0.2](https://github.com/Doist/todoist-sdk-typescript/compare/v13.0.1...v13.0.2) (2026-08-04)
+
+### Bug Fixes
+
+* allow omitted workspace insight folder ID ([#655](https://github.com/Doist/todoist-sdk-typescript/issues/655)) ([e44e38a](https://github.com/Doist/todoist-sdk-typescript/commit/e44e38afcbba0b610a781ed85295eba531f5ed2a))
+* serialize task IDs as comma-separated query parameter ([#656](https://github.com/Doist/todoist-sdk-typescript/issues/656)) ([2a31bd6](https://github.com/Doist/todoist-sdk-typescript/commit/2a31bd61266036bd420d422f6f34b3b68da8707f))
+
 ## [13.0.1](https://github.com/Doist/todoist-sdk-typescript/compare/v13.0.0...v13.0.1) (2026-08-03)
 
 ### Bug Fixes
