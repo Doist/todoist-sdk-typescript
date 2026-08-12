@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { StringOrNumberSchema } from '../../common'
+
 /**
  * Live notification resource from the Sync API.
  *
@@ -11,7 +13,7 @@ import { z } from 'zod'
 export const LiveNotificationSchema = z.looseObject({
     id: z.string(),
     createdAt: z.coerce.date(),
-    fromUid: z.string(),
+    fromUid: z.string().optional(),
     notificationType: z.string(),
     isUnread: z.boolean(),
     // Commonly present optional fields
@@ -19,13 +21,13 @@ export const LiveNotificationSchema = z.looseObject({
     invitationId: z.string().optional(),
     itemId: z.string().optional(),
     itemContent: z.string().optional(),
-    responsibleUid: z.string().optional(),
-    assignedByUid: z.string().optional(),
+    responsibleUid: z.string().nullable().optional(),
+    assignedByUid: z.string().nullable().optional(),
     fromUser: z
         .object({
             email: z.string(),
             fullName: z.string(),
-            id: z.string(),
+            id: StringOrNumberSchema,
             imageId: z.string().nullable(),
         })
         .optional(),
