@@ -1,3 +1,13 @@
+## [14.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v13.0.2...v14.0.0) (2026-08-12)
+
+### ⚠ BREAKING CHANGES
+
+* drop workspace insight folder ID and health task recommendations (#662)
+
+### Bug Fixes
+
+* drop workspace insight folder ID and health task recommendations ([#662](https://github.com/Doist/todoist-sdk-typescript/issues/662)) ([a8351f2](https://github.com/Doist/todoist-sdk-typescript/commit/a8351f2234a391ab19e426bb0db5d80b13324cff))
+
 ## [13.0.2](https://github.com/Doist/todoist-sdk-typescript/compare/v13.0.1...v13.0.2) (2026-08-04)
 
 ### Bug Fixes
