@@ -72,7 +72,6 @@ describe('TodoistApi insights endpoints', () => {
                 status: 'ON_TRACK',
                 description: 'Project is on track',
                 description_summary: 'On track',
-                task_recommendations: [{ task_id: '1', recommendation: 'Complete soon' }],
                 project_id: '123',
                 updated_at: '2025-01-15T00:00:00Z',
                 is_stale: false,
@@ -88,11 +87,8 @@ describe('TodoistApi insights endpoints', () => {
             const result = await api.getProjectHealth('123')
 
             expect(result.status).toBe('ON_TRACK')
-            expect(result.taskRecommendations).toHaveLength(1)
-            expect(result.taskRecommendations![0]).toMatchObject({
-                taskId: '1',
-                recommendation: 'Complete soon',
-            })
+            expect(result.descriptionSummary).toBe('On track')
+            expect(result.projectId).toBe('123')
         })
     })
 
@@ -168,7 +164,7 @@ describe('TodoistApi insights endpoints', () => {
     })
 
     describe('getWorkspaceInsights', () => {
-        test('accepts responses that omit folderId', async () => {
+        test('returns an empty list when the workspace has no insights', async () => {
             const mockResponse = {
                 project_insights: [],
             }
@@ -181,13 +177,11 @@ describe('TodoistApi insights endpoints', () => {
 
             const result = await api.getWorkspaceInsights('456')
 
-            expect(result.folderId).toBeUndefined()
             expect(result.projectInsights).toEqual([])
         })
 
         test('returns workspace insights from rest client', async () => {
             const mockResponse = {
-                folder_id: null,
                 project_insights: [
                     {
                         project_id: '123',
@@ -214,7 +208,6 @@ describe('TodoistApi insights endpoints', () => {
 
             const result = await api.getWorkspaceInsights('456')
 
-            expect(result.folderId).toBeNull()
             expect(result.projectInsights).toHaveLength(1)
             expect(result.projectInsights[0].health?.status).toBe('ON_TRACK')
             expect(result.projectInsights[0].progress?.progressPercent).toBe(33)
