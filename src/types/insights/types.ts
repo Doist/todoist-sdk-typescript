@@ -36,24 +36,16 @@ export const HEALTH_STATUSES = [
 /** Health status of a project. */
 export type HealthStatus = (typeof HEALTH_STATUSES)[number]
 
-export const TaskRecommendationSchema = z.object({
-    taskId: z.string(),
-    recommendation: z.string(),
-})
-/** A recommendation for a specific task. */
-export type TaskRecommendation = z.infer<typeof TaskRecommendationSchema>
-
 export const ProjectHealthSchema = z.object({
     status: z.enum(HEALTH_STATUSES),
     description: z.string().nullable().optional(),
     descriptionSummary: z.string().nullable().optional(),
-    taskRecommendations: z.array(TaskRecommendationSchema).nullable().optional(),
     projectId: z.string().nullable().optional(),
     updatedAt: z.coerce.date().nullable().optional(),
     isStale: z.boolean().default(false),
     updateInProgress: z.boolean().default(false),
 })
-/** Project health status and recommendations. */
+/** Project health status. */
 export type ProjectHealth = z.infer<typeof ProjectHealthSchema>
 
 export const ProjectMetricsSchema = z.object({
@@ -112,8 +104,7 @@ export const ProjectInsightSchema = z.object({
 export type ProjectInsight = z.infer<typeof ProjectInsightSchema>
 
 export const WorkspaceInsightsSchema = z.object({
-    folderId: z.string().nullable().optional(),
     projectInsights: z.array(ProjectInsightSchema),
 })
-/** Workspace insights grouped by folder. */
+/** Insights for the projects in a workspace. */
 export type WorkspaceInsights = z.infer<typeof WorkspaceInsightsSchema>
