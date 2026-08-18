@@ -470,6 +470,35 @@ describe('Sync resource schemas', () => {
             expect(result.itemContent).toBe('Buy milk')
         })
 
+        test('accepts live API notification variants', () => {
+            const withNullableAssignees = LiveNotificationSchema.parse({
+                ...validNotification,
+                responsibleUid: null,
+                assignedByUid: null,
+            })
+            expect(withNullableAssignees.responsibleUid).toBeNull()
+            expect(withNullableAssignees.assignedByUid).toBeNull()
+
+            const withNumericFromUserId = LiveNotificationSchema.parse({
+                ...validNotification,
+                fromUser: {
+                    email: 'user@example.com',
+                    fullName: 'Example User',
+                    id: 456,
+                    imageId: null,
+                },
+            })
+            expect(withNumericFromUserId.fromUser?.id).toBe('456')
+
+            const withoutFromUid = LiveNotificationSchema.parse({
+                id: 'ln2',
+                createdAt: '2024-01-01T00:00:00Z',
+                notificationType: 'workspace_invitation_accepted',
+                isUnread: true,
+            })
+            expect(withoutFromUid.fromUid).toBeUndefined()
+        })
+
         test('throws on invalid data', () => {
             expect(() => LiveNotificationSchema.parse({ id: 'ln1' })).toThrow(ZodError)
         })

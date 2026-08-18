@@ -127,6 +127,86 @@ describe('TodoistApi sync endpoint', () => {
                 }),
             ).rejects.toThrow(ZodError)
         })
+
+        test('parses live notification variants returned by the Sync API', async () => {
+            const createdAt = '2026-08-12T12:00:00Z'
+            server.use(
+                http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () => {
+                    return HttpResponse.json(
+                        {
+                            live_notifications: [
+                                {
+                                    id: 'notification-1',
+                                    created_at: createdAt,
+                                    from_uid: 'user-1',
+                                    notification_type: 'item_completed',
+                                    is_unread: true,
+                                    responsible_uid: null,
+                                    assigned_by_uid: null,
+                                },
+                                {
+                                    id: 'notification-2',
+                                    created_at: createdAt,
+                                    from_uid: 'user-1',
+                                    notification_type: 'user_removed_from_project',
+                                    is_unread: true,
+                                    from_user: {
+                                        email: 'user@example.com',
+                                        full_name: 'Example User',
+                                        id: 123,
+                                        image_id: null,
+                                    },
+                                },
+                                {
+                                    id: 'notification-3',
+                                    created_at: createdAt,
+                                    notification_type: 'workspace_invitation_accepted',
+                                    is_unread: true,
+                                },
+                            ],
+                        },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const response = await api.sync({
+                resourceTypes: ['live_notifications'],
+                syncToken: '*',
+            })
+
+            expect(response.liveNotifications).toEqual([
+                {
+                    id: 'notification-1',
+                    createdAt: new Date(createdAt),
+                    fromUid: 'user-1',
+                    notificationType: 'item_completed',
+                    isUnread: true,
+                    responsibleUid: null,
+                    assignedByUid: null,
+                },
+                {
+                    id: 'notification-2',
+                    createdAt: new Date(createdAt),
+                    fromUid: 'user-1',
+                    notificationType: 'user_removed_from_project',
+                    isUnread: true,
+                    fromUser: {
+                        email: 'user@example.com',
+                        fullName: 'Example User',
+                        id: '123',
+                        imageId: null,
+                    },
+                },
+                {
+                    id: 'notification-3',
+                    createdAt: new Date(createdAt),
+                    notificationType: 'workspace_invitation_accepted',
+                    isUnread: true,
+                },
+            ])
+        })
     })
 })
 
