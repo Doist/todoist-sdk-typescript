@@ -1,3 +1,9 @@
+## [14.0.1](https://github.com/Doist/todoist-sdk-typescript/compare/v14.0.0...v14.0.1) (2026-08-18)
+
+### Bug Fixes
+
+* send uidsToNotify as a list, not a comma-joined string ([#664](https://github.com/Doist/todoist-sdk-typescript/issues/664)) ([275246f](https://github.com/Doist/todoist-sdk-typescript/commit/275246f5adfd6158927e9c8fbde30ef6ae46d66e))
+
 ## [14.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v13.0.2...v14.0.0) (2026-08-12)
 
 ### ⚠ BREAKING CHANGES
