@@ -1,3 +1,9 @@
+## [14.0.2](https://github.com/Doist/todoist-sdk-typescript/compare/v14.0.1...v14.0.2) (2026-08-18)
+
+### Bug Fixes
+
+* parse live notification variants ([#663](https://github.com/Doist/todoist-sdk-typescript/issues/663)) ([53162df](https://github.com/Doist/todoist-sdk-typescript/commit/53162df22d052e0e8cc16fe3196dff90110e5c64))
+
 ## [14.0.1](https://github.com/Doist/todoist-sdk-typescript/compare/v14.0.0...v14.0.1) (2026-08-18)
 
 ### Bug Fixes
