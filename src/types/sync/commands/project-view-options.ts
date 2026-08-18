@@ -1,14 +1,10 @@
 import type {
+    CalendarSettings,
     ViewMode,
     GroupedBy,
     SortedBy,
     SortOrder,
-    CalendarLayout,
 } from '../resources/view-options'
-
-export type CalendarSettings = {
-    layout?: CalendarLayout
-}
 
 export type ProjectViewOptionsDefaultsSetArgs = {
     projectId: string

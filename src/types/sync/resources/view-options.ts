@@ -73,19 +73,31 @@ export const CALENDAR_LAYOUTS = ['WEEK', 'MONTH'] as const
 /** Calendar layout mode. */
 export type CalendarLayout = (typeof CALENDAR_LAYOUTS)[number]
 
+/** Available task color sources for calendar views. */
+export const CALENDAR_COLORS = ['PRIORITY', 'LABEL', 'PROJECT'] as const
+/** Task color source for a calendar view. */
+export type CalendarColor = (typeof CALENDAR_COLORS)[number]
+
 export const CalendarSettingsSchema = z.looseObject({
     layout: z.enum(CALENDAR_LAYOUTS).optional(),
+    visibleDayCount: z.union([z.literal(1), z.literal(3), z.literal(7)]).optional(),
+    color: z.enum(CALENDAR_COLORS).optional(),
 })
+
+export type CalendarSettings = z.infer<typeof CalendarSettingsSchema>
 
 export const ViewOptionsSchema = z.looseObject({
     viewType: ViewTypeSchema,
-    objectId: z.string().optional(),
+    objectId: z.string().nullable().optional(),
     groupedBy: GroupedBySchema.optional(),
     filteredBy: z.string().nullable().optional(),
-    viewMode: ViewModeSchema.optional(),
+    viewMode: ViewModeSchema.nullable().optional(),
     showCompletedTasks: z.boolean().optional(),
     sortedBy: SortedBySchema.optional(),
     sortOrder: SortOrderSchema.optional(),
+    deadline: z.string().nullable().optional(),
+    calendarSettings: CalendarSettingsSchema.nullable().optional(),
+    isDeleted: z.boolean().optional(),
 })
 
 export type ViewOptions = z.infer<typeof ViewOptionsSchema>
