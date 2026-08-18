@@ -62,7 +62,9 @@ export class CommentClient extends BaseClient {
             customFetch: this.customFetch,
             payload: {
                 ...rest,
-                ...(uidsToNotify ? { uidsToNotify: uidsToNotify.join(',') } : {}),
+                // The API expects a list; a comma-joined string is rejected
+                // with INVALID_ARGUMENT_VALUE on uids_to_notify.
+                ...(uidsToNotify?.length ? { uidsToNotify } : {}),
             },
             requestId: requestId,
         })
