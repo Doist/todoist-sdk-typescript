@@ -369,7 +369,6 @@ describe('Sync resource schemas', () => {
                 showCompletedTasks: false,
                 sortedBy: 'DUE_DATE' as const,
                 sortOrder: 'ASC' as const,
-                deadline: 'no deadline',
                 calendarSettings: {
                     layout: 'WEEK' as const,
                     visibleDayCount: 3 as const,
@@ -398,6 +397,29 @@ describe('Sync resource schemas', () => {
             const withExtra = { ...validViewOptions, futureOption: true }
             const result = ViewOptionsSchema.parse(withExtra)
             expect(result).toHaveProperty('futureOption', true)
+        })
+
+        test('validates cleared calendar settings', () => {
+            expect(
+                ViewOptionsSchema.parse({
+                    ...validViewOptions,
+                    calendarSettings: {
+                        layout: null,
+                        visibleDayCount: null,
+                        color: null,
+                    },
+                }),
+            ).toEqual({
+                ...validViewOptions,
+                calendarSettings: {
+                    layout: null,
+                    visibleDayCount: null,
+                    color: null,
+                },
+            })
+            expect(
+                ViewOptionsSchema.parse({ ...validViewOptions, calendarSettings: null }),
+            ).toEqual({ ...validViewOptions, calendarSettings: null })
         })
     })
 

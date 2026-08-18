@@ -79,9 +79,12 @@ export const CALENDAR_COLORS = ['PRIORITY', 'LABEL', 'PROJECT'] as const
 export type CalendarColor = (typeof CALENDAR_COLORS)[number]
 
 export const CalendarSettingsSchema = z.looseObject({
-    layout: z.enum(CALENDAR_LAYOUTS).optional(),
-    visibleDayCount: z.union([z.literal(1), z.literal(3), z.literal(7)]).optional(),
-    color: z.enum(CALENDAR_COLORS).optional(),
+    layout: z.enum(CALENDAR_LAYOUTS).nullable().optional(),
+    visibleDayCount: z
+        .union([z.literal(1), z.literal(3), z.literal(7)])
+        .nullable()
+        .optional(),
+    color: z.enum(CALENDAR_COLORS).nullable().optional(),
 })
 
 export type CalendarSettings = z.infer<typeof CalendarSettingsSchema>
@@ -95,7 +98,6 @@ export const ViewOptionsSchema = z.looseObject({
     showCompletedTasks: z.boolean().optional(),
     sortedBy: SortedBySchema.optional(),
     sortOrder: SortOrderSchema.optional(),
-    deadline: z.string().nullable().optional(),
     calendarSettings: CalendarSettingsSchema.nullable().optional(),
     isDeleted: z.boolean().optional(),
 })

@@ -358,17 +358,33 @@ export class TodoistApi {
         )
     }
 
-    /** Retrieves the authenticated user's active saved view options. */
+    /**
+     * Retrieves the authenticated user's active saved view options.
+     *
+     * @returns A promise that resolves to the active saved view options.
+     */
     async getViewOptions(): Promise<ViewOptions[]> {
         return this.viewOptionsClient.getViewOptions()
     }
 
-    /** Sets saved options for a view. */
+    /**
+     * Sets saved options for a view.
+     *
+     * @param args - The saved view options to set.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves when the view options are saved.
+     */
     async setViewOptions(args: ViewOptionsSetArgs, requestId?: string): Promise<void> {
         return this.viewOptionsClient.setViewOptions(args, requestId)
     }
 
-    /** Deletes the saved options for a view. */
+    /**
+     * Deletes the saved options for a view.
+     *
+     * @param args - The view whose saved options to delete.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves when the view options are deleted.
+     */
     async deleteViewOptions(args: ViewOptionsDeleteArgs, requestId?: string): Promise<void> {
         return this.viewOptionsClient.deleteViewOptions(args, requestId)
     }

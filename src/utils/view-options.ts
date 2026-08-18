@@ -7,6 +7,11 @@ export interface FindViewOptionsArgs {
     objectId?: string | null
 }
 
+/** Returns whether saved view options are active rather than a deletion tombstone. */
+export function isActiveViewOption(options: ViewOptions): boolean {
+    return options.isDeleted !== true
+}
+
 /** Finds the active saved options for one logical view. */
 export function findViewOptions(
     options: readonly ViewOptions[],
@@ -16,7 +21,7 @@ export function findViewOptions(
 
     return options.find(
         (entry) =>
-            entry.isDeleted !== true &&
+            isActiveViewOption(entry) &&
             (entry.objectId ?? null) === targetObjectId &&
             args.viewTypes.includes(entry.viewType),
     )

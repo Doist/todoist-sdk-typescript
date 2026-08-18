@@ -1,6 +1,7 @@
 import { performSyncRequest } from '../transport/sync-request'
 import type { ViewOptions, ViewOptionsDeleteArgs, ViewOptionsSetArgs } from '../types/sync'
 import { createCommand } from '../utils/sync-helpers'
+import { isActiveViewOption } from '../utils/view-options'
 import { BaseClient } from './base-client'
 
 /** Internal sub-client for saved view-option reads and writes. */
@@ -11,7 +12,7 @@ export class ViewOptionsClient extends BaseClient {
             syncToken: '*',
         })
 
-        return (response.viewOptions ?? []).filter((options) => options.isDeleted !== true)
+        return (response.viewOptions ?? []).filter(isActiveViewOption)
     }
 
     async setViewOptions(args: ViewOptionsSetArgs, requestId?: string): Promise<void> {

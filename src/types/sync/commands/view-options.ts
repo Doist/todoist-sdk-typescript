@@ -16,8 +16,7 @@ export type ViewOptionsSetArgs = {
     showCompletedTasks?: boolean
     sortedBy?: SortedBy | null
     sortOrder?: SortOrder | null
-    deadline?: string
-    calendarSettings?: CalendarSettings
+    calendarSettings?: CalendarSettings | null
 }
 
 export type ViewOptionsDeleteArgs = {
