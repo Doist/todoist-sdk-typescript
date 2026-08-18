@@ -62,6 +62,7 @@ const DEFAULT_LOCALE = 'en'
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
 const DATE_TIME_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,9}))?)?$/
 const EXPLICIT_TIMEZONE_PATTERN = /(?:Z|[+-]\d{2}:?\d{2})$/i
+const DATE_TIME_FORMATTERS = new Map<string, Intl.DateTimeFormat>()
 
 function compareNumber(a: number, b: number): number {
     if (a === b) return 0
@@ -121,11 +122,11 @@ function parseDateOnly(value: string): DateSortValue | null {
     })
 }
 
-function parseFloatingDateTime(value: string): DateSortValue | null {
+function parseDateTimeComponents(value: string): DateComponents | null {
     const match = DATE_TIME_PATTERN.exec(value)
     if (!match) return null
     const milliseconds = Number((match[7] ?? '').padEnd(3, '0').slice(0, 3))
-    return dateSortValue({
+    const components = {
         year: Number(match[1]),
         month: Number(match[2]),
         day: Number(match[3]),
@@ -133,12 +134,19 @@ function parseFloatingDateTime(value: string): DateSortValue | null {
         minute: Number(match[5]),
         second: Number(match[6] ?? 0),
         millisecond: milliseconds,
-    })
+    }
+    return dateSortValue(components) === null ? null : components
 }
 
-function createDateTimeFormatter(timezone: string): Intl.DateTimeFormat {
+function createDateTimeFormatter(
+    timezone: string,
+    fallback?: Intl.DateTimeFormat,
+): Intl.DateTimeFormat {
+    const cached = DATE_TIME_FORMATTERS.get(timezone)
+    if (cached) return cached
+
     try {
-        return new Intl.DateTimeFormat('en-US', {
+        const formatter = new Intl.DateTimeFormat('en-US', {
             timeZone: timezone,
             calendar: 'iso8601',
             numberingSystem: 'latn',
@@ -150,23 +158,20 @@ function createDateTimeFormatter(timezone: string): Intl.DateTimeFormat {
             second: '2-digit',
             hourCycle: 'h23',
         })
+        DATE_TIME_FORMATTERS.set(timezone, formatter)
+        return formatter
     } catch {
-        return createDateTimeFormatter(DEFAULT_TIMEZONE)
+        return fallback ?? createDateTimeFormatter(DEFAULT_TIMEZONE)
     }
 }
 
-function parseFixedDateTime(value: string, formatter: Intl.DateTimeFormat): DateSortValue | null {
-    if (parseFloatingDateTime(value.replace(EXPLICIT_TIMEZONE_PATTERN, '')) === null) return null
-
-    const timestamp = Date.parse(value)
-    if (Number.isNaN(timestamp)) return null
-
+function componentsAt(timestamp: number, formatter: Intl.DateTimeFormat): DateComponents {
     const parts = formatter.formatToParts(new Date(timestamp))
     function part(type: Intl.DateTimeFormatPartTypes): number {
         return Number(parts.find((entry) => entry.type === type)?.value)
     }
 
-    return dateSortValue({
+    return {
         year: part('year'),
         month: part('month'),
         day: part('day'),
@@ -174,53 +179,123 @@ function parseFixedDateTime(value: string, formatter: Intl.DateTimeFormat): Date
         minute: part('minute'),
         second: part('second'),
         millisecond: new Date(timestamp).getUTCMilliseconds(),
-    })
+    }
 }
 
-function parseTaskDate(value: string, formatter: Intl.DateTimeFormat): DateSortValue | null {
+function componentsAsUtcTimestamp({
+    year,
+    month,
+    day,
+    hour = 0,
+    minute = 0,
+    second = 0,
+    millisecond = 0,
+}: DateComponents): number {
+    const date = new Date(0)
+    date.setUTCFullYear(year, month - 1, day)
+    date.setUTCHours(hour, minute, second, millisecond)
+    return date.getTime()
+}
+
+/** Resolves a zoned wall clock to an instant, including daylight-saving offsets. */
+function timestampForWallClock(
+    components: DateComponents,
+    formatter: Intl.DateTimeFormat,
+): number | null {
+    const target = componentsAsUtcTimestamp(components)
+    let timestamp = target
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+        const adjustment = target - componentsAsUtcTimestamp(componentsAt(timestamp, formatter))
+        if (adjustment === 0) return timestamp
+        timestamp += adjustment
+    }
+
+    return null
+}
+
+function dateSortValueAt(timestamp: number, formatter: Intl.DateTimeFormat): DateSortValue | null {
+    const value = dateSortValue(componentsAt(timestamp, formatter))
+    return value ? { ...value, time: timestamp } : null
+}
+
+function parseFixedDateTime(value: string, formatter: Intl.DateTimeFormat): DateSortValue | null {
+    if (parseDateTimeComponents(value.replace(EXPLICIT_TIMEZONE_PATTERN, '')) === null) return null
+
+    const timestamp = Date.parse(value)
+    return Number.isNaN(timestamp) ? null : dateSortValueAt(timestamp, formatter)
+}
+
+function parseZonedFloatingDateTime(
+    value: string,
+    sourceFormatter: Intl.DateTimeFormat,
+    accountFormatter: Intl.DateTimeFormat,
+): DateSortValue | null {
+    const components = parseDateTimeComponents(value)
+    if (!components) return null
+
+    const timestamp = timestampForWallClock(components, sourceFormatter)
+    return timestamp === null ? null : dateSortValueAt(timestamp, accountFormatter)
+}
+
+function parseTaskDate(
+    value: string,
+    formatter: Intl.DateTimeFormat,
+    timezone?: string | null,
+): DateSortValue | null {
     return (
         parseDateOnly(value) ??
         (EXPLICIT_TIMEZONE_PATTERN.test(value)
             ? parseFixedDateTime(value, formatter)
-            : parseFloatingDateTime(value))
+            : parseZonedFloatingDateTime(
+                  value,
+                  timezone ? createDateTimeFormatter(timezone, formatter) : formatter,
+                  formatter,
+              ))
+    )
+}
+
+function compareNullable<T>(
+    a: T | null,
+    b: T | null,
+    compare: (left: T, right: T) => number,
+): number {
+    if (a === null || b === null) {
+        if (a === b) return 0
+        return a === null ? 1 : -1
+    }
+    return compare(a, b)
+}
+
+function compareDateValues(left: DateSortValue, right: DateSortValue): number {
+    return (
+        compareNumber(left.day, right.day) ||
+        compareNumber(left.kind, right.kind) ||
+        compareNumber(left.time, right.time)
     )
 }
 
 function compareDate(a: DateSortValue | null, b: DateSortValue | null): number {
-    if (a === null || b === null) {
-        if (a === b) return 0
-        return a === null ? 1 : -1
-    }
-    return (
-        compareNumber(a.day, b.day) ||
-        compareNumber(a.kind, b.kind) ||
-        compareNumber(a.time, b.time)
-    )
+    return compareNullable(a, b, compareDateValues)
 }
 
 function compareOptionalNumber(a: number | null, b: number | null): number {
-    if (a === null || b === null) {
-        if (a === b) return 0
-        return a === null ? 1 : -1
-    }
-    return compareNumber(a, b)
+    return compareNullable(a, b, compareNumber)
 }
 
 function compareOptionalText(a: string | null, b: string | null, collator: Intl.Collator): number {
-    if (a === null || b === null) {
-        if (a === b) return 0
-        return a === null ? 1 : -1
-    }
-    return collator.compare(a, b)
+    return compareNullable(a, b, (left, right) => collator.compare(left, right))
 }
 
 function prepareTasks(
     tasks: readonly Task[],
     context: TaskSortContext,
-    formatter: Intl.DateTimeFormat,
+    { formatter, resolveAssignee }: { formatter: Intl.DateTimeFormat; resolveAssignee: boolean },
 ): PreparedTask[] {
     return tasks.map((task, index) => {
-        const due = task.due ? parseTaskDate(task.due.datetime ?? task.due.date, formatter) : null
+        const due = task.due
+            ? parseTaskDate(task.due.datetime ?? task.due.date, formatter, task.due.timezone)
+            : null
         const deadline = task.deadline ? parseTaskDate(task.deadline.date, formatter) : null
 
         return {
@@ -235,7 +310,7 @@ function prepareTasks(
                     : null,
             project: context.projectOrder?.get(task.projectId) ?? null,
             workspace: context.workspaceOrder?.get(task.projectId) ?? null,
-            assignee: context.assigneeName?.(task) ?? null,
+            assignee: resolveAssignee ? (context.assigneeName?.(task) ?? null) : null,
         }
     })
 }
@@ -250,7 +325,7 @@ function comparePriorityFirst(a: PreparedTask, b: PreparedTask): number {
     const project = compareOptionalNumber(a.project, b.project)
     if (project !== 0) return project
 
-    if (a.project !== null && b.project !== null) {
+    if (a.task.projectId === b.task.projectId) {
         return compareNumber(a.task.childOrder, b.task.childOrder)
     }
     return 0
@@ -328,15 +403,19 @@ export function sortTasks(
         : (context.locale ?? DEFAULT_LOCALE)
     const collator = new Intl.Collator(locale, { sensitivity: 'base', numeric: true })
     const formatter = createDateTimeFormatter(context.timezone ?? DEFAULT_TIMEZONE)
-    const prepared = prepareTasks(tasks, context, formatter)
     const sortedBy = options.sortedBy
+    const prepared = prepareTasks(tasks, context, {
+        formatter,
+        resolveAssignee: sortedBy === 'ASSIGNEE',
+    })
+    const direction =
+        sortedBy && sortedBy !== 'MANUAL' ? (options.sortOrder ?? defaultSortOrder(sortedBy)) : null
+    const directionMultiplier = direction === 'DESC' ? -1 : 1
 
     return prepared
         .sort((a, b) => {
             if (sortedBy && sortedBy !== 'MANUAL') {
-                const direction = options.sortOrder ?? defaultSortOrder(sortedBy)
-                const primary =
-                    comparePrimary({ sortedBy, a, b, collator }) * (direction === 'DESC' ? -1 : 1)
+                const primary = comparePrimary({ sortedBy, a, b, collator }) * directionMultiplier
                 if (primary !== 0) return primary
             }
 

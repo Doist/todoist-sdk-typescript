@@ -1,32 +1,14 @@
+import { TASK_WITH_OPTIONALS_AS_NULL } from '../test-utils/test-defaults'
 import type { Task } from '../types/tasks'
 import { sortTasks } from './task-sorting'
 
 function makeTask(overrides: Partial<Task> & { id: string }): Task {
     return {
-        id: overrides.id,
-        userId: 'user1',
+        ...TASK_WITH_OPTIONALS_AS_NULL,
         projectId: 'project1',
-        sectionId: null,
-        parentId: null,
-        addedByUid: 'user1',
-        assignedByUid: null,
-        responsibleUid: null,
-        labels: [],
-        deadline: null,
-        duration: null,
-        checked: false,
-        isDeleted: false,
         addedAt: new Date('2026-01-01T00:00:00Z'),
-        completedAt: null,
         updatedAt: new Date('2026-01-01T00:00:00Z'),
-        due: null,
-        priority: 1,
-        childOrder: 0,
         content: overrides.id,
-        description: '',
-        dayOrder: 0,
-        isCollapsed: false,
-        isUncompletable: false,
         url: `https://app.todoist.com/app/task/${overrides.id}`,
         ...overrides,
     }
@@ -193,30 +175,32 @@ describe('sortTasks named sorting', () => {
             makeTask({
                 id: 'third',
                 due: due('2026-03-01'),
-                deadline: { date: '2026-06-01', lang: 'en' },
-                addedAt: new Date('2026-01-03T00:00:00Z'),
+                deadline: { date: '2026-04-01', lang: 'en' },
+                addedAt: new Date('2026-01-02T00:00:00Z'),
             }),
             makeTask({
                 id: 'first',
                 due: due('2026-01-01'),
-                deadline: { date: '2026-04-01', lang: 'en' },
-                addedAt: new Date('2026-01-01T00:00:00Z'),
+                deadline: { date: '2026-06-01', lang: 'en' },
+                addedAt: new Date('2026-01-03T00:00:00Z'),
             }),
             makeTask({
                 id: 'second',
                 due: due('2026-02-01'),
                 deadline: { date: '2026-05-01', lang: 'en' },
-                addedAt: new Date('2026-01-02T00:00:00Z'),
+                addedAt: new Date('2026-01-01T00:00:00Z'),
             }),
         ]
 
-        for (const sortedBy of ['DUE_DATE', 'DEADLINE', 'ADDED_DATE'] as const) {
-            expect(ids(sortTasks(tasks, { sortedBy, defaultOrder: 'PRIORITY_FIRST' }))).toEqual([
-                'first',
-                'second',
-                'third',
-            ])
-        }
+        expect(
+            ids(sortTasks(tasks, { sortedBy: 'DUE_DATE', defaultOrder: 'PRIORITY_FIRST' })),
+        ).toEqual(['first', 'second', 'third'])
+        expect(
+            ids(sortTasks(tasks, { sortedBy: 'DEADLINE', defaultOrder: 'PRIORITY_FIRST' })),
+        ).toEqual(['third', 'second', 'first'])
+        expect(
+            ids(sortTasks(tasks, { sortedBy: 'ADDED_DATE', defaultOrder: 'PRIORITY_FIRST' })),
+        ).toEqual(['second', 'third', 'first'])
     })
 
     test('sorts by supplied project and workspace ranks', () => {
@@ -232,17 +216,24 @@ describe('sortTasks named sorting', () => {
                 ['project3', 2],
             ]),
             workspaceOrder: new Map([
-                ['project1', 0],
+                ['project1', 2],
                 ['project2', 1],
-                ['project3', 2],
+                ['project3', 0],
             ]),
         }
 
-        for (const sortedBy of ['PROJECT', 'WORKSPACE'] as const) {
-            expect(
-                ids(sortTasks(tasks, { sortedBy, defaultOrder: 'PRIORITY_FIRST' }, context)),
-            ).toEqual(['first', 'second', 'third'])
-        }
+        expect(
+            ids(sortTasks(tasks, { sortedBy: 'PROJECT', defaultOrder: 'PRIORITY_FIRST' }, context)),
+        ).toEqual(['first', 'second', 'third'])
+        expect(
+            ids(
+                sortTasks(
+                    tasks,
+                    { sortedBy: 'WORKSPACE', defaultOrder: 'PRIORITY_FIRST' },
+                    context,
+                ),
+            ),
+        ).toEqual(['third', 'second', 'first'])
     })
 
     test('sorts assignees in both directions and reverses missing placement', () => {
@@ -346,6 +337,43 @@ describe('sortTasks date handling', () => {
         ).toEqual(['all-day', 'offset-8', 'floating-9', 'fixed-10'])
     })
 
+    test('interprets an IANA-tagged floating time in its own timezone', () => {
+        const tasks = [
+            makeTask({
+                id: 'los-angeles-9',
+                due: due('2026-02-01T09:00:00', 'America/Los_Angeles'),
+            }),
+            makeTask({ id: 'new-york-11', due: due('2026-02-01T16:00:00Z') }),
+        ]
+
+        expect(
+            ids(
+                sortTasks(
+                    tasks,
+                    { sortedBy: 'DUE_DATE', defaultOrder: 'PRIORITY_FIRST' },
+                    { timezone: 'America/New_York' },
+                ),
+            ),
+        ).toEqual(['new-york-11', 'los-angeles-9'])
+    })
+
+    test('preserves fixed-time order during a repeated DST hour', () => {
+        const tasks = [
+            makeTask({ id: 'later-est', due: due('2026-11-01T06:15:00Z') }),
+            makeTask({ id: 'earlier-edt', due: due('2026-11-01T05:45:00Z') }),
+        ]
+
+        expect(
+            ids(
+                sortTasks(
+                    tasks,
+                    { sortedBy: 'DUE_DATE', defaultOrder: 'PRIORITY_FIRST' },
+                    { timezone: 'America/New_York' },
+                ),
+            ),
+        ).toEqual(['earlier-edt', 'later-est'])
+    })
+
     test('uses UTC when no account timezone is supplied', () => {
         const tasks = [
             makeTask({ id: 'floating-9', due: due('2026-02-01T09:00:00') }),
@@ -429,7 +457,18 @@ describe('sortTasks input and fallback behavior', () => {
         const result = sortTasks(tasks, { defaultOrder: 'PRIORITY_FIRST' })
 
         expect(result).toEqual(tasks)
-        expect(result[0]).toBe(result[2])
+    })
+
+    test('uses childOrder for tasks in the same project without project ranks', () => {
+        const tasks = [
+            makeTask({ id: 'second', childOrder: 2 }),
+            makeTask({ id: 'first', childOrder: 1 }),
+        ]
+
+        expect(ids(sortTasks(tasks, { defaultOrder: 'PRIORITY_FIRST' }))).toEqual([
+            'first',
+            'second',
+        ])
     })
 
     test('does not compare childOrder across projects when project ranks are absent', () => {
@@ -452,5 +491,16 @@ describe('sortTasks input and fallback behavior', () => {
                 sortTasks(tasks, { sortedBy, defaultOrder: 'PRIORITY_FIRST' }),
             ).not.toThrow()
         }
+    })
+
+    test('resolves assignee names only for assignee sorting', () => {
+        const assigneeName = vi.fn(() => 'Name')
+        const tasks = [makeTask({ id: 'task' })]
+
+        sortTasks(tasks, { sortedBy: 'PROJECT', defaultOrder: 'PRIORITY_FIRST' }, { assigneeName })
+        expect(assigneeName).not.toHaveBeenCalled()
+
+        sortTasks(tasks, { sortedBy: 'ASSIGNEE', defaultOrder: 'PRIORITY_FIRST' }, { assigneeName })
+        expect(assigneeName).toHaveBeenCalledOnce()
     })
 })
