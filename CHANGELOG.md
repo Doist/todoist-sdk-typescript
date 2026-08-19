@@ -1,3 +1,10 @@
+## [14.1.0](https://github.com/Doist/todoist-sdk-typescript/compare/v14.0.2...v14.1.0) (2026-08-19)
+
+### Features
+
+* **tasks:** add reusable task sorting ([#666](https://github.com/Doist/todoist-sdk-typescript/issues/666)) ([a9464c1](https://github.com/Doist/todoist-sdk-typescript/commit/a9464c1c1355a2d16fde03954183ff20f5f0e183))
+* **view-options:** add saved view options API ([#665](https://github.com/Doist/todoist-sdk-typescript/issues/665)) ([4caaa68](https://github.com/Doist/todoist-sdk-typescript/commit/4caaa688e0a7ed36fede070d6fc7f6849134cac8))
+
 ## [14.0.2](https://github.com/Doist/todoist-sdk-typescript/compare/v14.0.1...v14.0.2) (2026-08-18)
 
 ### Bug Fixes
