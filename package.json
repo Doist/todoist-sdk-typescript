@@ -48,7 +48,7 @@
         "prepare": "npm run build"
     },
     "overrides": {
-        "fflate": "0.8.2"
+        "fflate": "0.8.3"
     },
     "dependencies": {
         "camelcase": "6.3.0",
