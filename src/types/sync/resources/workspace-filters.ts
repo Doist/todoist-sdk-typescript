@@ -5,6 +5,7 @@ export const WorkspaceFilterSchema = z.looseObject({
     workspaceId: z.string(),
     name: z.string(),
     query: z.string(),
+    description: z.string().nullish(),
     color: z.string(),
     itemOrder: z.number().int(),
     isDeleted: z.boolean(),
