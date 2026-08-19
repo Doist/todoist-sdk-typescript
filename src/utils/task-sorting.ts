@@ -6,7 +6,7 @@ export const DEFAULT_TASK_ORDERS = ['PRIORITY_FIRST', 'DATE_FIRST'] as const
 /** Default hierarchy used when a view has no named sorting. */
 export type DefaultTaskOrder = (typeof DEFAULT_TASK_ORDERS)[number]
 
-export interface TaskSortOptions {
+export type TaskSortOptions = {
     /** Saved or requested sort field. Null and MANUAL use defaultOrder. */
     sortedBy?: SortedBy | null
     /** Saved or requested direction. Defaults by field when absent. */
@@ -15,7 +15,7 @@ export interface TaskSortOptions {
     defaultOrder: DefaultTaskOrder
 }
 
-export interface TaskSortContext {
+export type TaskSortContext = {
     /** Project ID to its visible order. */
     projectOrder?: ReadonlyMap<string, number>
     /** Project ID to the visible order of its workspace bucket. */
