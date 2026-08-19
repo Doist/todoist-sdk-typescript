@@ -365,12 +365,28 @@ describe('Sync resource schemas', () => {
                 objectId: 'proj1',
                 groupedBy: 'PRIORITY' as const,
                 filteredBy: null,
-                viewMode: 'BOARD' as const,
+                viewMode: null,
                 showCompletedTasks: false,
                 sortedBy: 'DUE_DATE' as const,
                 sortOrder: 'ASC' as const,
+                calendarSettings: {
+                    layout: 'WEEK' as const,
+                    visibleDayCount: 3 as const,
+                    color: 'PROJECT' as const,
+                },
+                isDeleted: false,
             }
             expect(ViewOptionsSchema.parse(full)).toEqual(full)
+        })
+
+        test('validates singleton views with a null objectId', () => {
+            const data = { viewType: 'UPCOMING' as const, objectId: null }
+            expect(ViewOptionsSchema.parse(data)).toEqual(data)
+        })
+
+        test('validates deletion tombstones', () => {
+            const data = { viewType: 'FILTER' as const, objectId: 'filter1', isDeleted: true }
+            expect(ViewOptionsSchema.parse(data)).toEqual(data)
         })
 
         test('throws on invalid viewType', () => {
@@ -381,6 +397,29 @@ describe('Sync resource schemas', () => {
             const withExtra = { ...validViewOptions, futureOption: true }
             const result = ViewOptionsSchema.parse(withExtra)
             expect(result).toHaveProperty('futureOption', true)
+        })
+
+        test('validates cleared calendar settings', () => {
+            expect(
+                ViewOptionsSchema.parse({
+                    ...validViewOptions,
+                    calendarSettings: {
+                        layout: null,
+                        visibleDayCount: null,
+                        color: null,
+                    },
+                }),
+            ).toEqual({
+                ...validViewOptions,
+                calendarSettings: {
+                    layout: null,
+                    visibleDayCount: null,
+                    color: null,
+                },
+            })
+            expect(
+                ViewOptionsSchema.parse({ ...validViewOptions, calendarSettings: null }),
+            ).toEqual({ ...validViewOptions, calendarSettings: null })
         })
     })
 

@@ -16,6 +16,7 @@ import { TaskClient } from './clients/task-client'
 import { TemplateClient } from './clients/template-client'
 import { UiExtensionClient } from './clients/ui-extension-client'
 import { UploadClient } from './clients/upload-client'
+import { ViewOptionsClient } from './clients/view-options-client'
 import { WorkspaceClient } from './clients/workspace-client'
 import { ENDPOINT_REST_USER, getSyncBaseUri } from './consts/endpoints'
 import { request } from './transport/http-client'
@@ -137,6 +138,13 @@ import {
     SearchSectionsArgs,
     GetSectionsResponse,
 } from './types/sections'
+import type {
+    SyncRequest,
+    SyncResponse,
+    ViewOptions,
+    ViewOptionsDeleteArgs,
+    ViewOptionsSetArgs,
+} from './types/sync'
 import type { Folder } from './types/sync/resources/folders'
 import {
     Task,
@@ -202,8 +210,6 @@ import {
 } from './types/workspaces'
 import { validateCurrentUser } from './utils/validators'
 
-import { type SyncResponse, type SyncRequest } from './types/sync'
-
 /**
  * A client for interacting with the Todoist API v1.
  * This class provides methods to manage tasks, projects, sections, labels, and comments in Todoist.
@@ -267,6 +273,7 @@ export class TodoistApi {
     private readonly billingClient: BillingClient
     private readonly appClient: AppClient
     private readonly uiExtensionClient: UiExtensionClient
+    private readonly viewOptionsClient: ViewOptionsClient
 
     constructor(
         /**
@@ -312,6 +319,7 @@ export class TodoistApi {
         this.billingClient = new BillingClient(clientDeps)
         this.appClient = new AppClient(clientDeps)
         this.uiExtensionClient = new UiExtensionClient(clientDeps)
+        this.viewOptionsClient = new ViewOptionsClient(clientDeps)
     }
 
     /**
@@ -348,6 +356,37 @@ export class TodoistApi {
             syncRequest,
             { requestId, hasSyncCommands: Boolean(syncRequest.commands?.length) },
         )
+    }
+
+    /**
+     * Retrieves the authenticated user's active saved view options.
+     *
+     * @returns A promise that resolves to the active saved view options.
+     */
+    async getViewOptions(): Promise<ViewOptions[]> {
+        return this.viewOptionsClient.getViewOptions()
+    }
+
+    /**
+     * Sets saved options for a view.
+     *
+     * @param args - The saved view options to set.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves when the view options are saved.
+     */
+    async setViewOptions(args: ViewOptionsSetArgs, requestId?: string): Promise<void> {
+        return this.viewOptionsClient.setViewOptions(args, requestId)
+    }
+
+    /**
+     * Deletes the saved options for a view.
+     *
+     * @param args - The view whose saved options to delete.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves when the view options are deleted.
+     */
+    async deleteViewOptions(args: ViewOptionsDeleteArgs, requestId?: string): Promise<void> {
+        return this.viewOptionsClient.deleteViewOptions(args, requestId)
     }
 
     /**

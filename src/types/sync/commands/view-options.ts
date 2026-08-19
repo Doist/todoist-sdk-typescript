@@ -1,4 +1,11 @@
-import type { ViewType, ViewMode, GroupedBy, SortedBy, SortOrder } from '../resources/view-options'
+import type {
+    CalendarSettings,
+    GroupedBy,
+    SortedBy,
+    SortOrder,
+    ViewMode,
+    ViewType,
+} from '../resources/view-options'
 
 export type ViewOptionsSetArgs = {
     viewType: ViewType
@@ -9,6 +16,7 @@ export type ViewOptionsSetArgs = {
     showCompletedTasks?: boolean
     sortedBy?: SortedBy | null
     sortOrder?: SortOrder | null
+    calendarSettings?: CalendarSettings | null
 }
 
 export type ViewOptionsDeleteArgs = {
