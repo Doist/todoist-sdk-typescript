@@ -4,6 +4,7 @@ export const FilterSchema = z.looseObject({
     id: z.string(),
     name: z.string(),
     query: z.string(),
+    description: z.string().nullish(),
     color: z.string(),
     isDeleted: z.boolean(),
     isFavorite: z.boolean(),
