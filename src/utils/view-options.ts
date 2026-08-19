@@ -1,6 +1,6 @@
 import type { ViewOptions, ViewType } from '../types/sync'
 
-export interface FindViewOptionsArgs {
+export type FindViewOptionsArgs = {
     /** View types that identify the logical view. */
     viewTypes: readonly ViewType[]
     /** Object ID for object-backed views. Omit for singleton views. */
