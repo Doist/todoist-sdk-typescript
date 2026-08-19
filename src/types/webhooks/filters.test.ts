@@ -38,6 +38,26 @@ describe('filter:* payloads', () => {
         expect(payload.eventData.isFavorite).toBe(true)
     })
 
+    test('filter:added carries a description when the filter has one', () => {
+        const payload = parseWebhookPayload(
+            envelope('filter:added', rawFilter({ description: 'Everything due this week' })),
+        )
+        if (payload.eventName !== 'filter:added') throw new Error('expected filter:added')
+
+        expect(payload.eventData.description).toBe('Everything due this week')
+    })
+
+    test('a filter with no description parses whether the key is null or absent', () => {
+        // The column is nullable and predates every existing filter, so both shapes
+        // reach clients. Rejecting either would fail the whole payload.
+        for (const raw of [rawFilter({ description: null }), rawFilter()]) {
+            const payload = parseWebhookPayload(envelope('filter:added', raw))
+            if (payload.eventName !== 'filter:added') throw new Error('expected filter:added')
+
+            expect(payload.eventData.description ?? null).toBeNull()
+        }
+    })
+
     test('filter:deleted carries isDeleted=true', () => {
         const payload = parseWebhookPayload(
             envelope('filter:deleted', rawFilter({ is_deleted: true })),
