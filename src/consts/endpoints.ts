@@ -68,6 +68,9 @@ export const ENDPOINT_REST_TEMPLATES_CREATE_FROM_FILE = 'templates/create_projec
 export const ENDPOINT_REST_TEMPLATES_IMPORT_FROM_FILE = 'templates/import_into_project_from_file'
 export const ENDPOINT_REST_TEMPLATES_IMPORT_FROM_ID =
     'templates/import_into_project_from_template_id'
+export const ENDPOINT_REST_TEMPLATES_LIST = 'templates/list'
+export const ENDPOINT_REST_TEMPLATES_CATEGORIES = 'templates/categories'
+export const ENDPOINT_REST_TEMPLATES_GET = 'templates/get'
 
 export const ENDPOINT_REST_ACCESS_TOKENS_MIGRATE = 'access_tokens/migrate_personal_token'
 export const ENDPOINT_REST_BACKUPS = 'backups'

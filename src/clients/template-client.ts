@@ -1,29 +1,45 @@
 import {
+    ENDPOINT_REST_TEMPLATES_CATEGORIES,
     ENDPOINT_REST_TEMPLATES_CREATE_FROM_FILE,
     ENDPOINT_REST_TEMPLATES_FILE,
+    ENDPOINT_REST_TEMPLATES_GET,
     ENDPOINT_REST_TEMPLATES_IMPORT_FROM_FILE,
     ENDPOINT_REST_TEMPLATES_IMPORT_FROM_ID,
+    ENDPOINT_REST_TEMPLATES_LIST,
     ENDPOINT_REST_TEMPLATES_URL,
 } from '../consts/endpoints'
 import { request } from '../transport/http-client'
+import { TodoistArgumentError } from '../types/errors'
 import type {
     CreateProjectFromTemplateArgs,
     CreateProjectFromTemplateResponse,
     ExportTemplateFileArgs,
     ExportTemplateUrlArgs,
     ExportTemplateUrlResponse,
+    GetTemplateCategoriesArgs,
+    GetTemplateCategoriesResponse,
+    GetTemplatesArgs,
+    GetTemplatesByIdsArgs,
+    GetTemplatesByIdsResponse,
+    GetTemplatesResponse,
     ImportTemplateFromIdArgs,
     ImportTemplateIntoProjectArgs,
     ImportTemplateResponse,
 } from '../types/templates'
 import { uploadMultipartFile } from '../utils/multipart-upload'
+import { spreadIfDefined } from '../utils/request-helpers'
 import {
     validateCommentArray,
+    validateGetTemplateCategoriesResponse,
+    validateGetTemplatesByIdsResponse,
+    validateGetTemplatesResponse,
     validateProjectArray,
     validateSectionArray,
     validateTaskArray,
 } from '../utils/validators'
 import { BaseClient } from './base-client'
+
+const TEMPLATES_BY_IDS_MAX = 100
 
 /**
  * Internal sub-client handling all template-domain endpoints.
@@ -116,6 +132,60 @@ export class TemplateClient extends BaseClient {
             requestId: requestId,
         })
         return this.validateTemplateResponse(data) as ImportTemplateResponse
+    }
+
+    async getTemplates(args: GetTemplatesArgs = {}): Promise<GetTemplatesResponse> {
+        const { data } = await request<GetTemplatesResponse>({
+            httpMethod: 'GET',
+            baseUri: this.syncApiBase,
+            relativePath: ENDPOINT_REST_TEMPLATES_LIST,
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            payload: args,
+        })
+        return validateGetTemplatesResponse(data)
+    }
+
+    async getTemplateCategories(
+        args: GetTemplateCategoriesArgs = {},
+    ): Promise<GetTemplateCategoriesResponse> {
+        const { data } = await request<GetTemplateCategoriesResponse>({
+            httpMethod: 'GET',
+            baseUri: this.syncApiBase,
+            relativePath: ENDPOINT_REST_TEMPLATES_CATEGORIES,
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            payload: args,
+        })
+        return validateGetTemplateCategoriesResponse(data)
+    }
+
+    async getTemplatesByIds(args: GetTemplatesByIdsArgs): Promise<GetTemplatesByIdsResponse> {
+        const { templateIds, locale } = args
+        if (!Array.isArray(templateIds) || templateIds.length === 0) {
+            throw new TodoistArgumentError('templateIds must be a non-empty array.')
+        }
+        if (templateIds.length > TEMPLATES_BY_IDS_MAX) {
+            throw new TodoistArgumentError(
+                `templateIds may contain at most ${TEMPLATES_BY_IDS_MAX} IDs (received ${templateIds.length}).`,
+            )
+        }
+        if (templateIds.some((id) => typeof id !== 'string' || id.length === 0)) {
+            throw new TodoistArgumentError('templateIds must contain only non-empty strings.')
+        }
+
+        const { data } = await request<GetTemplatesByIdsResponse>({
+            httpMethod: 'GET',
+            baseUri: this.syncApiBase,
+            relativePath: ENDPOINT_REST_TEMPLATES_GET,
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            payload: {
+                templateIds: templateIds.join(','),
+                ...spreadIfDefined(locale, (v) => ({ locale: v })),
+            },
+        })
+        return validateGetTemplatesByIdsResponse(data)
     }
 
     private validateTemplateResponse(data: Record<string, unknown>) {
