@@ -12,6 +12,7 @@ import {
     getWorkspaceFilterUrl,
     getWorkspaceUrl,
     parseTodoistUrl,
+    TODOIST_LINK_TYPES,
 } from './url-helpers'
 
 describe('formatDateToYYYYMMDD', () => {
@@ -233,7 +234,76 @@ describe('parseTodoistUrl', () => {
         )
     })
 
+    test('parses a label URL', () => {
+        expect(parseTodoistUrl(getLabelUrl('123', 'Urgent'))).toEqual({
+            type: 'label',
+            id: '123',
+            workspaceId: null,
+            commentId: null,
+        })
+    })
+
+    test('parses a section URL', () => {
+        expect(parseTodoistUrl(getSectionUrl('11111', 'To Do'))).toEqual({
+            type: 'section',
+            id: '11111',
+            workspaceId: null,
+            commentId: null,
+        })
+    })
+
+    test('parses a workspace URL', () => {
+        expect(parseTodoistUrl(getWorkspaceUrl('69'))).toEqual({
+            type: 'workspace',
+            id: '69',
+            workspaceId: null,
+            commentId: null,
+        })
+    })
+
+    test('only ever returns a declared link type', () => {
+        const urls = [
+            getTaskUrl('1', 'Task'),
+            getProjectUrl('2', 'Project'),
+            getFilterUrl('3', 'Filter'),
+            getLabelUrl('4', 'Label'),
+            getSectionUrl('5', 'Section'),
+            getWorkspaceUrl('6'),
+        ]
+        const types = urls.map((url) => parseTodoistUrl(url)?.type)
+        expect(types).toEqual([...TODOIST_LINK_TYPES])
+    })
+
     test('returns null for a non-Todoist URL', () => {
         expect(parseTodoistUrl('https://example.com/foo')).toBeNull()
+    })
+})
+
+describe('fallback URLs keep pointing at the right entity', () => {
+    // A rejected id should degrade to a less-pretty URL, never to a different destination.
+    const REJECTED = 'bad_id'
+
+    test('workspace filter fallback keeps the workspace segment', () => {
+        expect(getWorkspaceFilterUrl('69', REJECTED, 'Due today')).toBe(
+            `https://app.todoist.com/app/69/filter/${REJECTED}`,
+        )
+    })
+
+    test('comments fallbacks keep the comments segment', () => {
+        expect(getTaskCommentsUrl(REJECTED, 'Buy groceries')).toBe(
+            `https://app.todoist.com/app/task/${REJECTED}/comments`,
+        )
+        expect(getProjectCommentsUrl(REJECTED, 'Work Project')).toBe(
+            `https://app.todoist.com/app/project/${REJECTED}/comments`,
+        )
+    })
+
+    test('single comment fallbacks keep the comment anchor', () => {
+        expect(getTaskCommentUrl('12345', REJECTED, 'Buy groceries')).toBe(
+            `https://app.todoist.com/app/task/12345#comment-${REJECTED}`,
+        )
+        expect(getProjectCommentUrl('67890', REJECTED, 'Work Project')).toBe(
+            `https://app.todoist.com/app/project/67890#comment-${REJECTED}`,
+        )
     })
 })

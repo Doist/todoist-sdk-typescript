@@ -138,7 +138,7 @@ export function getWorkspaceFilterUrl(
                 name ?? '',
                 LinkEnvironment.Production,
             ),
-        `filter/${filterId}`,
+        `${workspaceId}/filter/${filterId}`,
     )
 }
 
@@ -162,7 +162,7 @@ export function getWorkspaceUrl(workspaceId: string): string {
 export function getTaskCommentsUrl(taskId: string, content?: string): string {
     return buildUrl(
         () => todoistTaskCommentsUrl(taskId, content ?? '', LinkEnvironment.Production),
-        `task/${taskId}`,
+        `task/${taskId}/comments`,
     )
 }
 
@@ -176,7 +176,7 @@ export function getTaskCommentsUrl(taskId: string, content?: string): string {
 export function getProjectCommentsUrl(projectId: string, name?: string): string {
     return buildUrl(
         () => todoistProjectCommentsUrl(projectId, name ?? '', LinkEnvironment.Production),
-        `project/${projectId}`,
+        `project/${projectId}/comments`,
     )
 }
 
@@ -191,7 +191,7 @@ export function getProjectCommentsUrl(projectId: string, name?: string): string 
 export function getTaskCommentUrl(taskId: string, commentId: string, content?: string): string {
     return buildUrl(
         () => todoistTaskCommentUrl(taskId, content ?? '', commentId, LinkEnvironment.Production),
-        `task/${taskId}`,
+        `task/${taskId}#comment-${commentId}`,
     )
 }
 
@@ -207,7 +207,7 @@ export function getProjectCommentUrl(projectId: string, commentId: string, name?
     return buildUrl(
         () =>
             todoistProjectCommentUrl(projectId, name ?? '', commentId, LinkEnvironment.Production),
-        `project/${projectId}`,
+        `project/${projectId}#comment-${commentId}`,
     )
 }
 
@@ -237,6 +237,16 @@ export type TodoistUrlInfo = {
 }
 
 /**
+ * Checks whether a parsed link type is one this SDK knows about.
+ *
+ * @param value The link type name to check.
+ * @returns Whether the value is a known link type.
+ */
+function isTodoistLinkType(value: string): value is TodoistLinkType {
+    return (TODOIST_LINK_TYPES as readonly string[]).includes(value)
+}
+
+/**
  * Parse a Todoist URL into the entity it points at.
  *
  * @param url The URL to parse.
@@ -248,7 +258,11 @@ export function parseTodoistUrl(url: string): TodoistUrlInfo | null {
         return null
     }
 
-    const type = link.type.name.toLowerCase() as TodoistLinkType
+    const type = link.type.name.toLowerCase()
+    if (!isTodoistLinkType(type)) {
+        return null
+    }
+
     return {
         type,
         id: link.id,
