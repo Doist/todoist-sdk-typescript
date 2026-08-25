@@ -17,7 +17,7 @@ const KEEP_ALIVE_OPTIONS = {
  * never observe a dispatcher paired with a mismatched `fetch` — see
  * {@link getDefaultFetch} for why the pairing matters.
  */
-type DefaultTransport = { dispatcher: Dispatcher; fetch: UndiciFetch | undefined }
+export type DefaultTransport = { dispatcher: Dispatcher; fetch: UndiciFetch | undefined }
 
 let defaultTransport: DefaultTransport | undefined
 let defaultTransportPromise: Promise<DefaultTransport> | undefined
@@ -26,6 +26,23 @@ let defaultTransportPromise: Promise<DefaultTransport> | undefined
  * The default dispatcher and its paired `fetch`, as a single value so the two
  * are always read consistently. Resolves to `undefined` outside Node (browser/
  * edge), where callers use the global `fetch` with no dispatcher.
+ *
+ * Use this when supplying a `customFetch` that should still honour the proxy
+ * environment variables (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`) and decode
+ * compressed responses the way the SDK does by default.
+ *
+ * Both halves must be used together. `dispatcher` decompresses the response
+ * body itself, so a `fetch` from a different undici build will try to decode
+ * it a second time and the request fails mid-stream with `terminated`. A
+ * `fetch` of `undefined` means the runtime's global `fetch` is the correct
+ * partner for this dispatcher.
+ *
+ * @example
+ * ```ts
+ * const transport = await getDefaultTransport()
+ * const fetchImpl = transport?.fetch ?? fetch
+ * const response = await fetchImpl(url, { ...options, dispatcher: transport?.dispatcher })
+ * ```
  */
 export function getDefaultTransport(): Promise<DefaultTransport | undefined> {
     if (!isNodeEnvironment()) {
@@ -48,6 +65,14 @@ export function getDefaultTransport(): Promise<DefaultTransport | undefined> {
     return defaultTransportPromise
 }
 
+/**
+ * The default dispatcher on its own.
+ *
+ * @deprecated Use {@link getDefaultTransport} instead, which returns this
+ * dispatcher together with the `fetch` it must be used with. Attaching this
+ * dispatcher to the runtime's global `fetch` decodes compressed responses
+ * twice on Node 26 and the request fails with `terminated`.
+ */
 export async function getDefaultDispatcher(): Promise<Dispatcher | undefined> {
     return (await getDefaultTransport())?.dispatcher
 }
