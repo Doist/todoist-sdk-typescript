@@ -1,3 +1,9 @@
+## [14.2.0](https://github.com/Doist/todoist-sdk-typescript/compare/v14.1.0...v14.2.0) (2026-08-25)
+
+### Features
+
+* export the paired transport and bump undici to 7.29.0 ([#674](https://github.com/Doist/todoist-sdk-typescript/issues/674)) ([1de9be7](https://github.com/Doist/todoist-sdk-typescript/commit/1de9be722efa88ff9bcfd7e93a1260000500859a))
+
 ## [14.1.0](https://github.com/Doist/todoist-sdk-typescript/compare/v14.0.2...v14.1.0) (2026-08-19)
 
 ### Features
