@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import { Readable } from 'stream'
 import { vi } from 'vitest'
-import { server, http, HttpResponse, getLastRequest, captureRequest } from '../test-utils/msw-setup'
+import { captureRequest, getLastRequest, http, HttpResponse, server } from '../test-utils/msw-setup'
 import { uploadMultipartFile } from './multipart-upload'
 
 // Mock fs
@@ -31,10 +31,53 @@ describe('uploadMultipartFile', () => {
         )
     })
 
+    /**
+     * Captures the encoded request body rather than a parsed `FormData`.
+     *
+     * The body has to be asserted as bytes: a `FormData` body is only encoded
+     * by the `fetch` that owns that `FormData` class, and the SDK dispatches
+     * through undici's own `fetch`. A body built from the global `FormData`
+     * therefore arrives as the literal string "[object FormData]" with no file
+     * in it, and a `request.formData()` assertion cannot tell the difference.
+     */
+    function captureRawBody() {
+        let rawBody: string | undefined
+        let contentType: string | undefined
+        server.use(
+            http.post(`${baseUrl}${endpoint}`, async ({ request }) => {
+                contentType = request.headers.get('content-type') ?? undefined
+                rawBody = await request.text()
+                return HttpResponse.json(mockResponseData, { status: 200 })
+            }),
+        )
+        return {
+            getRawBody: () => rawBody ?? '',
+            getContentType: () => contentType ?? '',
+            getBoundary: () => /boundary=(.+)$/.exec(contentType ?? '')?.[1],
+        }
+    }
+
+    /** Asserts the body is a well-formed multipart payload carrying the file. */
+    function expectMultipart(
+        captured: ReturnType<typeof captureRawBody>,
+        expected: { fileName: string; contentType: string; contents: string },
+    ) {
+        const boundary = captured.getBoundary()
+        expect(boundary).toBeDefined()
+
+        const rawBody = captured.getRawBody()
+        expect(rawBody).not.toBe('[object FormData]')
+        expect(rawBody).toContain(`--${boundary}`)
+        expect(rawBody).toContain(`name="file"; filename="${expected.fileName}"`)
+        expect(rawBody).toContain(`Content-Type: ${expected.contentType}`)
+        expect(rawBody).toContain(expected.contents)
+        expect(rawBody).toContain(`--${boundary}--`)
+    }
+
     describe('file path uploads', () => {
         test('uploads file from path without fileName', async () => {
-            const mockStream = new Readable()
-            mockedFs.createReadStream.mockReturnValue(mockStream as fs.ReadStream)
+            mockedFs.openAsBlob.mockResolvedValue(new Blob(['on-disk-contents']))
+            const captured = captureRawBody()
 
             const result = await uploadMultipartFile({
                 baseUrl: baseUrl,
@@ -46,19 +89,21 @@ describe('uploadMultipartFile', () => {
                 requestId: 'req-123',
             })
 
-            expect(mockedFs.createReadStream).toHaveBeenCalledWith('/path/to/document.pdf')
+            // Read lazily off disk rather than buffered into memory.
+            expect(mockedFs.openAsBlob).toHaveBeenCalledWith('/path/to/document.pdf')
             expect(result).toEqual(mockResponseData)
 
-            const capturedRequest = getLastRequest()
-            expect(capturedRequest).toBeDefined()
-            expect(capturedRequest?.url).toBe(`${baseUrl}${endpoint}`)
-            expect(capturedRequest?.headers['authorization']).toBe('Bearer test-token')
-            expect(capturedRequest?.headers['x-request-id']).toBe('req-123')
+            expectMultipart(captured, {
+                fileName: 'document.pdf',
+                contentType: 'application/octet-stream',
+                contents: 'on-disk-contents',
+            })
+            expect(captured.getRawBody()).toContain('name="project_id"')
         })
 
         test('uploads file from path with custom fileName', async () => {
-            const mockStream = new Readable()
-            mockedFs.createReadStream.mockReturnValue(mockStream as fs.ReadStream)
+            mockedFs.openAsBlob.mockResolvedValue(new Blob(['on-disk-contents']))
+            const captured = captureRawBody()
 
             await uploadMultipartFile({
                 baseUrl: baseUrl,
@@ -69,32 +114,35 @@ describe('uploadMultipartFile', () => {
                 additionalFields: {},
             })
 
-            expect(mockedFs.createReadStream).toHaveBeenCalledWith('/path/to/document.pdf')
-
-            const capturedRequest = getLastRequest()
-            expect(capturedRequest).toBeDefined()
+            expect(mockedFs.openAsBlob).toHaveBeenCalledWith('/path/to/document.pdf')
+            expectMultipart(captured, {
+                fileName: 'custom-name.pdf',
+                contentType: 'application/octet-stream',
+                contents: 'on-disk-contents',
+            })
         })
     })
 
     describe('Buffer uploads', () => {
         test('uploads file from Buffer with fileName', async () => {
-            const buffer = Buffer.from('test file content')
+            const captured = captureRawBody()
 
             const result = await uploadMultipartFile({
                 baseUrl: baseUrl,
                 authToken: authToken,
                 endpoint: endpoint,
-                file: buffer,
-                fileName: 'test-file.pdf',
+                file: Buffer.from('test file content'),
+                fileName: 'test-file.png',
                 additionalFields: { workspace_id: 456 },
             })
 
             expect(result).toEqual(mockResponseData)
-
-            const capturedRequest = getLastRequest()
-            expect(capturedRequest).toBeDefined()
-            expect(capturedRequest?.url).toBe(`${baseUrl}${endpoint}`)
-            expect(capturedRequest?.headers['authorization']).toBe('Bearer test-token')
+            expectMultipart(captured, {
+                fileName: 'test-file.png',
+                contentType: 'image/png',
+                contents: 'test file content',
+            })
+            expect(captured.getRawBody()).toContain('name="workspace_id"')
         })
 
         test('throws error when Buffer provided without fileName', async () => {
@@ -115,21 +163,39 @@ describe('uploadMultipartFile', () => {
 
     describe('Stream uploads', () => {
         test('uploads file from stream with fileName', async () => {
-            const mockStream = new Readable()
+            const captured = captureRawBody()
 
             const result = await uploadMultipartFile({
                 baseUrl: baseUrl,
                 authToken: authToken,
                 endpoint: endpoint,
-                file: mockStream,
+                file: Readable.from([Buffer.from('streamed-'), Buffer.from('contents')]),
                 fileName: 'stream-file.pdf',
                 additionalFields: { delete: true },
             })
 
             expect(result).toEqual(mockResponseData)
+            expectMultipart(captured, {
+                fileName: 'stream-file.pdf',
+                contentType: 'application/octet-stream',
+                contents: 'streamed-contents',
+            })
+            expect(captured.getRawBody()).toContain('name="delete"')
+        })
 
-            const capturedRequest = getLastRequest()
-            expect(capturedRequest).toBeDefined()
+        test('accepts a stream that yields strings', async () => {
+            const captured = captureRawBody()
+
+            await uploadMultipartFile({
+                baseUrl: baseUrl,
+                authToken: authToken,
+                endpoint: endpoint,
+                file: Readable.from(['string-chunk']),
+                fileName: 'stream-file.pdf',
+                additionalFields: {},
+            })
+
+            expect(captured.getRawBody()).toContain('string-chunk')
         })
 
         test('throws error when stream provided without fileName', async () => {
@@ -148,9 +214,76 @@ describe('uploadMultipartFile', () => {
         })
     })
 
+    describe('Blob uploads', () => {
+        test('encodes a Blob as a real multipart body', async () => {
+            const captured = captureRawBody()
+
+            await uploadMultipartFile({
+                baseUrl: baseUrl,
+                authToken: authToken,
+                endpoint: endpoint,
+                file: new Blob(['file-contents'], { type: 'image/png' }),
+                fileName: 'screenshot.png',
+                additionalFields: { project_id: '123' },
+            })
+
+            expectMultipart(captured, {
+                fileName: 'screenshot.png',
+                contentType: 'image/png',
+                contents: 'file-contents',
+            })
+            expect(captured.getRawBody()).toContain('name="project_id"')
+        })
+
+        test('falls back to the file name for the part content type', async () => {
+            const captured = captureRawBody()
+
+            await uploadMultipartFile({
+                baseUrl: baseUrl,
+                authToken: authToken,
+                endpoint: endpoint,
+                file: new Blob(['file-contents']),
+                fileName: 'photo.jpg',
+                additionalFields: {},
+            })
+
+            expect(captured.getRawBody()).toContain('Content-Type: image/jpeg')
+        })
+
+        test('uses the File name when no fileName is given', async () => {
+            const captured = captureRawBody()
+
+            await uploadMultipartFile({
+                baseUrl: baseUrl,
+                authToken: authToken,
+                endpoint: endpoint,
+                file: new File(['file-contents'], 'from-file-object.png', { type: 'image/png' }),
+                fileName: undefined,
+                additionalFields: {},
+            })
+
+            expect(captured.getRawBody()).toContain('filename="from-file-object.png"')
+        })
+
+        test('escapes quotes in the file name', async () => {
+            const captured = captureRawBody()
+
+            await uploadMultipartFile({
+                baseUrl: baseUrl,
+                authToken: authToken,
+                endpoint: endpoint,
+                file: new Blob(['file-contents']),
+                fileName: 'we"ird.png',
+                additionalFields: {},
+            })
+
+            expect(captured.getRawBody()).toContain('filename="we%22ird.png"')
+        })
+    })
+
     describe('additional fields handling', () => {
         test('filters out null and undefined values', async () => {
-            const buffer = Buffer.from('test')
+            const captured = captureRawBody()
 
             const additionalFields: Record<string, string | number | boolean> = {
                 field1: 'value1',
@@ -171,115 +304,58 @@ describe('uploadMultipartFile', () => {
                 baseUrl: baseUrl,
                 authToken: authToken,
                 endpoint: endpoint,
-                file: buffer,
+                file: Buffer.from('test'),
                 fileName: 'test.pdf',
                 additionalFields: additionalFields,
             })
 
-            const capturedRequest = getLastRequest()
-            expect(capturedRequest).toBeDefined()
-            // We can't easily test FormData contents, but we verified the method doesn't throw
+            const rawBody = captured.getRawBody()
+            expect(rawBody).toContain('name="field1"')
+            // Falsy values are still values and must survive.
+            expect(rawBody).toContain('name="field4"')
+            expect(rawBody).toContain('name="field5"')
+            expect(rawBody).not.toContain('name="field2"')
+            expect(rawBody).not.toContain('name="field3"')
         })
 
         test('handles empty additional fields', async () => {
-            const buffer = Buffer.from('test')
+            const captured = captureRawBody()
 
             await uploadMultipartFile({
                 baseUrl: baseUrl,
                 authToken: authToken,
                 endpoint: endpoint,
-                file: buffer,
+                file: Buffer.from('test'),
                 fileName: 'test.pdf',
                 additionalFields: {},
             })
 
-            const capturedRequest = getLastRequest()
-            expect(capturedRequest).toBeDefined()
-        })
-    })
-
-    describe('Blob uploads', () => {
-        // These assert the encoded bytes on the wire rather than a parsed
-        // `FormData`. A `FormData` body is only encoded by the `fetch` that
-        // owns that `FormData` class, and the SDK dispatches through undici's
-        // own `fetch`, so a body built from the global `FormData` would be sent
-        // as the literal string "[object FormData]" with no file in it — which
-        // a `request.formData()` based assertion cannot see.
-        function captureRawBody() {
-            let rawBody: string | undefined
-            let contentType: string | undefined
-            server.use(
-                http.post(`${baseUrl}${endpoint}`, async ({ request }) => {
-                    contentType = request.headers.get('content-type') ?? undefined
-                    rawBody = await request.text()
-                    return HttpResponse.json(mockResponseData, { status: 200 })
-                }),
-            )
-            return {
-                getRawBody: () => rawBody,
-                getContentType: () => contentType,
-            }
-        }
-
-        test('encodes a Blob as a real multipart body', async () => {
-            const { getRawBody, getContentType } = captureRawBody()
-
-            await uploadMultipartFile({
-                baseUrl: baseUrl,
-                authToken: authToken,
-                endpoint: endpoint,
-                file: new Blob(['file-contents'], { type: 'image/png' }),
-                fileName: 'screenshot.png',
-                additionalFields: { project_id: '123' },
-            })
-
-            const contentType = getContentType()
-            const boundary = /boundary=(.+)$/.exec(contentType ?? '')?.[1]
-            expect(boundary).toBeDefined()
-
-            const rawBody = getRawBody() ?? ''
-            expect(rawBody).not.toBe('[object FormData]')
-            expect(rawBody).toContain(`--${boundary}`)
-            expect(rawBody).toContain('name="file"; filename="screenshot.png"')
-            expect(rawBody).toContain('Content-Type: image/png')
-            expect(rawBody).toContain('file-contents')
-            expect(rawBody).toContain('name="project_id"')
-            expect(rawBody).toContain(`--${boundary}--`)
-        })
-
-        test('falls back to the file name for the part content type', async () => {
-            const { getRawBody } = captureRawBody()
-
-            await uploadMultipartFile({
-                baseUrl: baseUrl,
-                authToken: authToken,
-                endpoint: endpoint,
-                file: new Blob(['file-contents']),
-                fileName: 'photo.jpg',
-                additionalFields: {},
-            })
-
-            expect(getRawBody()).toContain('Content-Type: image/jpeg')
-        })
-
-        test('escapes quotes in the file name', async () => {
-            const { getRawBody } = captureRawBody()
-
-            await uploadMultipartFile({
-                baseUrl: baseUrl,
-                authToken: authToken,
-                endpoint: endpoint,
-                file: new Blob(['file-contents']),
-                fileName: 'we"ird.png',
-                additionalFields: {},
-            })
-
-            expect(getRawBody()).toContain('filename="we%22ird.png"')
+            const boundary = captured.getBoundary()
+            expect(captured.getRawBody()).toContain(`--${boundary}--`)
         })
     })
 
     describe('headers handling', () => {
-        test('includes FormData headers', async () => {
+        test('sets the multipart content type with our own boundary', async () => {
+            const captured = captureRawBody()
+
+            await uploadMultipartFile({
+                baseUrl: baseUrl,
+                authToken: authToken,
+                endpoint: endpoint,
+                file: Buffer.from('test'),
+                fileName: 'test.pdf',
+                additionalFields: {},
+            })
+
+            // The boundary is ours, so it has to be declared explicitly —
+            // `fetch` only fills this in for a `FormData` body.
+            expect(captured.getContentType()).toMatch(
+                /^multipart\/form-data; boundary=----todoist-sdk-/,
+            )
+        })
+
+        test('includes the auth header', async () => {
             const buffer = Buffer.from('test')
 
             await uploadMultipartFile({
@@ -294,7 +370,6 @@ describe('uploadMultipartFile', () => {
             const capturedRequest = getLastRequest()
             expect(capturedRequest).toBeDefined()
             expect(capturedRequest?.headers['authorization']).toBe('Bearer test-token')
-            // FormData.getHeaders() is mocked, so we can't test specific multipart headers
         })
 
         test('omits X-Request-Id when not provided', async () => {

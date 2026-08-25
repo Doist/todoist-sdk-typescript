@@ -58,8 +58,7 @@ describe('TodoistApi uploads', () => {
         })
 
         test('uploads file from file path', async () => {
-            const mockStream = new Readable()
-            mockedFs.createReadStream.mockReturnValue(mockStream as fs.ReadStream)
+            mockedFs.openAsBlob.mockResolvedValue(new Blob(['on-disk-contents']))
 
             const api = new TodoistApi('token')
 
@@ -68,7 +67,7 @@ describe('TodoistApi uploads', () => {
                 projectId: '12345',
             })
 
-            expect(mockedFs.createReadStream).toHaveBeenCalledWith('/path/to/document.pdf')
+            expect(mockedFs.openAsBlob).toHaveBeenCalledWith('/path/to/document.pdf')
 
             const capturedRequest = getLastRequest()
             expect(capturedRequest).toBeDefined()
@@ -76,8 +75,7 @@ describe('TodoistApi uploads', () => {
         })
 
         test('uploads file from file path with custom fileName', async () => {
-            const mockStream = new Readable()
-            mockedFs.createReadStream.mockReturnValue(mockStream as fs.ReadStream)
+            mockedFs.openAsBlob.mockResolvedValue(new Blob(['on-disk-contents']))
 
             const api = new TodoistApi('token')
 
@@ -86,14 +84,15 @@ describe('TodoistApi uploads', () => {
                 fileName: 'custom-name.pdf',
             })
 
-            expect(mockedFs.createReadStream).toHaveBeenCalledWith('/path/to/document.pdf')
+            expect(mockedFs.openAsBlob).toHaveBeenCalledWith('/path/to/document.pdf')
 
             const capturedRequest = getLastRequest()
             expect(capturedRequest).toBeDefined()
         })
 
         test('uploads file from stream with fileName', async () => {
-            const mockStream = new Readable()
+            // A real readable: the stream is consumed to build the request body.
+            const mockStream = Readable.from([Buffer.from('streamed-contents')])
             const api = new TodoistApi('token')
 
             await api.uploadFile({

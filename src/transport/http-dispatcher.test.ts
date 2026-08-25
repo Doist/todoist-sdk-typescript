@@ -94,10 +94,7 @@ describe('http-dispatcher', () => {
             // response terminates with `Z_DATA_ERROR`. This mirrors how
             // `fetch-with-retry` calls the transport in production.
             const pairedFetch = getDefaultFetch() ?? fetch
-            const response = await pairedFetch(url, {
-                // @ts-expect-error - dispatcher is a valid Node fetch option not in TS lib types
-                dispatcher,
-            })
+            const response = await pairedFetch(url, { dispatcher })
             const body = await response.text()
 
             expect(response.status).toBe(200)
