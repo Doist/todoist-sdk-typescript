@@ -7,14 +7,11 @@
     "homepage": "https://doist.github.io/todoist-sdk-typescript/",
     "license": "MIT",
     "type": "module",
-    "main": "dist/cjs/index.js",
-    "module": "dist/esm/index.js",
     "types": "dist/types/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/types/index.d.ts",
-            "import": "./dist/esm/index.js",
-            "require": "./dist/cjs/index.js"
+            "default": "./dist/esm/index.js"
         }
     },
     "publishConfig": {
@@ -36,13 +33,11 @@
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
         "api:request": "node ./scripts/todoist-api-request.cjs",
-        "build:cjs": "npx tsc -p tsconfig.cjs.json",
         "build:esm": "npx tsc -p tsconfig.esm.json",
         "build:fix-esm": "node scripts/fix-esm-imports.cjs",
         "build:fix-dts": "node scripts/fix-dts-imports.cjs",
-        "build:post": "echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
-        "build": "npm-run-all clean build:cjs build:esm build:fix-esm build:fix-dts build:post",
-        "attw": "attw --pack --ignore-rules fallback-condition false-esm",
+        "build": "npm-run-all clean build:esm build:fix-esm build:fix-dts",
+        "attw": "attw --pack --ignore-rules cjs-resolves-to-esm",
         "integrity-checks": "npm-run-all clean check test build attw",
         "prepublishOnly": "npm run integrity-checks",
         "prepare": "npm run build"
@@ -51,6 +46,7 @@
         "fflate": "0.8.2"
     },
     "dependencies": {
+        "@doist/sdk-kmp": "0.2.1",
         "camelcase": "6.3.0",
         "emoji-regex": "10.6.0",
         "ts-custom-error": "^3.2.0",
@@ -91,7 +87,6 @@
         "*.{ts,tsx,json,md,yml,yaml}": "oxfmt --no-error-on-unmatched-pattern"
     },
     "files": [
-        "dist/cjs/**/*",
         "dist/esm/**/*",
         "dist/types/**/*",
         "!dist/**/*.test.js",
