@@ -125,6 +125,29 @@ const refreshed = await refreshAuthToken({
 > refresh. For public clients (`tokenEndpointAuthMethod: 'none'`), omit
 > `clientSecret` when calling `refreshAuthToken`.
 
+### Keeping Proxy Support and Response Decompression
+
+On Node, the SDK's default transport reads the proxy environment variables (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`) and decodes compressed response bodies. Supplying a `customFetch` replaces that transport, so a custom implementation that still wants both can borrow it with `getDefaultTransport`:
+
+```typescript
+import { getDefaultTransport, TodoistApi } from '@doist/todoist-sdk'
+
+const customFetch = async (url, options) => {
+    const transport = await getDefaultTransport()
+    const fetchImpl = transport?.fetch ?? fetch
+
+    return fetchImpl(url, {
+        ...options,
+        headers: { ...options?.headers, 'x-my-header': 'value' },
+        dispatcher: transport?.dispatcher,
+    })
+}
+
+const api = new TodoistApi('YOURTOKEN', { customFetch })
+```
+
+`getDefaultTransport` returns the dispatcher and the `fetch` it must be used with as a single value, and both halves have to be used together. The dispatcher decompresses the response body itself, so pairing it with a `fetch` from a different undici build — including the runtime's global `fetch` on Node 26 — decodes the body twice and the request fails mid-stream with `terminated`. A `fetch` of `undefined` means the global `fetch` is the correct partner; the whole value is `undefined` outside Node, where no dispatcher applies.
+
 ### Important Notes
 
 - All existing transforms (snake_case ↔ camelCase) work automatically with custom fetch

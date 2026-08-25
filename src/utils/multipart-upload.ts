@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid'
 import { fetchWithRetry } from '../transport/fetch-with-retry'
 import type { HttpResponse, CustomFetch } from '../types/http'
 import { camelCaseKeys } from './case-conversion'
@@ -35,6 +36,62 @@ function getContentTypeFromFileName(fileName: string): string {
         default:
             return 'application/octet-stream'
     }
+}
+
+/**
+ * Escapes a value for use inside a `Content-Disposition` parameter, which is
+ * quoted and therefore cannot carry a raw quote or line break.
+ */
+function escapeDispositionValue(value: string): string {
+    return value.replace(/"/g, '%22').replace(/\r?\n/g, ' ')
+}
+
+/**
+ * Builds a `multipart/form-data` body as a `Blob`, together with the
+ * `Content-Type` that describes it.
+ *
+ * A `FormData` body is only encoded by the `fetch` that owns that `FormData`
+ * class. undici brands its own, so a global `FormData` passed to undici's
+ * `fetch` — or an undici one passed to the runtime's global `fetch` — is
+ * stringified to the literal `"[object FormData]"` and the upload silently
+ * sends no file. `Blob` carries no such brand, so encoding the body ourselves
+ * works whichever `fetch` ends up dispatching the request, including a
+ * caller-supplied `customFetch`.
+ *
+ * File-backed Blobs (for example from `fs.openAsBlob`) stay lazy when composed
+ * into another Blob, so the file is not read into memory here.
+ */
+function buildBlobMultipartBody(args: {
+    file: Blob
+    fileName: string
+    additionalFields: Record<string, string | number | boolean>
+}): { body: Blob; contentType: string } {
+    const { file, fileName, additionalFields } = args
+    const boundary = `----todoist-sdk-${uuidv4()}`
+    const parts: BlobPart[] = []
+
+    const fileContentType = file.type || getContentTypeFromFileName(fileName)
+    parts.push(
+        `--${boundary}\r\n` +
+            `Content-Disposition: form-data; name="file"; filename="${escapeDispositionValue(fileName)}"\r\n` +
+            `Content-Type: ${fileContentType}\r\n\r\n`,
+        file,
+        '\r\n',
+    )
+
+    for (const [key, value] of Object.entries(additionalFields)) {
+        if (value !== undefined && value !== null) {
+            parts.push(
+                `--${boundary}\r\n` +
+                    `Content-Disposition: form-data; name="${escapeDispositionValue(key)}"\r\n\r\n` +
+                    `${value.toString()}\r\n`,
+            )
+        }
+    }
+
+    parts.push(`--${boundary}--\r\n`)
+
+    return { body: new Blob(parts), contentType: `multipart/form-data; boundary=${boundary}` }
 }
 
 /**
@@ -103,20 +160,18 @@ export async function uploadMultipartFile(args: UploadMultipartFileArgs): Promis
     }
 
     if (file instanceof Blob) {
-        // Browser path: use native FormData
-        const form = new globalThis.FormData()
         const resolvedFileName =
             fileName || (file instanceof File ? file.name : undefined) || 'upload'
-        form.append('file', file, resolvedFileName)
+        const multipart = buildBlobMultipartBody({
+            file,
+            fileName: resolvedFileName,
+            additionalFields,
+        })
 
-        for (const [key, value] of Object.entries(additionalFields)) {
-            if (value !== undefined && value !== null) {
-                form.append(key, value.toString())
-            }
-        }
-
-        // Don't set Content-Type — let fetch set it with the correct multipart boundary
-        body = form
+        // The boundary is ours, so the Content-Type has to be set explicitly —
+        // `fetch` only fills it in for a `FormData` body.
+        headers['Content-Type'] = multipart.contentType
+        body = multipart.body
     } else {
         // Node path: dynamically import Node-only modules
         const [FormDataModule, fsModule, pathModule] = await Promise.all([

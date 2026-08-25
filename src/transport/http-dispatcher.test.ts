@@ -7,6 +7,7 @@ import { server } from '../test-utils/msw-setup'
 import {
     getDefaultDispatcher,
     getDefaultFetch,
+    getDefaultTransport,
     resetDefaultDispatcherForTests,
     suppressExperimentalWarningsSync,
 } from './http-dispatcher'
@@ -34,6 +35,15 @@ describe('http-dispatcher', () => {
         // The bridge that fixes the version mismatch: the resolved transport
         // must carry undici's own `fetch`, not the global one.
         expect(getDefaultFetch()).toBe(undiciFetch)
+    })
+
+    test('exposes the dispatcher and its fetch as one value', async () => {
+        const transport = await getDefaultTransport()
+
+        // Consumers read both halves from a single resolved value, so they
+        // cannot end up with a dispatcher paired with a mismatched `fetch`.
+        expect(transport?.dispatcher).toBe(await getDefaultDispatcher())
+        expect(transport?.fetch).toBe(undiciFetch)
     })
 
     test('caches the dispatcher instance', async () => {
@@ -78,7 +88,13 @@ describe('http-dispatcher', () => {
 
         try {
             const dispatcher = await getDefaultDispatcher()
-            const response = await fetch(url, {
+            // Use the `fetch` the dispatcher is paired with, not the global
+            // one. The dispatcher decompresses the body itself, so a `fetch`
+            // from a different undici build decodes it a second time and the
+            // response terminates with `Z_DATA_ERROR`. This mirrors how
+            // `fetch-with-retry` calls the transport in production.
+            const pairedFetch = getDefaultFetch() ?? fetch
+            const response = await pairedFetch(url, {
                 // @ts-expect-error - dispatcher is a valid Node fetch option not in TS lib types
                 dispatcher,
             })
