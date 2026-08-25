@@ -265,6 +265,41 @@ describe('uploadMultipartFile', () => {
             expect(captured.getRawBody()).toContain('filename="from-file-object.png"')
         })
 
+        test('percent-encodes line breaks in the file name', async () => {
+            const captured = captureRawBody()
+
+            // The header-injection case: a raw CR or LF would end the
+            // Content-Disposition header and let a crafted name forge one.
+            await uploadMultipartFile({
+                baseUrl: baseUrl,
+                authToken: authToken,
+                endpoint: endpoint,
+                file: new Blob(['file-contents']),
+                fileName: 'evil\r\nX-Injected: yes.png',
+                additionalFields: {},
+            })
+
+            const rawBody = captured.getRawBody()
+            expect(rawBody).toContain('filename="evil%0D%0AX-Injected: yes.png"')
+            expect(rawBody).not.toContain('\r\nX-Injected: yes')
+            expect(rawBody.match(/Content-Disposition: form-data; name="file"/g)).toHaveLength(1)
+        })
+
+        test('percent-encodes line breaks in a field name', async () => {
+            const captured = captureRawBody()
+
+            await uploadMultipartFile({
+                baseUrl: baseUrl,
+                authToken: authToken,
+                endpoint: endpoint,
+                file: new Blob(['file-contents']),
+                fileName: 'a.png',
+                additionalFields: { 'evil\r\nX-Injected: yes': '1' },
+            })
+
+            expect(captured.getRawBody()).not.toContain('\r\nX-Injected: yes')
+        })
+
         test('escapes quotes in the file name', async () => {
             const captured = captureRawBody()
 

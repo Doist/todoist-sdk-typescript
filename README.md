@@ -130,17 +130,39 @@ const refreshed = await refreshAuthToken({
 On Node, the SDK's default transport reads the proxy environment variables (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`) and decodes compressed response bodies. Supplying a `customFetch` replaces that transport, so a custom implementation that still wants both can borrow it with `getDefaultTransport`:
 
 ```typescript
-import { getDefaultTransport, TodoistApi } from '@doist/todoist-sdk'
+import { type CustomFetch, getDefaultTransport, TodoistApi } from '@doist/todoist-sdk'
 
-const customFetch = async (url, options) => {
+const customFetch: CustomFetch = async (url, options) => {
     const transport = await getDefaultTransport()
-    const fetchImpl = transport?.fetch ?? fetch
+    // undici's `fetch` and the global one are the same call at runtime but
+    // carry different types, so settle on one signature.
+    const fetchImpl = (transport?.fetch ?? fetch) as typeof fetch
 
-    return fetchImpl(url, {
+    const response = await fetchImpl(url, {
         ...options,
-        headers: { ...options?.headers, 'x-my-header': 'value' },
+        headers: {
+            ...(options?.headers as Record<string, string> | undefined),
+            'x-my-header': 'value',
+        },
+        // `dispatcher` is a Node fetch option that the DOM types don't declare.
         dispatcher: transport?.dispatcher,
+    } as RequestInit)
+
+    // `CustomFetchResponse` wants plain-object headers, not a `Headers`.
+    const headers: Record<string, string> = {}
+    response.headers.forEach((value, key) => {
+        headers[key] = value
     })
+
+    return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+        text: () => response.text(),
+        json: () => response.json(),
+        arrayBuffer: () => response.arrayBuffer(),
+    }
 }
 
 const api = new TodoistApi('YOURTOKEN', { customFetch })
@@ -153,7 +175,7 @@ const api = new TodoistApi('YOURTOKEN', { customFetch })
 - All existing transforms (snake_case ↔ camelCase) work automatically with custom fetch
 - Retry logic and error handling are preserved
 - File uploads work with custom fetch implementations
-- The custom fetch function should handle FormData for multipart uploads
+- File upload bodies are a `Blob`, or a `ReadableStream` when uploading from a stream — a custom fetch must pass them through unchanged
 - Timeout parameter is optional and up to your custom implementation
 
 ## Development and Testing

@@ -39,11 +39,15 @@ function getContentTypeFromFileName(fileName: string): string {
 }
 
 /**
- * Escapes a value for use inside a `Content-Disposition` parameter, which is
- * quoted and therefore cannot carry a raw quote or line break.
+ * Escapes a value for use inside a quoted `Content-Disposition` parameter,
+ * where a raw quote would end the value early and a raw CR or LF would end the
+ * header. Note that a lone CR needs escaping too, not just CRLF pairs.
+ *
+ * This is the same escaping the platform's own `FormData` encoder applies, so
+ * servers see exactly what they would from any browser or from undici.
  */
 function escapeDispositionValue(value: string): string {
-    return value.replace(/"/g, '%22').replace(/\r?\n/g, ' ')
+    return value.replace(/"/g, '%22').replace(/\r/g, '%0D').replace(/\n/g, '%0A')
 }
 
 type MultipartParts = {
@@ -110,8 +114,10 @@ function streamMultipartBody(
 
     const iterator = chunks()
 
-    // Built by hand rather than with `Readable.toWeb` so this module stays free
-    // of Node-only imports on the paths that do not need them.
+    // Driven by hand rather than with `ReadableStream.from`, which is absent
+    // from this project's DOM lib types and is still missing in some browsers,
+    // or `Readable.toWeb`, which would drag a Node-only import into a module
+    // that browsers also load.
     return new ReadableStream<Uint8Array>({
         async pull(controller) {
             const { value, done } = await iterator.next()
