@@ -219,6 +219,9 @@ export const TODOIST_LINK_TYPES = [
     'label',
     'section',
     'workspace',
+    'template',
+    'comment',
+    'label_by_name',
 ] as const
 
 /** The kind of Todoist entity a URL points at. */
@@ -237,13 +240,20 @@ export type TodoistUrlInfo = {
 }
 
 /**
- * Checks whether a parsed link type is one this SDK knows about.
- *
- * @param value The link type name to check.
- * @returns Whether the value is a known link type.
+ * Maps the link parser's type names onto the types this SDK exposes. A name
+ * that is missing here is one this SDK does not know about, and is treated as
+ * an unrecognised URL rather than surfaced as a value outside the union.
  */
-function isTodoistLinkType(value: string): value is TodoistLinkType {
-    return (TODOIST_LINK_TYPES as readonly string[]).includes(value)
+const LINK_TYPE_BY_PARSED_NAME: Record<string, TodoistLinkType> = {
+    Task: 'task',
+    Project: 'project',
+    Filter: 'filter',
+    Label: 'label',
+    Section: 'section',
+    Workspace: 'workspace',
+    Template: 'template',
+    Comment: 'comment',
+    LabelByName: 'label_by_name',
 }
 
 /**
@@ -258,8 +268,8 @@ export function parseTodoistUrl(url: string): TodoistUrlInfo | null {
         return null
     }
 
-    const type = link.type.name.toLowerCase()
-    if (!isTodoistLinkType(type)) {
+    const type = LINK_TYPE_BY_PARSED_NAME[link.type.name]
+    if (!type) {
         return null
     }
 

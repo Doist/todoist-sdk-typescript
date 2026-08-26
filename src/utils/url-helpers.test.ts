@@ -261,7 +261,7 @@ describe('parseTodoistUrl', () => {
         })
     })
 
-    test('only ever returns a declared link type', () => {
+    test('maps every URL this SDK can build back to its declared type', () => {
         const urls = [
             getTaskUrl('1', 'Task'),
             getProjectUrl('2', 'Project'),
@@ -271,7 +271,24 @@ describe('parseTodoistUrl', () => {
             getWorkspaceUrl('6'),
         ]
         const types = urls.map((url) => parseTodoistUrl(url)?.type)
-        expect(types).toEqual([...TODOIST_LINK_TYPES])
+        expect(types).toEqual(['task', 'project', 'filter', 'label', 'section', 'workspace'])
+    })
+
+    test('parses a template URL', () => {
+        // Templates have no builder; they are recognised on parse only.
+        expect(parseTodoistUrl('https://todoist.com/templates/team-standup-123')).toEqual({
+            type: 'template',
+            id: 'team-standup-123',
+            workspaceId: null,
+            commentId: null,
+        })
+    })
+
+    test('every declared type is a known link type', () => {
+        expect(new Set(TODOIST_LINK_TYPES).size).toBe(TODOIST_LINK_TYPES.length)
+        expect(TODOIST_LINK_TYPES).toContain('template')
+        expect(TODOIST_LINK_TYPES).toContain('comment')
+        expect(TODOIST_LINK_TYPES).toContain('label_by_name')
     })
 
     test('returns null for a non-Todoist URL', () => {
