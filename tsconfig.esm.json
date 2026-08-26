@@ -5,6 +5,7 @@
         "module": "esnext",
         "moduleResolution": "bundler",
         "outDir": "dist/esm",
-        "declaration": false
+        "declaration": true,
+        "declarationDir": "dist/types"
     }
 }
