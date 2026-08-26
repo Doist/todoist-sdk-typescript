@@ -1,3 +1,13 @@
+## [15.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v14.2.0...v15.0.0) (2026-08-26)
+
+### ⚠ BREAKING CHANGES
+
+* generate URLs via @doist/sdk-kmp and drop the CommonJS build (#675)
+
+### Features
+
+* generate URLs via @doist/sdk-kmp and drop the CommonJS build ([#675](https://github.com/Doist/todoist-sdk-typescript/issues/675)) ([cdeeae9](https://github.com/Doist/todoist-sdk-typescript/commit/cdeeae9580acc4d5d33dc7a1aa7039a3dd1d3368))
+
 ## [14.2.0](https://github.com/Doist/todoist-sdk-typescript/compare/v14.1.0...v14.2.0) (2026-08-25)
 
 ### Features
