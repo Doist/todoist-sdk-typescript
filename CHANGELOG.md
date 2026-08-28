@@ -1,3 +1,9 @@
+## [15.0.1](https://github.com/Doist/todoist-sdk-typescript/compare/v15.0.0...v15.0.1) (2026-08-28)
+
+### Bug Fixes
+
+* align Sync resource schemas with API responses ([#676](https://github.com/Doist/todoist-sdk-typescript/issues/676)) ([6eff63b](https://github.com/Doist/todoist-sdk-typescript/commit/6eff63b244fad688fa290beaecb2a95e3ee9b5f7))
+
 ## [15.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v14.2.0...v15.0.0) (2026-08-26)
 
 ### ⚠ BREAKING CHANGES
