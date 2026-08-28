@@ -1,3 +1,9 @@
+## [15.0.2](https://github.com/Doist/todoist-sdk-typescript/compare/v15.0.1...v15.0.2) (2026-08-28)
+
+### Bug Fixes
+
+* normalize Todoist user API responses ([#677](https://github.com/Doist/todoist-sdk-typescript/issues/677)) ([c4cd7d3](https://github.com/Doist/todoist-sdk-typescript/commit/c4cd7d38aa97bbac9c6d6ce0aef580b6fd2c11fc))
+
 ## [15.0.1](https://github.com/Doist/todoist-sdk-typescript/compare/v15.0.0...v15.0.1) (2026-08-28)
 
 ### Bug Fixes
