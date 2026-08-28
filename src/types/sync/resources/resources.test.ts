@@ -718,13 +718,18 @@ describe('Sync resource schemas', () => {
             expect(result.fullName).toBe(validUser.fullName)
         })
 
-        test('transforms enabled karmaDisabled to true', () => {
-            const result = SyncUserSchema.parse({
+        test('accepts numeric and boolean karmaDisabled values', () => {
+            const numericResult = SyncUserSchema.parse({
                 ...validUser,
                 features: { ...validUser.features, karmaDisabled: 1 },
             })
+            const booleanResult = SyncUserSchema.parse({
+                ...validUser,
+                features: { ...validUser.features, karmaDisabled: true },
+            })
 
-            expect(result.features.karmaDisabled).toBe(true)
+            expect(numericResult.features.karmaDisabled).toBe(true)
+            expect(booleanResult.features.karmaDisabled).toBe(true)
         })
 
         test('validates with optional onboarding fields', () => {

@@ -106,7 +106,6 @@ describe('Obsidian Custom Fetch Integration', () => {
                 inboxProjectId: '123',
                 daysOff: [6, 7],
                 weekendStartDay: 6,
-                websocketUrl: 'wss://ws.todoist.com/ws?token=example',
             }
 
             server.use(

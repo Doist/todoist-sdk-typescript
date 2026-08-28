@@ -39,7 +39,6 @@ const MOCK_CURRENT_USER: CurrentUser = {
     inboxProjectId: 'test_project_123',
     daysOff: [6, 7],
     weekendStartDay: 6,
-    websocketUrl: 'wss://ws.todoist.com/ws?token=example',
 }
 
 describe('Custom Fetch Core Functionality', () => {

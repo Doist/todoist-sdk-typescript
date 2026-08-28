@@ -56,7 +56,7 @@ export const CurrentUserSchema = z.object({
     inboxProjectId: z.string(),
     daysOff: z.array(z.number().int()),
     weekendStartDay: z.number().int(),
-    websocketUrl: z.string(),
+    websocketUrl: z.string().optional(),
 })
 /**
  * Represents the current authenticated user with detailed information.
