@@ -322,7 +322,7 @@ describe('parseSyncResponse', () => {
             daysOff: [6, 7],
             featureIdentifier: 'abc',
             features: {
-                karmaDisabled: false,
+                karmaDisabled: 0,
                 restriction: 0,
                 karmaVacation: false,
                 dateistLang: null,
@@ -374,6 +374,7 @@ describe('parseSyncResponse', () => {
         expect(result.user?.timeFormat).toBe('24h')
         expect(result.user?.startDay).toBe('Monday')
         expect(result.user?.nextWeek).toBe('Monday')
+        expect(result.user?.features.karmaDisabled).toBe(false)
         expect(result.user?.features.beta).toBe(true)
         expect(result.user?.tzInfo.isDst).toBe(false)
     })

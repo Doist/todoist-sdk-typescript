@@ -40,6 +40,7 @@ const DEFAULT_CURRENT_USER_RESPONSE: CurrentUser = {
     inboxProjectId: 'test_project_123',
     daysOff: [6, 7],
     weekendStartDay: 6,
+    websocketUrl: 'wss://ws.todoist.com/ws?token=example',
 }
 
 const PRODUCTIVITY_STATS_RESPONSE = {
