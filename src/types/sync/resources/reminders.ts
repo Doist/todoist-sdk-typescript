@@ -64,3 +64,23 @@ export const ReminderSchema = z.discriminatedUnion('type', [
 ])
 
 export type Reminder = z.infer<typeof ReminderSchema>
+
+export const SyncAbsoluteReminderSchema = AbsoluteReminderSchema.extend({
+    due: DueDateSchema.nullable(),
+})
+
+export type SyncAbsoluteReminder = z.infer<typeof SyncAbsoluteReminderSchema>
+
+export const SyncRelativeReminderSchema = RelativeReminderSchema.extend({
+    due: DueDateSchema.nullable().optional(),
+})
+
+export type SyncRelativeReminder = z.infer<typeof SyncRelativeReminderSchema>
+
+export const SyncReminderSchema = z.discriminatedUnion('type', [
+    LocationReminderSchema,
+    SyncAbsoluteReminderSchema,
+    SyncRelativeReminderSchema,
+])
+
+export type SyncReminder = z.infer<typeof SyncReminderSchema>

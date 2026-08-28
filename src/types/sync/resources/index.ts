@@ -1,4 +1,5 @@
 export * from './filters'
+export * from './labels'
 export * from './collaborators'
 export * from './folders'
 export * from './tooltips'

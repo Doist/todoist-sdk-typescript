@@ -267,6 +267,39 @@ describe('parseSyncResponse', () => {
         expect(result.folders).toEqual([DEFAULT_FOLDER])
     })
 
+    test('accepts Sync labels without order and preserves deletion state', () => {
+        const label = {
+            id: 'label-1',
+            name: 'Waiting',
+            color: 'blue',
+            isFavorite: false,
+            isDeleted: true,
+        }
+
+        const result = parseSyncResponse({ labels: [label] })
+
+        expect(result.labels).toEqual([label])
+    })
+
+    test.each(['absolute', 'relative'] as const)(
+        'accepts a null due date on a Sync %s reminder',
+        (type) => {
+            const reminder = {
+                id: 'reminder-1',
+                notifyUid: 'user-1',
+                itemId: 'task-1',
+                isDeleted: true,
+                type,
+                due: null,
+                ...(type === 'relative' ? { minuteOffset: 30 } : {}),
+            }
+
+            const result = parseSyncResponse({ reminders: [reminder] })
+
+            expect(result.reminders).toEqual([reminder])
+        },
+    )
+
     test('throws ZodError for invalid items', () => {
         const response = {
             items: [{ invalid: true }],

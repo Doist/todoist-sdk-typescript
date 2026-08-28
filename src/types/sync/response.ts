@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-import { LabelSchema } from '../labels/types'
 import { ProjectSchema } from '../projects/types'
 import { SectionSchema } from '../sections/types'
 import { TaskSchema } from '../tasks/types'
@@ -15,7 +14,8 @@ import {
     WorkspaceFilterSchema,
     CalendarSchema,
     CalendarAccountSchema,
-    ReminderSchema,
+    SyncLabelSchema,
+    SyncReminderSchema,
     LocationReminderSchema,
     CompletedInfoSchema,
     ViewOptionsSchema,
@@ -46,11 +46,11 @@ export const SyncResponseSchema = z.looseObject({
     items: z.array(TaskSchema).optional(),
     projects: z.array(ProjectSchema).optional(),
     sections: z.array(SectionSchema).optional(),
-    labels: z.array(LabelSchema).optional(),
+    labels: z.array(SyncLabelSchema).optional(),
     notes: z.array(NoteSchema).optional(),
     projectNotes: z.array(NoteSchema).optional(),
     filters: z.array(FilterSchema).optional(),
-    reminders: z.array(ReminderSchema).optional(),
+    reminders: z.array(SyncReminderSchema).optional(),
     remindersLocation: z.array(LocationReminderSchema).optional(),
     locations: z.array(z.record(z.string(), z.unknown())).optional(),
     user: SyncUserSchema.optional(),
