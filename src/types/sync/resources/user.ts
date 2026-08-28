@@ -8,7 +8,7 @@ import {
 } from '../user-preferences'
 
 export const FeaturesSchema = z.looseObject({
-    karmaDisabled: z.boolean(),
+    karmaDisabled: BooleanFromZeroOneSchema,
     restriction: z.number().int(),
     karmaVacation: z.boolean(),
     dateistLang: z.any(),

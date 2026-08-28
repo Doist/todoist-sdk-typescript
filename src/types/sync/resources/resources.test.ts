@@ -655,7 +655,7 @@ describe('Sync resource schemas', () => {
             daysOff: [6, 7],
             featureIdentifier: 'abc',
             features: {
-                karmaDisabled: false,
+                karmaDisabled: 0,
                 restriction: 0,
                 karmaVacation: false,
                 dateistLang: null,
@@ -709,12 +709,22 @@ describe('Sync resource schemas', () => {
             expect(result.startDay).toBe('Monday')
             expect(result.nextWeek).toBe('Monday')
             // 0/1 fields are transformed to booleans
+            expect(result.features.karmaDisabled).toBe(false)
             expect(result.features.beta).toBe(false)
             expect(result.tzInfo.isDst).toBe(false)
             // Non-transformed fields pass through unchanged
             expect(result.id).toBe(validUser.id)
             expect(result.email).toBe(validUser.email)
             expect(result.fullName).toBe(validUser.fullName)
+        })
+
+        test('transforms enabled karmaDisabled to true', () => {
+            const result = SyncUserSchema.parse({
+                ...validUser,
+                features: { ...validUser.features, karmaDisabled: 1 },
+            })
+
+            expect(result.features.karmaDisabled).toBe(true)
         })
 
         test('validates with optional onboarding fields', () => {
