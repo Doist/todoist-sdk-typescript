@@ -1,3 +1,9 @@
+## [15.1.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.0.2...v15.1.0) (2026-09-02)
+
+### Features
+
+* **filters:** add description to filter types ([#668](https://github.com/Doist/todoist-sdk-typescript/issues/668)) ([b7d4679](https://github.com/Doist/todoist-sdk-typescript/commit/b7d467943d1b78238b0da55a3917733d5a38f001))
+
 ## [15.0.2](https://github.com/Doist/todoist-sdk-typescript/compare/v15.0.1...v15.0.2) (2026-08-28)
 
 ### Bug Fixes
