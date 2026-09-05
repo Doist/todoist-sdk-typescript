@@ -11,7 +11,10 @@ export type TaskSortOptions = {
     sortedBy?: SortedBy | null
     /** Saved or requested direction. Defaults by field when absent. */
     sortOrder?: SortOrder | null
-    /** Default hierarchy for this view or filter query. */
+    /**
+     * Default hierarchy for this view or filter query. Today and Upcoming are
+     * date-first; for a filter, {@link isDateDrivenQuery} reads it off the query.
+     */
     defaultOrder: DefaultTaskOrder
 }
 
@@ -392,6 +395,8 @@ function defaultSortOrder(sortedBy: SortedBy): SortOrder {
  *
  * This function sorts only the tasks supplied to it. Fetch every page first
  * when globally correct ordering is required for a paginated query.
+ *
+ * @see isDateDrivenQuery
  */
 export function sortTasks(
     tasks: readonly Task[],
