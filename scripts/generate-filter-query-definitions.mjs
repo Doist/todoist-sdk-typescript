@@ -13,9 +13,10 @@
  * Reading the definitions needs `gh` authenticated against the Doist org.
  */
 
-import { execFileSync } from 'node:child_process'
+import { execFile, execFileSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { promisify } from 'node:util'
 
 const REPO = 'Doist/filterist-definitions'
 const REF = process.env.FILTERIST_DEFINITIONS_REF ?? 'main'
@@ -103,18 +104,41 @@ const OPERATOR_TOKENS = ['LEFT', 'RIGHT', 'NOT', 'AND', 'OR']
 /** The operand a named reference or date argument runs to, shared by most patterns. */
 const OPERAND = String.raw`((?:[^()|&!,\\]|\\.)+)`
 
+const execFileAsync = promisify(execFile)
+const GH_OPTIONS = { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }
+
 const cache = new Map()
 
 function gh(path) {
-    const cached = cache.get(path)
-    if (cached) return cached
+    if (cache.has(path)) return cache.get(path)
 
-    const body = execFileSync('gh', ['api', `repos/${REPO}/${path}`], {
-        encoding: 'utf8',
-        maxBuffer: 64 * 1024 * 1024,
-    })
+    const body = execFileSync('gh', ['api', `repos/${REPO}/${path}`], GH_OPTIONS)
     cache.set(path, body)
     return body
+}
+
+/**
+ * Fetches paths that don't depend on each other at the same time, so the rest
+ * of the run reads them out of the cache. Every file the generator wants sits
+ * at the commit resolved first, which is what makes them independent.
+ */
+async function ghPrefetch(paths) {
+    await Promise.all(
+        paths
+            .filter((path) => !cache.has(path))
+            .map(async (path) => {
+                const { stdout } = await execFileAsync(
+                    'gh',
+                    ['api', `repos/${REPO}/${path}`],
+                    GH_OPTIONS,
+                )
+                cache.set(path, stdout)
+            }),
+    )
+}
+
+function contentsPath(path, ref) {
+    return `contents/${path}?ref=${ref}`
 }
 
 function ghJson(path) {
@@ -122,7 +146,7 @@ function ghJson(path) {
 }
 
 function ghFile(path, ref) {
-    const { content } = ghJson(`contents/${path}?ref=${ref}`)
+    const { content } = ghJson(contentsPath(path, ref))
     return JSON.parse(
         Buffer.from(content, 'base64')
             .toString('utf8')
@@ -157,7 +181,7 @@ function patternLiteral(body) {
     return `\`${escaped}\${OPERAND}\``
 }
 
-function main() {
+async function main() {
     // Resolve the ref once. Every request below pins to this commit, so a tip
     // that moves mid-run cannot mix two revisions into one generated file.
     const sha = ghJson(`commits/${REF}`).sha
@@ -166,6 +190,16 @@ function main() {
         .filter((name) => name.endsWith('.json'))
         .map((name) => name.slice(0, -'.json'.length))
         .sort()
+
+    // Two files per language plus the shared grouping cases: 13 seconds of
+    // round trips one at a time, under 2 together.
+    await ghPrefetch([
+        contentsPath('test_json/grouping_test.json', sha),
+        ...languages.flatMap((language) => [
+            contentsPath(`dist/json/${language}.json`, sha),
+            contentsPath(`test_json/lexer_i18n_tests/${language}_test.json`, sha),
+        ]),
+    ])
 
     const patterns = new Map()
     for (const language of languages) {
@@ -317,4 +351,4 @@ function renderConformance({ sha, languages }) {
     ].join('\n')
 }
 
-main()
+await main()
