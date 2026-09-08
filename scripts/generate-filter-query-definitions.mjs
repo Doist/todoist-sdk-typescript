@@ -107,34 +107,51 @@ const OPERAND = String.raw`((?:[^()|&!,\\]|\\.)+)`
 const execFileAsync = promisify(execFile)
 const GH_OPTIONS = { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }
 
+/**
+ * How many `gh` processes to keep in flight.
+ *
+ * The waiting is all network, so a handful of requests hides most of it. The
+ * point of the cap is that the list of files grows with the language count,
+ * and one process per file each holding its own response is not something the
+ * definitions repository should get to decide.
+ */
+const GH_CONCURRENCY = 8
+
 const cache = new Map()
+
+function ghApiArgs(path) {
+    return ['api', `repos/${REPO}/${path}`]
+}
 
 function gh(path) {
     if (cache.has(path)) return cache.get(path)
 
-    const body = execFileSync('gh', ['api', `repos/${REPO}/${path}`], GH_OPTIONS)
+    const body = execFileSync('gh', ghApiArgs(path), GH_OPTIONS)
     cache.set(path, body)
     return body
 }
 
 /**
- * Fetches paths that don't depend on each other at the same time, so the rest
- * of the run reads them out of the cache. Every file the generator wants sits
- * at the commit resolved first, which is what makes them independent.
+ * Fetches paths that don't depend on each other together, so the rest of the
+ * run reads them out of the cache. Every file the generator wants sits at the
+ * commit resolved first, which is what makes them independent.
  */
 async function ghPrefetch(paths) {
-    await Promise.all(
-        paths
-            .filter((path) => !cache.has(path))
-            .map(async (path) => {
-                const { stdout } = await execFileAsync(
-                    'gh',
-                    ['api', `repos/${REPO}/${path}`],
-                    GH_OPTIONS,
-                )
-                cache.set(path, stdout)
-            }),
-    )
+    const pending = paths.filter((path) => !cache.has(path))
+    let next = 0
+
+    async function worker() {
+        while (next < pending.length) {
+            const path = pending[next]
+            next += 1
+
+            const { stdout } = await execFileAsync('gh', ghApiArgs(path), GH_OPTIONS)
+            cache.set(path, stdout)
+        }
+    }
+
+    const workers = Math.min(GH_CONCURRENCY, pending.length)
+    await Promise.all(Array.from({ length: workers }, worker))
 }
 
 function contentsPath(path, ref) {
@@ -192,7 +209,7 @@ async function main() {
         .sort()
 
     // Two files per language plus the shared grouping cases: 13 seconds of
-    // round trips one at a time, under 2 together.
+    // round trips one at a time, about 2.5 a few at a time.
     await ghPrefetch([
         contentsPath('test_json/grouping_test.json', sha),
         ...languages.flatMap((language) => [
