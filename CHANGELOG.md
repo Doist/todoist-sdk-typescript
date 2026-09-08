@@ -1,3 +1,9 @@
+## [15.2.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.1.0...v15.2.0) (2026-09-08)
+
+### Features
+
+* **filters:** add isDateDrivenQuery for default task ordering ([#670](https://github.com/Doist/todoist-sdk-typescript/issues/670)) ([fe8e794](https://github.com/Doist/todoist-sdk-typescript/commit/fe8e794b3d47ed9f19283b31e965840404e60d31))
+
 ## [15.1.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.0.2...v15.1.0) (2026-09-02)
 
 ### Features
