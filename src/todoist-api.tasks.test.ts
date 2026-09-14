@@ -485,6 +485,22 @@ describe('TodoistApi task endpoints', () => {
             })
         })
 
+        test('passes raw filter syntax through unchanged', async () => {
+            const query = String.raw`(today | overdue) & !#Work, search: meeting \& notes`
+            let capturedUrl = ''
+            server.use(
+                http.get(`${getSyncBaseUri()}${ENDPOINT_REST_TASKS_FILTER}`, ({ request }) => {
+                    capturedUrl = request.url
+                    return HttpResponse.json({ results: [], nextCursor: null }, { status: 200 })
+                }),
+            )
+            const api = getTarget()
+
+            await api.getTasksByFilter({ query })
+
+            expect(new URL(capturedUrl).searchParams.get('query')).toBe(query)
+        })
+
         test('validates task array in response', async () => {
             const invalidTask = { ...DEFAULT_TASK, due: '2020-01-31' }
             server.use(

@@ -142,3 +142,23 @@ export function getSanitizedContent(input: string): string {
 export function getSanitizedTasks(tasks: Task[]): TaskWithSanitizedContent[] {
     return tasks.map((task) => ({ ...task, sanitizedContent: getSanitizedContent(task.content) }))
 }
+
+/**
+ * Escapes text for use as a token in a Todoist filter query.
+ *
+ * Prefixes parentheses, pipes, ampersands, exclamation marks, commas, and
+ * backslashes with a backslash. Quotes and asterisks are left unchanged.
+ * Whitespace validation and trimming are the caller's responsibility.
+ * Pass unescaped text to this function once, before inserting it into a query.
+ *
+ * @example
+ * const tasks = await api.getTasksByFilter({
+ *     query: `search: ${escapeFilterToken(searchText)}`,
+ * })
+ *
+ * @param text - The text to escape, not a complete filter query
+ * @returns The escaped text, with whitespace preserved
+ */
+export function escapeFilterToken(text: string): string {
+    return text.replace(/[()|&!,\\]/g, '\\$&')
+}

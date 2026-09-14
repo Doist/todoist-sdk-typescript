@@ -178,6 +178,16 @@ const api = new TodoistApi('YOURTOKEN', { customFetch })
 - File upload bodies are a `Blob`, or a `ReadableStream` when uploading from a stream — a custom fetch must pass them through unchanged
 - Timeout parameter is optional and up to your custom implementation
 
+## Filter Queries
+
+Use `escapeFilterToken` for user-provided search text, handling validation and trimming in your code. Pass complete filter queries directly to `getTasksByFilter`.
+
+```typescript
+await api.getTasksByFilter({
+    query: `search: ${escapeFilterToken(searchText)}`,
+})
+```
+
 ## Development and Testing
 
 Instead of having an example app in the repository to assist development and testing, we have included [ts-node](https://github.com/TypeStrong/ts-node) as a dev dependency. This allows us to have a scratch file locally that can import and utilize the API while developing or reviewing pull requests without having to manage a separate app project.
