@@ -1,3 +1,4 @@
+import { escapeFilterToken } from '../index'
 import { DEFAULT_TASK } from '../test-utils/test-defaults'
 import { Task } from '../types'
 import { getSanitizedContent, getSanitizedTasks } from './sanitization'
@@ -58,5 +59,42 @@ describe('getSanitizedTasks', () => {
         expect(sanitizedTasks[0].sanitizedContent).toEqual(expectedStrings[0])
         expect(sanitizedTasks[1].sanitizedContent).toEqual(expectedStrings[1])
         expect(sanitizedTasks[2].sanitizedContent).toEqual(expectedStrings[2])
+    })
+})
+
+describe('escapeFilterToken', () => {
+    test.each([
+        '',
+        'team meeting notes',
+        '日本語 café 🙂',
+        '"double quotes" and \'single quotes\'',
+        '*wildcard*',
+        '@work #project: [notes] / 100% $value',
+        '   ',
+        '\t\n\r',
+        '  before\tand\nafter  ',
+    ])('preserves %p', (input) => {
+        expect(escapeFilterToken(input)).toBe(input)
+    })
+
+    test.each([
+        ['before ( after', 'before \\( after'],
+        ['before ) after', 'before \\) after'],
+        ['before | after', 'before \\| after'],
+        ['before & after', 'before \\& after'],
+        ['before ! after', 'before \\! after'],
+        ['before , after', 'before \\, after'],
+        ['before \\ after', 'before \\\\ after'],
+        ['(one & two), !three | four', '\\(one \\& two\\)\\, \\!three \\| four'],
+        ['  (text)\t&\nnotes  ', '  \\(text\\)\t\\&\nnotes  '],
+        ['\\', '\\\\'],
+        ['trailing\\', 'trailing\\\\'],
+        ['trailing\\\\', 'trailing\\\\\\\\'],
+        [String.raw`C:\reports\notes`, String.raw`C:\\reports\\notes`],
+        [String.raw`\(\)\|\&\!\,`, String.raw`\\\(\\\)\\\|\\\&\\\!\\\,`],
+        [String.raw`\\,`, String.raw`\\\\\,`],
+        [String.raw`\"\'\*\:`, String.raw`\\"\\'\\*\\:`],
+    ])('escapes %p to %p', (input, expected) => {
+        expect(escapeFilterToken(input)).toBe(expected)
     })
 })
