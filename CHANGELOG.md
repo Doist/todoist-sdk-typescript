@@ -1,3 +1,9 @@
+## [15.3.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.2.0...v15.3.0) (2026-09-14)
+
+### Features
+
+* add escapeFilterToken helper ([#687](https://github.com/Doist/todoist-sdk-typescript/issues/687)) ([0b4a999](https://github.com/Doist/todoist-sdk-typescript/commit/0b4a9992e0ca232ff047d771b528f586801a8544))
+
 ## [15.2.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.1.0...v15.2.0) (2026-09-08)
 
 ### Features
