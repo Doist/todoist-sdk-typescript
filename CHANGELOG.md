@@ -1,3 +1,9 @@
+## [15.3.1](https://github.com/Doist/todoist-sdk-typescript/compare/v15.3.0...v15.3.1) (2026-09-25)
+
+### Bug Fixes
+
+* Update Help Center links to canonical paths ([#693](https://github.com/Doist/todoist-sdk-typescript/issues/693)) ([7008500](https://github.com/Doist/todoist-sdk-typescript/commit/70085006e1c9a67efe49642e8e9ec5d9ebf76300))
+
 ## [15.3.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.2.0...v15.3.0) (2026-09-14)
 
 ### Features
