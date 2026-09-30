@@ -47,7 +47,7 @@
     },
     "dependencies": {
         "@doist/sdk-kmp": "0.2.3",
-        "camelcase": "6.3.0",
+        "camelcase": "9.0.0",
         "emoji-regex": "10.6.0",
         "ts-custom-error": "^3.2.0",
         "undici": "^7.29.0",
