@@ -418,6 +418,29 @@ describe('TodoistApi task endpoints', () => {
 
             expect(task).toEqual(DEFAULT_TASK)
         })
+
+        test('keeps an ID with path characters inside the tasks endpoint', async () => {
+            let requestedUrl: string | undefined
+            server.use(
+                http.get(`${getSyncBaseUri()}${ENDPOINT_REST_TASKS}/:id`, ({ request }) => {
+                    requestedUrl = request.url
+                    return HttpResponse.json(DEFAULT_TASK, { status: 200 })
+                }),
+            )
+            const api = getTarget()
+
+            await api.getTask('../projects/123')
+
+            expect(requestedUrl).toBe(
+                `${getSyncBaseUri()}${ENDPOINT_REST_TASKS}/..%2Fprojects%2F123`,
+            )
+        })
+
+        test('rejects a dot-segment ID without sending a request', async () => {
+            const api = getTarget()
+
+            await expect(api.getTask('..')).rejects.toThrow('Invalid path segment')
+        })
     })
 
     describe('getTasks', () => {
