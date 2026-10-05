@@ -1,3 +1,5 @@
+import { encodePathSegment } from '../utils/request-helpers'
+
 const BASE_URI = 'https://api.todoist.com'
 const TODOIST_URI = 'https://todoist.com'
 export const TODOIST_WEB_URI = 'https://app.todoist.com/app'
@@ -113,36 +115,36 @@ export const ENDPOINT_PRICING = 'pricing'
 
 // Workspace invitation actions (require invite_code parameter)
 export function getWorkspaceInvitationAcceptEndpoint(inviteCode: string): string {
-    return `workspaces/invitations/${inviteCode}/accept`
+    return `workspaces/invitations/${encodePathSegment(inviteCode)}/accept`
 }
 
 export function getWorkspaceInvitationRejectEndpoint(inviteCode: string): string {
-    return `workspaces/invitations/${inviteCode}/reject`
+    return `workspaces/invitations/${encodePathSegment(inviteCode)}/reject`
 }
 
 // Insights endpoints
 export function getProjectInsightsActivityStatsEndpoint(projectId: string): string {
-    return `projects/${projectId}/insights/activity_stats`
+    return `projects/${encodePathSegment(projectId)}/insights/activity_stats`
 }
 
 export function getProjectInsightsHealthEndpoint(projectId: string): string {
-    return `projects/${projectId}/insights/health`
+    return `projects/${encodePathSegment(projectId)}/insights/health`
 }
 
 export function getProjectInsightsHealthContextEndpoint(projectId: string): string {
-    return `projects/${projectId}/insights/health/context`
+    return `projects/${encodePathSegment(projectId)}/insights/health/context`
 }
 
 export function getProjectInsightsProgressEndpoint(projectId: string): string {
-    return `projects/${projectId}/insights/progress`
+    return `projects/${encodePathSegment(projectId)}/insights/progress`
 }
 
 export function getProjectInsightsHealthAnalyzeEndpoint(projectId: string): string {
-    return `projects/${projectId}/insights/health/analyze`
+    return `projects/${encodePathSegment(projectId)}/insights/health/analyze`
 }
 
 export function getWorkspaceInsightsEndpoint(workspaceId: string): string {
-    return `workspaces/${workspaceId}/insights`
+    return `workspaces/${encodePathSegment(workspaceId)}/insights`
 }
 
 // Workspace members
@@ -150,24 +152,24 @@ export const ENDPOINT_WORKSPACE_MEMBERS = 'workspaces/members'
 
 // Workspace user management (require workspace_id and/or user_id parameters)
 export function getWorkspaceUserTasksEndpoint(workspaceId: string, userId: string): string {
-    return `workspaces/${workspaceId}/users/${userId}/tasks`
+    return `workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}/tasks`
 }
 
 export function getWorkspaceInviteUsersEndpoint(workspaceId: string): string {
-    return `workspaces/${workspaceId}/users/invite`
+    return `workspaces/${encodePathSegment(workspaceId)}/users/invite`
 }
 
 export function getWorkspaceUserEndpoint(workspaceId: string, userId: string): string {
-    return `workspaces/${workspaceId}/users/${userId}`
+    return `workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}`
 }
 
 // Workspace projects (require workspace_id parameter)
 export function getWorkspaceActiveProjectsEndpoint(workspaceId: string): string {
-    return `workspaces/${workspaceId}/projects/active`
+    return `workspaces/${encodePathSegment(workspaceId)}/projects/active`
 }
 
 export function getWorkspaceArchivedProjectsEndpoint(workspaceId: string): string {
-    return `workspaces/${workspaceId}/projects/archived`
+    return `workspaces/${encodePathSegment(workspaceId)}/projects/archived`
 }
 
 // App management endpoints (dev:app_console scope)
@@ -184,57 +186,58 @@ export const APP_ICON_SIZES = ['small', 'medium', 'large'] as const
 export type AppIconSize = (typeof APP_ICON_SIZES)[number]
 
 export function getAppEndpoint(appId: string): string {
-    return `apps/${appId}`
+    return `apps/${encodePathSegment(appId)}`
 }
 
 export function getAppSecretsEndpoint(appId: string): string {
-    return `apps/${appId}/secrets`
+    return `apps/${encodePathSegment(appId)}/secrets`
 }
 
 export function getAppClientSecretEndpoint(appId: string): string {
-    return `apps/${appId}/client_secret`
+    return `apps/${encodePathSegment(appId)}/client_secret`
 }
 
 export function getAppTokensEndpoint(appId: string): string {
-    return `apps/${appId}/tokens`
+    return `apps/${encodePathSegment(appId)}/tokens`
 }
 
 export function getAppTestTokenEndpoint(appId: string): string {
-    return `apps/${appId}/test_token`
+    return `apps/${encodePathSegment(appId)}/test_token`
 }
 
 export function getAppDistributionTokenEndpoint(appId: string): string {
-    return `apps/${appId}/distribution_token`
+    return `apps/${encodePathSegment(appId)}/distribution_token`
 }
 
 export function getAppVerificationTokenEndpoint(appId: string): string {
-    return `apps/${appId}/verification_token`
+    return `apps/${encodePathSegment(appId)}/verification_token`
 }
 
 export function getAppWebhookEndpoint(appId: string): string {
-    return `apps/${appId}/webhook`
+    return `apps/${encodePathSegment(appId)}/webhook`
 }
 
 export function getAppIconEndpoint(appId: string, size: AppIconSize): string {
-    return size === 'medium' ? `apps/${appId}/icon` : `apps/${appId}/icon/${size}`
+    const base = `apps/${encodePathSegment(appId)}/icon`
+    return size === 'medium' ? base : `${base}/${size}`
 }
 
 export function getAppInstallationEndpoint(installationId: string): string {
-    return `apps/installations/${installationId}`
+    return `apps/installations/${encodePathSegment(installationId)}`
 }
 
 export function getAppByDistributionTokenEndpoint(distributionToken: string): string {
-    return `apps/by_distribution_token/${distributionToken}`
+    return `apps/by_distribution_token/${encodePathSegment(distributionToken)}`
 }
 
 export function getUiExtensionEndpoint(uiExtensionId: string): string {
-    return `apps/ui_extensions/${uiExtensionId}`
+    return `apps/ui_extensions/${encodePathSegment(uiExtensionId)}`
 }
 
 export function getUiExtensionIconEndpoint(uiExtensionId: string): string {
-    return `apps/ui_extensions/${uiExtensionId}/icon`
+    return `apps/ui_extensions/${encodePathSegment(uiExtensionId)}/icon`
 }
 
 export function getUiExtensionsByIntegrationEndpoint(integrationId: string): string {
-    return `apps/ui_extensions/integration/${integrationId}`
+    return `apps/ui_extensions/integration/${encodePathSegment(integrationId)}`
 }
