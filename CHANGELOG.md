@@ -1,3 +1,9 @@
+## [15.8.1](https://github.com/Doist/todoist-sdk-typescript/compare/v15.8.0...v15.8.1) (2026-10-28)
+
+### Bug Fixes
+
+* support partial Status updates ([#723](https://github.com/Doist/todoist-sdk-typescript/issues/723)) ([32e39f6](https://github.com/Doist/todoist-sdk-typescript/commit/32e39f6a4ade32970251fcdc745e3498529b6a32))
+
 ## [15.8.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.7.0...v15.8.0) (2026-10-23)
 
 ### Features
