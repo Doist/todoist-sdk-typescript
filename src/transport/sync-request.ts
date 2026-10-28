@@ -31,7 +31,7 @@ export type SyncRequestContext = {
 }
 
 // An invalid Date would otherwise be sent as `null`, which the API reads as "no expiry".
-function serializeStatusActiveUntil(value: Date | string): string {
+function serializeStatusActiveUntil(value: Date | string | null): string | null {
     if (!(value instanceof Date)) return value
     if (Number.isNaN(value.getTime())) {
         throw new TodoistArgumentError('status.activeUntil is an invalid Date')

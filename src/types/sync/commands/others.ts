@@ -1,19 +1,23 @@
 import type { DateFormat, DayOfWeek, TimeFormat } from '../user-preferences'
 
 export type UserStatusEffectArgs = {
-    scope?: { mode: string }
+    scope?: { mode?: string }
 }
 
-/** The complete status to set. It replaces any existing status. */
+/** Only supplied fields change. Null removes optional fields and effects. */
 export type UserStatusArgs = {
-    message: string
-    emoji?: string
-    /** Must be in the future; omit it for no expiry. A `Date` is sent as an ISO 8601 string. */
-    activeUntil?: Date | string
+    /** Required when creating a status; omit to preserve the existing message. */
+    message?: string
+    emoji?: string | null
+    /** Must be in the future; null removes expiry, omission preserves it. Dates are sent as ISO strings. */
+    activeUntil?: Date | string | null
+    /** Supplied effects are merged; null clears all effects, omission or {} preserves them. */
     effects?: {
-        pauseNotifications?: UserStatusEffectArgs
-        pauseActivity?: UserStatusEffectArgs
-    }
+        /** Null removes the effect; {} preserves its configuration or enables it with defaults. */
+        pauseNotifications?: UserStatusEffectArgs | null
+        /** Null removes the effect; {} preserves its configuration or enables it with defaults. */
+        pauseActivity?: UserStatusEffectArgs | null
+    } | null
 }
 
 export type UserUpdateArgs = {

@@ -63,6 +63,30 @@ describe('user_update status serialization', () => {
         })
     })
 
+    test.each([
+        {
+            status: { emoji: null, activeUntil: null },
+            expected: { emoji: null, active_until: null },
+        },
+        {
+            status: { effects: { pauseNotifications: null, pauseActivity: {} } },
+            expected: { effects: { pause_notifications: null, pause_activity: {} } },
+        },
+        {
+            status: { effects: { pauseNotifications: {}, pauseActivity: null } },
+            expected: { effects: { pause_notifications: {}, pause_activity: null } },
+        },
+        { status: { effects: null }, expected: { effects: null } },
+        {
+            status: { effects: { pauseNotifications: { scope: {} } } },
+            expected: { effects: { pause_notifications: { scope: {} } } },
+        },
+    ])('preserves partial-update values on the wire: $status', async ({ status, expected }) => {
+        const args = await sendUserUpdate({ status })
+
+        expect(args).toEqual({ status: expected })
+    })
+
     test('sends status: null to clear', async () => {
         const args = await sendUserUpdate({ status: null })
 
