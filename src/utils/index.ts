@@ -18,6 +18,7 @@ export {
 export type { TodoistLinkType, TodoistUrlInfo } from './url-helpers'
 export { createCommand } from './sync-helpers'
 export * from './project-helpers'
+export * from './person-names'
 export { isDateDrivenQuery } from './filter-queries'
 export type { IsDateDrivenQueryOptions } from './filter-queries'
 export { FILTER_QUERY_LANGUAGES } from './filter-query-definitions'
