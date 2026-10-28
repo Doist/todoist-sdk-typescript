@@ -344,7 +344,10 @@ export class TodoistApi {
      * @param request - The sync request payload containing commands and/or resource types.
      * @param requestId - Optional custom identifier for the request.
      * @returns A promise that resolves to the sync response.
-     * @throws TodoistRequestError if the sync status contains errors.
+     * @throws TodoistSyncError if any command failed. The Sync API applies commands
+     * independently, so the error's `syncStatus` (keyed by command `uuid`) and
+     * `tempIdMapping` (keyed by command `tempId`) report the commands that were
+     * applied regardless.
      *
      * @example
      * ```typescript

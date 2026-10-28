@@ -36,6 +36,8 @@ type RequestArgs = {
     hasSyncCommands?: boolean
     customHeaders?: CustomHeaders
     customFetch?: CustomFetch
+    /** Top-level response fields whose map keys are identifiers, left out of camel-casing. */
+    opaqueKeyMaps?: ReadonlySet<string>
 }
 
 export function paramsSerializer(params: Record<string, unknown>) {
@@ -146,6 +148,7 @@ export async function request<T>(args: RequestArgs): Promise<HttpResponse<T>> {
         hasSyncCommands,
         customHeaders,
         customFetch,
+        opaqueKeyMaps,
     } = args
 
     // Capture original stack for better error reporting
@@ -209,7 +212,7 @@ export async function request<T>(args: RequestArgs): Promise<HttpResponse<T>> {
         })
 
         // Convert snake_case response to camelCase
-        const convertedData = camelCaseKeys(response.data)
+        const convertedData = camelCaseKeys(response.data, { opaqueKeyMaps })
         return { ...response, data: convertedData }
     } catch (error: unknown) {
         throw toTodoistRequestError(error, originalStack)

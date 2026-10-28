@@ -1,8 +1,9 @@
 import { ENDPOINT_SYNC } from '../consts/endpoints'
-import { TodoistArgumentError, TodoistRequestError } from '../types'
+import { TodoistArgumentError, TodoistSyncError } from '../types'
 import type { CustomFetch, CustomHeaders } from '../types/http'
 import {
     type SyncCommand,
+    type SyncError,
     type SyncRequest,
     type SyncResponse,
     DATE_FORMAT_TO_API,
@@ -122,13 +123,23 @@ function preprocessSyncCommands(commands: SyncCommand[]): SyncCommand[] {
 }
 
 /**
+ * Response fields keyed by the command `uuid` / `tempId` the caller sent. Their
+ * keys must reach the caller unchanged so each entry can be matched to its
+ * command; camel-casing would rewrite them (`a3bb189e-8bf9-…` → `a3Bb189E8Bf9…`).
+ */
+const COMMAND_KEYED_FIELDS: ReadonlySet<string> = new Set(['sync_status', 'temp_id_mapping'])
+
+/**
  * Makes a request to the Sync API and handles error checking.
  *
  * @param ctx - HTTP identity (auth token, sync API base URI, optional custom fetch and headers).
  * @param syncRequest - The sync request payload.
  * @param options - Optional request identifier and commands flag.
- * @returns The sync response data.
- * @throws TodoistRequestError if sync status contains errors.
+ * @returns The sync response data, with `syncStatus` keyed by command `uuid` and
+ * `tempIdMapping` keyed by command `tempId`.
+ * @throws TodoistSyncError if any command failed. Commands are applied
+ * independently, so its `syncStatus` and `tempIdMapping` report the ones that
+ * were applied regardless.
  */
 export async function performSyncRequest(
     ctx: SyncRequestContext,
@@ -152,14 +163,17 @@ export async function performSyncRequest(
         payload: processedRequest,
         requestId: requestId,
         hasSyncCommands: hasSyncCommands,
+        opaqueKeyMaps: COMMAND_KEYED_FIELDS,
     })
 
-    // Check for sync errors and throw if any are found
-    if (response.data.syncStatus) {
-        Object.entries(response.data.syncStatus).forEach(([_, value]) => {
-            if (value === 'ok') return
-
-            throw new TodoistRequestError(value.error, value.httpCode, value.errorExtra)
+    const syncStatus = response.data.syncStatus as SyncResponse['syncStatus']
+    const firstFailure = Object.values(syncStatus ?? {}).find(
+        (status): status is SyncError => status !== 'ok',
+    )
+    if (firstFailure) {
+        throw new TodoistSyncError(firstFailure, {
+            syncStatus: syncStatus ?? {},
+            tempIdMapping: (response.data.tempIdMapping as SyncResponse['tempIdMapping']) ?? {},
         })
     }
 
