@@ -1,8 +1,9 @@
 import { ENDPOINT_SYNC } from '../consts/endpoints'
-import { TodoistArgumentError, TodoistRequestError } from '../types'
+import { TodoistArgumentError, TodoistSyncError } from '../types'
 import type { CustomFetch, CustomHeaders } from '../types/http'
 import {
     type SyncCommand,
+    type SyncError,
     type SyncRequest,
     type SyncResponse,
     DATE_FORMAT_TO_API,
@@ -12,6 +13,7 @@ import {
     type TaskUpdateDateCompleteArgs,
     type UpdateGoalsArgs,
 } from '../types/sync'
+import { customCamelCase } from '../utils/case-conversion'
 import { spreadIfDefined } from '../utils/request-helpers'
 import { parseSyncResponse } from '../utils/validators'
 import { request } from './http-client'
@@ -122,13 +124,39 @@ function preprocessSyncCommands(commands: SyncCommand[]): SyncCommand[] {
 }
 
 /**
+ * Response keys are camel-cased on the way in, which also rewrites the command
+ * UUIDs and temp IDs that key `syncStatus` and `tempIdMapping` (for example
+ * `a3bb189e-8bf9-…` becomes `a3Bb189E8Bf9…`). Map them back to the keys the
+ * caller sent, so each entry can be matched to its command.
+ */
+function restoreSentKeys<T>(
+    received: Record<string, T> | undefined,
+    sentKeys: string[],
+): Record<string, T> | undefined {
+    if (!received) return received
+
+    const restored = { ...received }
+    for (const key of sentKeys) {
+        const convertedKey = customCamelCase(key)
+        if (convertedKey !== key && convertedKey in restored) {
+            restored[key] = restored[convertedKey] as T
+            delete restored[convertedKey]
+        }
+    }
+    return restored
+}
+
+/**
  * Makes a request to the Sync API and handles error checking.
  *
  * @param ctx - HTTP identity (auth token, sync API base URI, optional custom fetch and headers).
  * @param syncRequest - The sync request payload.
  * @param options - Optional request identifier and commands flag.
- * @returns The sync response data.
- * @throws TodoistRequestError if sync status contains errors.
+ * @returns The sync response data, with `syncStatus` keyed by command `uuid` and
+ * `tempIdMapping` keyed by command `tempId`.
+ * @throws TodoistSyncError if any command failed. Commands are applied
+ * independently, so its `syncStatus` and `tempIdMapping` report the ones that
+ * were applied regardless.
  */
 export async function performSyncRequest(
     ctx: SyncRequestContext,
@@ -154,14 +182,29 @@ export async function performSyncRequest(
         hasSyncCommands: hasSyncCommands,
     })
 
-    // Check for sync errors and throw if any are found
-    if (response.data.syncStatus) {
-        Object.entries(response.data.syncStatus).forEach(([_, value]) => {
-            if (value === 'ok') return
+    const commands = processedRequest.commands ?? []
+    const syncStatus = restoreSentKeys(
+        response.data.syncStatus as Record<string, 'ok' | SyncError> | undefined,
+        commands.map((command) => command.uuid),
+    )
+    const tempIdMapping = restoreSentKeys(
+        response.data.tempIdMapping as Record<string, string> | undefined,
+        commands.flatMap((command) => (command.tempId ? [command.tempId] : [])),
+    )
 
-            throw new TodoistRequestError(value.error, value.httpCode, value.errorExtra)
+    const firstFailure = Object.values(syncStatus ?? {}).find(
+        (status): status is SyncError => status !== 'ok',
+    )
+    if (firstFailure) {
+        throw new TodoistSyncError(firstFailure, {
+            syncStatus: syncStatus ?? {},
+            tempIdMapping: tempIdMapping ?? {},
         })
     }
 
-    return parseSyncResponse(response.data)
+    return parseSyncResponse({
+        ...response.data,
+        ...spreadIfDefined(syncStatus, (v) => ({ syncStatus: v })),
+        ...spreadIfDefined(tempIdMapping, (v) => ({ tempIdMapping: v })),
+    })
 }

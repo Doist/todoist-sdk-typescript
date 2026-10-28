@@ -12,6 +12,7 @@ import {
     DEFAULT_NOTE,
     DEFAULT_FOLDER,
 } from './test-utils/test-defaults'
+import { TodoistRequestError, TodoistSyncError } from './types/errors'
 import { createCommand } from './utils/sync-helpers'
 import { parseSyncResponse } from './utils/validators'
 
@@ -206,6 +207,91 @@ describe('TodoistApi sync endpoint', () => {
                     isUnread: true,
                 },
             ])
+        })
+    })
+
+    describe('command results', () => {
+        // UUIDs whose segments start with a letter, so camel-casing the response
+        // keys would rewrite them if they were not restored.
+        const ADDED_UUID = 'a3bb189e-8bf9-3888-9912-ace4e6543002'
+        const FAILED_UUID = 'b7c9e2d4-af31-4c0e-9d8b-ce1f2a3b4c5d'
+
+        function getCommands() {
+            return [
+                {
+                    ...createCommand('item_add', { content: 'Buy milk' }, 'temp-milk'),
+                    uuid: ADDED_UUID,
+                },
+                { ...createCommand('item_add', { content: '' }, 'temp-empty'), uuid: FAILED_UUID },
+            ]
+        }
+
+        const COMMAND_ERROR = {
+            error: 'Invalid argument value',
+            error_code: 20,
+            error_extra: { argument: 'content' },
+            error_tag: 'INVALID_ARGUMENT_VALUE',
+            http_code: 400,
+        }
+
+        test('keys syncStatus and tempIdMapping by the uuid and tempId that were sent', async () => {
+            server.use(
+                http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () => {
+                    return HttpResponse.json(
+                        {
+                            sync_status: { [ADDED_UUID]: 'ok', [FAILED_UUID]: 'ok' },
+                            temp_id_mapping: { 'temp-milk': 'task-1', 'temp-empty': 'task-2' },
+                        },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const response = await api.sync({ commands: getCommands() })
+
+            expect(response.syncStatus).toEqual({ [ADDED_UUID]: 'ok', [FAILED_UUID]: 'ok' })
+            expect(response.tempIdMapping).toEqual({
+                'temp-milk': 'task-1',
+                'temp-empty': 'task-2',
+            })
+        })
+
+        test('throws a TodoistSyncError that reports every command when one fails', async () => {
+            server.use(
+                http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () => {
+                    return HttpResponse.json(
+                        {
+                            sync_status: { [ADDED_UUID]: 'ok', [FAILED_UUID]: COMMAND_ERROR },
+                            temp_id_mapping: { 'temp-milk': 'task-1' },
+                        },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const error = await api.sync({ commands: getCommands() }).catch((e: unknown) => e)
+
+            expect(error).toBeInstanceOf(TodoistSyncError)
+            // Existing callers catch the base class, so it must still match.
+            expect(error).toBeInstanceOf(TodoistRequestError)
+            const syncError = error as TodoistSyncError
+            expect(syncError.name).toBe('TodoistSyncError')
+            expect(syncError.message).toBe('Invalid argument value')
+            expect(syncError.httpStatusCode).toBe(400)
+            expect(syncError.responseData).toEqual({ argument: 'content' })
+            expect(syncError.syncStatus).toEqual({
+                [ADDED_UUID]: 'ok',
+                [FAILED_UUID]: {
+                    error: 'Invalid argument value',
+                    errorCode: 20,
+                    errorExtra: { argument: 'content' },
+                    errorTag: 'INVALID_ARGUMENT_VALUE',
+                    httpCode: 400,
+                },
+            })
+            expect(syncError.tempIdMapping).toEqual({ 'temp-milk': 'task-1' })
         })
     })
 })
