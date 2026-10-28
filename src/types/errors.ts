@@ -1,5 +1,5 @@
 import { CustomError } from 'ts-custom-error'
-import type { SyncError } from './sync/response'
+import type { SyncError, SyncResponse } from './sync/response'
 
 const authenticationErrorCodes = [401, 403]
 
@@ -33,19 +33,13 @@ export class TodoistRequestError extends CustomError {
  */
 export class TodoistSyncError extends TodoistRequestError {
     /** Each command's outcome, keyed by the command's `uuid`: `'ok'` or the error it failed with. */
-    public syncStatus: Record<string, 'ok' | SyncError>
+    public syncStatus: NonNullable<SyncResponse['syncStatus']>
     /** Server IDs assigned to the resources the request created, keyed by the command's `tempId`. */
-    public tempIdMapping: Record<string, string>
+    public tempIdMapping: NonNullable<SyncResponse['tempIdMapping']>
 
     public constructor(
         firstFailure: SyncError,
-        {
-            syncStatus,
-            tempIdMapping,
-        }: {
-            syncStatus: Record<string, 'ok' | SyncError>
-            tempIdMapping: Record<string, string>
-        },
+        { syncStatus, tempIdMapping }: Pick<TodoistSyncError, 'syncStatus' | 'tempIdMapping'>,
     ) {
         super(firstFailure.error, firstFailure.httpCode, firstFailure.errorExtra)
         Object.defineProperty(this, 'name', { value: 'TodoistSyncError' })

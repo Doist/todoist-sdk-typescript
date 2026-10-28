@@ -21,10 +21,23 @@ export function customCamelCase(input: string): string {
     return camelcase(input)
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && value.constructor === Object
+}
+
 /**
  * Converts object keys from snake_case to camelCase recursively
+ *
+ * @param obj - The value to convert.
+ * @param options.opaqueKeyMaps - Top-level fields whose value is a map keyed by
+ * identifiers rather than field names, such as the Sync API's `sync_status`
+ * (keyed by command UUID). Those identifiers are kept exactly as received, since
+ * camel-casing would rewrite them; the map's values are still converted.
  */
-export function camelCaseKeys<T>(obj: T): T {
+export function camelCaseKeys<T>(
+    obj: T,
+    { opaqueKeyMaps }: { opaqueKeyMaps?: ReadonlySet<string> } = {},
+): T {
     if (obj === null || obj === undefined) {
         return obj
     }
@@ -33,11 +46,16 @@ export function camelCaseKeys<T>(obj: T): T {
         return obj.map((item: unknown) => camelCaseKeys(item)) as T
     }
 
-    if (typeof obj === 'object' && obj.constructor === Object) {
+    if (isPlainObject(obj)) {
         const converted: Record<string, unknown> = {}
         for (const [key, value] of Object.entries(obj)) {
             const camelKey = customCamelCase(key)
-            converted[camelKey] = camelCaseKeys(value)
+            converted[camelKey] =
+                opaqueKeyMaps?.has(key) && isPlainObject(value)
+                    ? Object.fromEntries(
+                          Object.entries(value).map(([id, entry]) => [id, camelCaseKeys(entry)]),
+                      )
+                    : camelCaseKeys(value)
         }
         return converted as T
     }

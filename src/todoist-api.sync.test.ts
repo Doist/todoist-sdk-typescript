@@ -212,7 +212,7 @@ describe('TodoistApi sync endpoint', () => {
 
     describe('command results', () => {
         // UUIDs whose segments start with a letter, so camel-casing the response
-        // keys would rewrite them if they were not restored.
+        // keys would rewrite them.
         const ADDED_UUID = 'a3bb189e-8bf9-3888-9912-ace4e6543002'
         const FAILED_UUID = 'b7c9e2d4-af31-4c0e-9d8b-ce1f2a3b4c5d'
 
@@ -292,6 +292,66 @@ describe('TodoistApi sync endpoint', () => {
                 },
             })
             expect(syncError.tempIdMapping).toEqual({ 'temp-milk': 'task-1' })
+        })
+
+        test('keeps temp IDs that only differ once camel-cased apart', async () => {
+            // `temp_milk` and `tempMilk` camel-case to the same key, so only leaving the
+            // keys untouched attributes the created task to the command that made it.
+            const commands = [
+                { ...createCommand('item_add', { content: '' }, 'temp_milk'), uuid: FAILED_UUID },
+                {
+                    ...createCommand('item_add', { content: 'Buy milk' }, 'tempMilk'),
+                    uuid: ADDED_UUID,
+                },
+            ]
+            server.use(
+                http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () => {
+                    return HttpResponse.json(
+                        {
+                            sync_status: { [FAILED_UUID]: COMMAND_ERROR, [ADDED_UUID]: 'ok' },
+                            temp_id_mapping: { tempMilk: 'task-1' },
+                        },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const error = (await api
+                .sync({ commands })
+                .catch((e: unknown) => e)) as TodoistSyncError
+
+            expect(error.tempIdMapping).toEqual({ tempMilk: 'task-1' })
+            expect(Object.keys(error.syncStatus)).toEqual([FAILED_UUID, ADDED_UUID])
+        })
+
+        test('reports the first failure in the order the server returned it', async () => {
+            const SECOND_FAILED_UUID = 'c1d2e3f4-ab56-4c78-9d0e-fa1b2c3d4e5f'
+            server.use(
+                http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () => {
+                    return HttpResponse.json(
+                        {
+                            sync_status: {
+                                [FAILED_UUID]: COMMAND_ERROR,
+                                [SECOND_FAILED_UUID]: {
+                                    ...COMMAND_ERROR,
+                                    error: 'Item not found',
+                                    http_code: 404,
+                                },
+                            },
+                        },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const error = (await api
+                .sync({ commands: getCommands() })
+                .catch((e: unknown) => e)) as TodoistSyncError
+
+            expect(error.message).toBe('Invalid argument value')
+            expect(error.httpStatusCode).toBe(400)
         })
     })
 })

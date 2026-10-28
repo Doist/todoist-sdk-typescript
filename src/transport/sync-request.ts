@@ -13,7 +13,6 @@ import {
     type TaskUpdateDateCompleteArgs,
     type UpdateGoalsArgs,
 } from '../types/sync'
-import { customCamelCase } from '../utils/case-conversion'
 import { spreadIfDefined } from '../utils/request-helpers'
 import { parseSyncResponse } from '../utils/validators'
 import { request } from './http-client'
@@ -124,27 +123,11 @@ function preprocessSyncCommands(commands: SyncCommand[]): SyncCommand[] {
 }
 
 /**
- * Response keys are camel-cased on the way in, which also rewrites the command
- * UUIDs and temp IDs that key `syncStatus` and `tempIdMapping` (for example
- * `a3bb189e-8bf9-…` becomes `a3Bb189E8Bf9…`). Map them back to the keys the
- * caller sent, so each entry can be matched to its command.
+ * Response fields keyed by the command `uuid` / `tempId` the caller sent. Their
+ * keys must reach the caller unchanged so each entry can be matched to its
+ * command; camel-casing would rewrite them (`a3bb189e-8bf9-…` → `a3Bb189E8Bf9…`).
  */
-function restoreSentKeys<T>(
-    received: Record<string, T> | undefined,
-    sentKeys: string[],
-): Record<string, T> | undefined {
-    if (!received) return received
-
-    const restored = { ...received }
-    for (const key of sentKeys) {
-        const convertedKey = customCamelCase(key)
-        if (convertedKey !== key && convertedKey in restored) {
-            restored[key] = restored[convertedKey] as T
-            delete restored[convertedKey]
-        }
-    }
-    return restored
-}
+const COMMAND_KEYED_FIELDS: ReadonlySet<string> = new Set(['sync_status', 'temp_id_mapping'])
 
 /**
  * Makes a request to the Sync API and handles error checking.
@@ -180,31 +163,19 @@ export async function performSyncRequest(
         payload: processedRequest,
         requestId: requestId,
         hasSyncCommands: hasSyncCommands,
+        opaqueKeyMaps: COMMAND_KEYED_FIELDS,
     })
 
-    const commands = processedRequest.commands ?? []
-    const syncStatus = restoreSentKeys(
-        response.data.syncStatus as Record<string, 'ok' | SyncError> | undefined,
-        commands.map((command) => command.uuid),
-    )
-    const tempIdMapping = restoreSentKeys(
-        response.data.tempIdMapping as Record<string, string> | undefined,
-        commands.flatMap((command) => (command.tempId ? [command.tempId] : [])),
-    )
-
+    const syncStatus = response.data.syncStatus as SyncResponse['syncStatus']
     const firstFailure = Object.values(syncStatus ?? {}).find(
         (status): status is SyncError => status !== 'ok',
     )
     if (firstFailure) {
         throw new TodoistSyncError(firstFailure, {
             syncStatus: syncStatus ?? {},
-            tempIdMapping: tempIdMapping ?? {},
+            tempIdMapping: (response.data.tempIdMapping as SyncResponse['tempIdMapping']) ?? {},
         })
     }
 
-    return parseSyncResponse({
-        ...response.data,
-        ...spreadIfDefined(syncStatus, (v) => ({ syncStatus: v })),
-        ...spreadIfDefined(tempIdMapping, (v) => ({ tempIdMapping: v })),
-    })
+    return parseSyncResponse(response.data)
 }
