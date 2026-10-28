@@ -1,3 +1,9 @@
+## [15.9.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.8.1...v15.9.0) (2026-10-28)
+
+### Features
+
+* report every command's result when a Sync request fails ([#731](https://github.com/Doist/todoist-sdk-typescript/issues/731)) ([f84c07d](https://github.com/Doist/todoist-sdk-typescript/commit/f84c07d84ab656d174da5b3992cad23b247f174c))
+
 ## [15.8.1](https://github.com/Doist/todoist-sdk-typescript/compare/v15.8.0...v15.8.1) (2026-10-28)
 
 ### Bug Fixes
