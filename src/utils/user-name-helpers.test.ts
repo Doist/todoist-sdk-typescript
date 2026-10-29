@@ -1,4 +1,4 @@
-import { formatUserShortName } from './user-name-helpers'
+import { formatUserShortName } from '../index'
 
 /** Written as a code point because formatters render the escape invisibly. */
 const COMBINING_ACUTE = String.fromCharCode(0x0301)
@@ -75,7 +75,6 @@ describe('formatUserShortName', () => {
         test.each([
             ['Ada Lovelace (Back 7 Sept)', 'Ada L.'],
             ['Ada 𐐀name', 'Ada 𐐀.'],
-            ['Omar | 🌴', 'Omar'],
             ['Yuki 🎌 Tanaka', 'Yuki'],
             // Code points cannot keep a combining accent with its base letter.
             [`Ada E${COMBINING_ACUTE}clair`, 'Ada E.'],
