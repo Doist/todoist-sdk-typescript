@@ -2,7 +2,7 @@
     "compilerOptions": {
         "types": ["vitest/globals"],
         "target": "es2017",
-        "lib": ["dom", "es2017"],
+        "lib": ["dom", "es2017", "es2022.intl"],
         "module": "esnext",
         "allowJs": true,
         "skipLibCheck": true,
