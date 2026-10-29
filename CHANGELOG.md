@@ -1,3 +1,9 @@
+## [15.10.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.9.0...v15.10.0) (2026-10-29)
+
+### Features
+
+* add formatUserShortName for status-aware name abbreviation ([#733](https://github.com/Doist/todoist-sdk-typescript/issues/733)) ([326f5ae](https://github.com/Doist/todoist-sdk-typescript/commit/326f5ae031ddd2d78447cc6a84f6c7f6b5bbc929))
+
 ## [15.9.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.8.1...v15.9.0) (2026-10-28)
 
 ### Features
