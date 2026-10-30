@@ -1,5 +1,6 @@
 // `isWellFormed` is newer than this package's `lib` setting. Node 24 has it.
 /// <reference lib="es2024.string" />
+import { formatUserShortName } from '../index'
 import { getFirstName, getLastName, getShortName } from './person-names'
 
 describe('person names', () => {
@@ -28,5 +29,15 @@ describe('person names', () => {
         for (const name of names) {
             expect(name.isWellFormed()).toBe(true)
         }
+    })
+
+    // From the package entry, so that dropping this export fails here before it fails a caller.
+    test.each([
+        ['Steven Kao Smith', 'Steven S.'],
+        ['Yuki 🎌 Tanaka', 'Yuki T.'],
+        ['Ada (nickname) Lovelace', 'Ada L.'],
+    ])('formatUserShortName reads %j the same as getShortName', (fullName, shortName) => {
+        expect(formatUserShortName(fullName)).toBe(shortName)
+        expect(getShortName(fullName)).toBe(shortName)
     })
 })
