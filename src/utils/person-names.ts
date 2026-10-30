@@ -54,3 +54,16 @@ export function getLastName(fullName: string): string {
 export function getShortName(fullName: string): string {
     return sharedGetShortName(fullName)
 }
+
+/**
+ * Returns a person's first name and the initial of their last name.
+ *
+ * @deprecated Use {@link getShortName} instead, which this calls. It used to take the initial
+ * from the second word, which no longer matches the Todoist apps.
+ *
+ * @param fullName - The person's full name, such as a user's `name` or `fullName`
+ * @returns The same as {@link getShortName}
+ */
+export function formatUserShortName(fullName: string): string {
+    return getShortName(fullName)
+}
