@@ -1,3 +1,9 @@
+## [15.11.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.10.0...v15.11.0) (2026-10-30)
+
+### Features
+
+* add person name helpers ([#734](https://github.com/Doist/todoist-sdk-typescript/issues/734)) ([efff966](https://github.com/Doist/todoist-sdk-typescript/commit/efff966c6d81d3339a19902da9897df624f08c14))
+
 ## [15.10.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.9.0...v15.10.0) (2026-10-29)
 
 ### Features
