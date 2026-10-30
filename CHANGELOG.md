@@ -1,3 +1,9 @@
+## [15.11.1](https://github.com/Doist/todoist-sdk-typescript/compare/v15.11.0...v15.11.1) (2026-10-30)
+
+### Bug Fixes
+
+* deprecate formatUserShortName in favour of getShortName ([#735](https://github.com/Doist/todoist-sdk-typescript/issues/735)) ([4a5c214](https://github.com/Doist/todoist-sdk-typescript/commit/4a5c214180a9318f8e6668e66e905153dd5324f6))
+
 ## [15.11.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.10.0...v15.11.0) (2026-10-30)
 
 ### Features
