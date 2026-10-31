@@ -119,6 +119,16 @@ describe('Sync resource schemas', () => {
             expect(FolderSchema.parse(validFolder)).toEqual(validFolder)
         })
 
+        test('validates the default order key', () => {
+            for (const defaultOrderKey of ['a0', null]) {
+                const folder = { ...validFolder, defaultOrderKey }
+                expect(FolderSchema.parse(folder)).toEqual(folder)
+            }
+            expect(() => FolderSchema.parse({ ...validFolder, defaultOrderKey: 1 })).toThrow(
+                ZodError,
+            )
+        })
+
         test('throws on invalid data', () => {
             expect(() => FolderSchema.parse({ id: '1' })).toThrow(ZodError)
         })

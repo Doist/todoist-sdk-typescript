@@ -71,6 +71,11 @@ describe('validators', () => {
             expect(result).toEqual(DEFAULT_PROJECT)
         })
 
+        test('validation keeps order keys', () => {
+            const project = { ...DEFAULT_PROJECT, orderKey: 'a1V', defaultOrderKey: null }
+            expect(validateProject(project)).toEqual(project)
+        })
+
         test('validation throws error for an invalid project', () => {
             expect(() => {
                 validateProject(INVALID_PROJECT)
@@ -102,6 +107,11 @@ describe('validators', () => {
             expect(result).toEqual(DEFAULT_WORKSPACE_PROJECT)
         })
 
+        test('validation keeps order keys', () => {
+            const project = { ...DEFAULT_WORKSPACE_PROJECT, orderKey: null, defaultOrderKey: 'a0' }
+            expect(validateWorkspaceProject(project)).toEqual(project)
+        })
+
         test('validation throws error for an invalid workspace project', () => {
             expect(() => {
                 validateWorkspaceProject(INVALID_PROJECT)
@@ -131,6 +141,11 @@ describe('validators', () => {
         test('validation passes for a valid section', () => {
             const result = validateSection(DEFAULT_SECTION)
             expect(result).toEqual(DEFAULT_SECTION)
+        })
+
+        test('validation keeps the order key', () => {
+            const section = { ...DEFAULT_SECTION, orderKey: 'a1V' }
+            expect(validateSection(section)).toEqual(section)
         })
 
         test('validation throws error for an invalid section', () => {

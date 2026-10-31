@@ -2,6 +2,7 @@ export type SectionAddArgs = {
     projectId: string
     name: string
     sectionOrder?: number
+    orderKey?: string
     addedAt?: string
 }
 
@@ -9,6 +10,7 @@ export type SectionUpdateArgs = {
     id: string
     name?: string
     isCollapsed?: boolean
+    orderKey?: string
 }
 
 export type SectionMoveArgs = {
@@ -16,6 +18,9 @@ export type SectionMoveArgs = {
     projectId: string
 }
 
+/**
+ * @deprecated Set `orderKey` via `section_update` instead.
+ */
 export type SectionReorderArgs = {
     sections: Array<{ id: string; sectionOrder: number }>
 }

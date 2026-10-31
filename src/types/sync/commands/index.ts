@@ -130,6 +130,7 @@ export type SyncCommandsMap = {
     project_add: ProjectAddArgs
     project_update: ProjectUpdateArgs
     project_move: ProjectMoveArgs
+    /** @deprecated Set `orderKey` via `project_update` instead. */
     project_reorder: ProjectReorderArgs
     share_project: ShareProjectArgs
     project_leave: ProjectLeaveArgs
@@ -143,6 +144,7 @@ export type SyncCommandsMap = {
     section_add: SectionAddArgs
     section_update: SectionUpdateArgs
     section_move: SectionMoveArgs
+    /** @deprecated Set `orderKey` via `section_update` instead. */
     section_reorder: SectionReorderArgs
     section_archive: SectionArchiveArgs
     section_unarchive: SectionUnarchiveArgs
@@ -182,6 +184,7 @@ export type SyncCommandsMap = {
     workspace_delete_user: WorkspaceDeleteUserArgs
     workspace_leave: WorkspaceLeaveArgs
     workspace_invite: WorkspaceInviteArgs
+    /** @deprecated Set `defaultOrderKey` via `project_update` and `folder_update` instead. */
     workspace_set_default_project_ordering: WorkspaceSetDefaultOrderArgs
     workspace_update_user_project_sort_preference: WorkspaceUpdateUserProjectSortPreferenceArgs
 

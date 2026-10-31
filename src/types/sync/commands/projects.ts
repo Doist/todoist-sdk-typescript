@@ -17,6 +17,7 @@ export type ProjectAddArgs = {
     workspaceId?: string
     folderId?: string | null
     childOrder?: number
+    orderKey?: string
     defaultOrder?: number
     color?: ColorKey
     description?: string
@@ -32,6 +33,8 @@ export type ProjectAddArgs = {
 export type ProjectUpdateArgs = {
     id: string
     folderId?: string | null
+    orderKey?: string
+    defaultOrderKey?: string
     name?: string
     color?: ColorKey
     description?: string
@@ -51,6 +54,9 @@ export type ProjectMoveArgs = {
     parentId?: string | null
 }
 
+/**
+ * @deprecated Set `orderKey` via `project_update` instead.
+ */
 export type ProjectReorderArgs = {
     projects: Array<{ id: string; childOrder: number }>
 }
