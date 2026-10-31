@@ -120,6 +120,7 @@ import {
     GetFullProjectArgs,
     GetFullProjectResponse,
     JoinProjectResponse,
+    PersonalProjectCapacity,
 } from './types/projects'
 import {
     AddReminderArgs,
@@ -735,6 +736,37 @@ export class TodoistApi {
         requestId?: string,
     ): Promise<PersonalProject | WorkspaceProject> {
         return this.projectClient.moveProjectToPersonal(args, requestId)
+    }
+
+    /**
+     * Reads how many active personal projects the user's plan allows and how many
+     * they have.
+     *
+     * The API accepts a couple of projects beyond the plan limit, so offline clients
+     * can sync at the boundary. It therefore does not reject an `addProject`,
+     * `unarchiveProject` or `moveProjectToPersonal` that the Todoist apps would
+     * refuse. Check `remaining` before any of those to enforce the same limit as the
+     * apps. The count can change between this call and the write, so treat it as a
+     * guard rather than a guarantee.
+     *
+     * Every active personal project except the Inbox counts, including shared
+     * projects and sub-projects (see `countsTowardsPersonalProjectLimit`).
+     *
+     * @returns A promise that resolves to the limit, the number of projects counting
+     * towards it, and how many more can be added.
+     * @throws TodoistRequestError if the plan limits do not include a project limit.
+     *
+     * @example
+     * ```typescript
+     * const { remaining, maxProjects } = await api.getPersonalProjectCapacity()
+     * if (remaining === 0) {
+     *     throw new Error(`You have reached your limit of ${maxProjects} projects`)
+     * }
+     * await api.addProject({ name: 'Groceries' })
+     * ```
+     */
+    async getPersonalProjectCapacity(): Promise<PersonalProjectCapacity> {
+        return this.projectClient.getPersonalProjectCapacity()
     }
 
     /**

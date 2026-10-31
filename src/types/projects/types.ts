@@ -64,6 +64,19 @@ export const WorkspaceProjectSchema = BaseProjectSchema.extend({
 })
 
 /**
+ * How many active personal projects the user's plan allows, and how many they have.
+ * Returned by `TodoistApi.getPersonalProjectCapacity`.
+ */
+export type PersonalProjectCapacity = {
+    /** The current plan's limit on active personal projects. */
+    maxProjects: number
+    /** Active personal projects that count towards the limit. */
+    activeCount: number
+    /** How many more active personal projects the user can add; never negative. */
+    remaining: number
+}
+
+/**
  * Represents a personal project in Todoist.
  * @see https://developer.todoist.com/api/v1/#tag/Projects
  */
