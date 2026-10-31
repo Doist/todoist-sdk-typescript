@@ -1,3 +1,9 @@
+## [15.12.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.11.1...v15.12.0) (2026-10-31)
+
+### Features
+
+* add getPersonalProjectCapacity for plan project limits ([#736](https://github.com/Doist/todoist-sdk-typescript/issues/736)) ([b6e7af2](https://github.com/Doist/todoist-sdk-typescript/commit/b6e7af252b18c9996df2a2b60be2b9c33132ff75))
+
 ## [15.11.1](https://github.com/Doist/todoist-sdk-typescript/compare/v15.11.0...v15.11.1) (2026-10-30)
 
 ### Bug Fixes
