@@ -16,6 +16,7 @@ export const SectionBaseSchema = z.object({
     name: z.string(),
     description: z.string().nullable(),
     sectionOrder: z.number().int(),
+    orderKey: z.string().nullable().optional(),
     isArchived: z.boolean(),
     isDeleted: z.boolean(),
     isCollapsed: z.boolean(),

@@ -6,6 +6,7 @@ export const FolderSchema = z.looseObject({
     workspaceId: z.string(),
     isDeleted: z.boolean(),
     defaultOrder: z.number().int(),
+    defaultOrderKey: z.string().nullable().optional(),
     childOrder: z.number().int(),
 })
 

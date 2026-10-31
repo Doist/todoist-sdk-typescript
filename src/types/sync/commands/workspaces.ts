@@ -71,6 +71,9 @@ export type WorkspaceInviteArgs = {
     role?: WorkspaceRole
 }
 
+/**
+ * @deprecated Set `defaultOrderKey` via `project_update` and `folder_update` instead.
+ */
 export type WorkspaceSetDefaultOrderArgs = {
     projects: Array<{ id: string; defaultOrder: number; folderId?: string | null }>
     folders: Array<{ id: string; defaultOrder: number }>
