@@ -13,6 +13,8 @@ import {
     PROJECT_UNARCHIVE,
 } from '../consts/endpoints'
 import { isSuccess, request } from '../transport/http-client'
+import { performSyncRequest } from '../transport/sync-request'
+import { TodoistRequestError } from '../types/errors'
 import type {
     AddProjectArgs,
     GetArchivedProjectsArgs,
@@ -30,10 +32,12 @@ import type {
     MoveProjectToPersonalArgs,
     MoveProjectToWorkspaceArgs,
     PersonalProject,
+    PersonalProjectCapacity,
     SearchProjectsArgs,
     UpdateProjectArgs,
     WorkspaceProject,
 } from '../types/projects'
+import { countsTowardsPersonalProjectLimit } from '../utils/project-helpers'
 import { generatePath } from '../utils/request-helpers'
 import {
     IdSchema,
@@ -59,6 +63,9 @@ import { BaseClient } from './base-client'
  * Instantiated by `TodoistApi`; every public project method on `TodoistApi`
  * delegates here. See `todoist-api.ts` for the user-facing JSDoc.
  */
+/** The largest page of projects the API returns. */
+const PROJECTS_PAGE_SIZE = 200
+
 export class ProjectClient extends BaseClient {
     async getProject(id: string): Promise<PersonalProject | WorkspaceProject> {
         IdSchema.parse(id)
@@ -362,5 +369,45 @@ export class ProjectClient extends BaseClient {
             results: validateUserArray(results),
             nextCursor,
         }
+    }
+
+    async getPersonalProjectCapacity(): Promise<PersonalProjectCapacity> {
+        const [syncResponse, activeCount] = await Promise.all([
+            performSyncRequest(this.syncContext, {
+                resourceTypes: ['user_plan_limits'],
+                syncToken: '*',
+            }),
+            this.countActivePersonalProjects(),
+        ])
+
+        const maxProjects = syncResponse.userPlanLimits?.current.maxProjects
+        if (maxProjects === undefined) {
+            throw new TodoistRequestError(
+                'The plan limits returned by the API do not include maxProjects',
+                undefined,
+                syncResponse.userPlanLimits,
+            )
+        }
+
+        return {
+            maxProjects,
+            activeCount,
+            remaining: Math.max(0, maxProjects - activeCount),
+        }
+    }
+
+    private async countActivePersonalProjects(): Promise<number> {
+        let count = 0
+        let cursor: string | null = null
+        do {
+            const page: GetProjectsResponse = await this.getProjects({
+                cursor,
+                limit: PROJECTS_PAGE_SIZE,
+            })
+            count += page.results.filter(countsTowardsPersonalProjectLimit).length
+            cursor = page.nextCursor
+        } while (cursor)
+
+        return count
     }
 }

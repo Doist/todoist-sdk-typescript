@@ -3,7 +3,7 @@ import { countsTowardsPersonalProjectLimit } from './project-helpers'
 
 describe('countsTowardsPersonalProjectLimit', () => {
     test.each([
-        { kind: 'an active personal project', project: DEFAULT_PROJECT },
+        { kind: 'an active personal project', project: { ...DEFAULT_PROJECT, parentId: null } },
         { kind: 'a shared personal project', project: { ...DEFAULT_PROJECT, isShared: true } },
         { kind: 'a sub-project', project: { ...DEFAULT_PROJECT, parentId: 'parent' } },
     ])('counts $kind', ({ project }) => {

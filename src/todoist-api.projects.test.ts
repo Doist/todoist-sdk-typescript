@@ -29,6 +29,7 @@ import {
     DEFAULT_NOTE,
     DEFAULT_WORKSPACE_PROJECT,
 } from './test-utils/test-defaults'
+import { TodoistRequestError } from './types/errors'
 import type { UpdateProjectArgs } from './types/projects/requests'
 import { getProjectUrl } from './utils/url-helpers'
 
@@ -572,7 +573,13 @@ describe('TodoistApi project endpoints', () => {
             mockPlanLimits({ max_collaborators: 5 })
             mockProjectPages([[]])
 
-            await expect(getTarget().getPersonalProjectCapacity()).rejects.toThrow(
+            const error = await getTarget()
+                .getPersonalProjectCapacity()
+                .catch((caught: unknown) => caught)
+
+            expect(error).toBeInstanceOf(TodoistRequestError)
+            expect(error).toHaveProperty(
+                'message',
                 'The plan limits returned by the API do not include maxProjects',
             )
         })

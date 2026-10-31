@@ -210,11 +210,7 @@ import {
     AllWorkspaceInvitationsResponse,
     WorkspaceLogoResponse,
 } from './types/workspaces'
-import { countsTowardsPersonalProjectLimit } from './utils/project-helpers'
 import { validateCurrentUser } from './utils/validators'
-
-/** The largest page of projects the API returns. */
-const PROJECTS_PAGE_SIZE = 200
 
 /**
  * A client for interacting with the Todoist API v1.
@@ -758,7 +754,7 @@ export class TodoistApi {
      *
      * @returns A promise that resolves to the limit, the number of projects counting
      * towards it, and how many more can be added.
-     * @throws Error if the plan limits do not include a project limit.
+     * @throws TodoistRequestError if the plan limits do not include a project limit.
      *
      * @example
      * ```typescript
@@ -770,36 +766,7 @@ export class TodoistApi {
      * ```
      */
     async getPersonalProjectCapacity(): Promise<PersonalProjectCapacity> {
-        const [syncResponse, activeCount] = await Promise.all([
-            this.sync({ resourceTypes: ['user_plan_limits'], syncToken: '*' }),
-            this.countActivePersonalProjects(),
-        ])
-
-        const maxProjects = syncResponse.userPlanLimits?.current.maxProjects
-        if (maxProjects === undefined) {
-            throw new Error('The plan limits returned by the API do not include maxProjects')
-        }
-
-        return {
-            maxProjects,
-            activeCount,
-            remaining: Math.max(0, maxProjects - activeCount),
-        }
-    }
-
-    private async countActivePersonalProjects(): Promise<number> {
-        let count = 0
-        let cursor: string | null = null
-        do {
-            const page: GetProjectsResponse = await this.getProjects({
-                cursor,
-                limit: PROJECTS_PAGE_SIZE,
-            })
-            count += page.results.filter(countsTowardsPersonalProjectLimit).length
-            cursor = page.nextCursor
-        } while (cursor)
-
-        return count
+        return this.projectClient.getPersonalProjectCapacity()
     }
 
     /**
