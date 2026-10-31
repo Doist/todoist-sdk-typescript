@@ -8,6 +8,8 @@ export const PlanLimitsSchema = z.looseObject({
     fileUploadsPerComment: z.number().int().optional(),
     filtersPerUser: z.number().int().optional(),
     labelsPerTask: z.number().int().optional(),
+    /** How many active personal projects the plan allows, not counting the Inbox. */
+    maxProjects: z.number().int().optional(),
     remindersPerUser: z.number().int().optional(),
     sectionsPerProject: z.number().int().optional(),
     tasksPerProject: z.number().int().optional(),

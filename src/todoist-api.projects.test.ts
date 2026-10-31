@@ -12,6 +12,7 @@ import {
     ENDPOINT_REST_PROJECTS_PERMISSIONS,
     ENDPOINT_REST_PROJECT_FULL,
     ENDPOINT_REST_PROJECT_JOIN,
+    ENDPOINT_SYNC,
 } from './consts/endpoints'
 import { server, http, HttpResponse } from './test-utils/msw-setup'
 import {
@@ -500,6 +501,80 @@ describe('TodoistApi project endpoints', () => {
             const result = await api.joinProject('123')
 
             expect(result.folder).toBeNull()
+        })
+    })
+
+    describe('getPersonalProjectCapacity', () => {
+        function mockPlanLimits(current: Record<string, unknown>) {
+            server.use(
+                http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () =>
+                    HttpResponse.json({
+                        sync_token: 'token',
+                        full_sync: true,
+                        user_plan_limits: { current, next: { max_projects: 300 } },
+                    }),
+                ),
+            )
+        }
+
+        function mockProjectPages(pages: Array<Array<Record<string, unknown>>>) {
+            const requestedCursors: Array<string | null> = []
+            server.use(
+                http.get(`${getSyncBaseUri()}${ENDPOINT_REST_PROJECTS}`, ({ request }) => {
+                    const cursor = new URL(request.url).searchParams.get('cursor')
+                    requestedCursors.push(cursor)
+                    const index = cursor ? Number(cursor) : 0
+                    return HttpResponse.json({
+                        results: pages[index],
+                        next_cursor: index + 1 < pages.length ? String(index + 1) : null,
+                    })
+                }),
+            )
+            return requestedCursors
+        }
+
+        test('counts active personal projects across every page against the current limit', async () => {
+            mockPlanLimits({ max_projects: 5 })
+            const requestedCursors = mockProjectPages([
+                [
+                    { ...DEFAULT_PROJECT, id: 'personal-1' },
+                    { ...DEFAULT_PROJECT, id: 'inbox', inboxProject: true },
+                    { ...DEFAULT_WORKSPACE_PROJECT, id: 'workspace-1' },
+                ],
+                [
+                    { ...DEFAULT_PROJECT, id: 'shared', isShared: true },
+                    { ...DEFAULT_PROJECT, id: 'archived', isArchived: true },
+                    { ...DEFAULT_PROJECT, id: 'deleted', isDeleted: true },
+                ],
+            ])
+
+            const capacity = await getTarget().getPersonalProjectCapacity()
+
+            expect(capacity).toEqual({ maxProjects: 5, activeCount: 2, remaining: 3 })
+            expect(requestedCursors).toEqual([null, '1'])
+        })
+
+        test('reports no remaining capacity when the account is over its limit', async () => {
+            mockPlanLimits({ max_projects: 1 })
+            mockProjectPages([
+                [
+                    { ...DEFAULT_PROJECT, id: 'personal-1' },
+                    { ...DEFAULT_PROJECT, id: 'personal-2' },
+                ],
+            ])
+
+            const capacity = await getTarget().getPersonalProjectCapacity()
+
+            expect(capacity).toEqual({ maxProjects: 1, activeCount: 2, remaining: 0 })
+        })
+
+        test('throws when the plan limits do not include a project limit', async () => {
+            mockPlanLimits({ max_collaborators: 5 })
+            mockProjectPages([[]])
+
+            await expect(getTarget().getPersonalProjectCapacity()).rejects.toThrow(
+                'The plan limits returned by the API do not include maxProjects',
+            )
         })
     })
 })

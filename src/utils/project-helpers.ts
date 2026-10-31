@@ -21,3 +21,21 @@ export function isPersonalProject(
 ): project is PersonalProject {
     return !isWorkspaceProject(project)
 }
+
+/**
+ * Whether a project counts towards the plan's limit on active personal projects:
+ * an active personal project other than the Inbox. Shared projects and sub-projects
+ * count; workspace projects do not.
+ * @param project The project to check
+ * @returns True if the project counts towards the limit
+ */
+export function countsTowardsPersonalProjectLimit(
+    project: PersonalProject | WorkspaceProject,
+): boolean {
+    return (
+        isPersonalProject(project) &&
+        !project.inboxProject &&
+        !project.isArchived &&
+        !project.isDeleted
+    )
+}
