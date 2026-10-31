@@ -1,3 +1,9 @@
+## [15.13.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.12.0...v15.13.0) (2026-10-31)
+
+### Features
+
+* support fractional order keys for projects, sections and folders ([#737](https://github.com/Doist/todoist-sdk-typescript/issues/737)) ([83abb5b](https://github.com/Doist/todoist-sdk-typescript/commit/83abb5bffc8b3b9dd0aed1e313216aec9235e130))
+
 ## [15.12.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.11.1...v15.12.0) (2026-10-31)
 
 ### Features
