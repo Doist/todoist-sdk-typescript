@@ -465,7 +465,7 @@ describe('Sync resource schemas', () => {
 
     describe('PlanLimitsSchema', () => {
         test('validates with known fields', () => {
-            const data = { activeProjects: 80, filtersPerUser: 150 }
+            const data = { activeProjects: 80, filtersPerUser: 150, tableLayout: true }
             expect(PlanLimitsSchema.parse(data)).toEqual(data)
         })
 

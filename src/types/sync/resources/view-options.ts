@@ -89,6 +89,47 @@ export const CalendarSettingsSchema = z.looseObject({
 
 export type CalendarSettings = z.infer<typeof CalendarSettingsSchema>
 
+/** How a view shows one task property. Attributes the SDK doesn't know are kept. */
+export const PropertyAttributesSchema = z.looseObject({
+    is_hidden: z.boolean().optional(),
+    /** Width of the property's column, in CSS pixels. */
+    width: z.number().int().optional(),
+})
+
+export type PropertyAttributes = z.infer<typeof PropertyAttributesSchema>
+
+/**
+ * How a view shows task properties, such as `due` or `labels`, holding only what the user
+ * changed. Property IDs are opaque strings (`field:6Jf8VQXx`), so every key inside keeps its
+ * API spelling rather than being camel-cased, and keys the SDK doesn't know are kept.
+ */
+export const PropertySettingsSchema = z.looseObject({
+    /** Property IDs in display order. */
+    order: z.array(z.string()).optional(),
+    /** How each property shows, by property ID. */
+    properties: z.record(z.string(), PropertyAttributesSchema).optional(),
+})
+
+export type PropertySettings = z.infer<typeof PropertySettingsSchema>
+
+/** A change to one property's attributes, where `null` resets an attribute. */
+export type PropertyAttributesPatch = {
+    is_hidden?: boolean | null
+    width?: number | null
+    [attribute: string]: unknown
+}
+
+/**
+ * A change to property settings, applied like a JSON merge patch: objects merge into the
+ * saved settings, arrays such as `order` replace them, and `null` removes its path. Keys
+ * keep their API spelling, as in {@link PropertySettings}.
+ */
+export type PropertySettingsPatch = {
+    order?: string[] | null
+    properties?: Record<string, PropertyAttributesPatch | null> | null
+    [key: string]: unknown
+}
+
 export const ViewOptionsSchema = z.looseObject({
     viewType: ViewTypeSchema,
     objectId: z.string().nullable().optional(),
@@ -99,6 +140,7 @@ export const ViewOptionsSchema = z.looseObject({
     sortedBy: SortedBySchema.optional(),
     sortOrder: SortOrderSchema.optional(),
     calendarSettings: CalendarSettingsSchema.nullable().optional(),
+    propertySettings: PropertySettingsSchema.nullable().optional(),
     isDeleted: z.boolean().optional(),
 })
 
@@ -113,6 +155,7 @@ export const ProjectViewOptionsDefaultsSchema = z.looseObject({
     showCompletedTasks: z.boolean().optional(),
     filteredBy: z.string().nullable().optional(),
     calendarSettings: CalendarSettingsSchema.nullable().optional(),
+    propertySettings: PropertySettingsSchema.nullable().optional(),
 })
 
 export type ProjectViewOptionsDefaults = z.infer<typeof ProjectViewOptionsDefaultsSchema>
