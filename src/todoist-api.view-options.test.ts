@@ -128,7 +128,7 @@ describe('TodoistApi view options', () => {
         })
     })
 
-    test('accepts only known values when setting view options', async () => {
+    test('accepts only known values when setting view options, at compile time', async () => {
         server.use(
             http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, async ({ request }) => {
                 const body = (await request.json()) as { commands: Array<{ uuid: string }> }

@@ -379,10 +379,8 @@ function comparePrimary({
             return compareOptionalNumber(a.project, b.project)
         case 'WORKSPACE':
             return compareOptionalNumber(a.workspace, b.workspace)
-        case 'MANUAL':
-            return 0
         default:
-            // LABEL, and fields added after this SDK version, keep the default order.
+            // MANUAL, LABEL, and fields added after this SDK version keep the default order.
             return 0
     }
 }

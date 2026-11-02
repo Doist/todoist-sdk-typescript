@@ -119,7 +119,6 @@ export type CalendarSettingsArgs = {
     layout?: KnownCalendarLayout | null
     visibleDayCount?: CalendarSettings['visibleDayCount']
     color?: KnownCalendarColor | null
-    [key: string]: unknown
 }
 
 /** How a view shows one task property. Attributes the SDK doesn't know are kept. */
