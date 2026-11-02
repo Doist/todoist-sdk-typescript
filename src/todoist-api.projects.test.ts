@@ -14,7 +14,7 @@ import {
     ENDPOINT_REST_PROJECT_JOIN,
     ENDPOINT_SYNC,
 } from './consts/endpoints'
-import { server, http, HttpResponse } from './test-utils/msw-setup'
+import { server, http, HttpResponse, mockApiResponse } from './test-utils/msw-setup'
 import {
     DEFAULT_AUTH_TOKEN,
     DEFAULT_PROJECT,
@@ -506,16 +506,19 @@ describe('TodoistApi project endpoints', () => {
     })
 
     describe('getPersonalProjectCapacity', () => {
-        function mockPlanLimits(current: Record<string, unknown>) {
-            server.use(
-                http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () =>
-                    HttpResponse.json({
-                        sync_token: 'token',
-                        full_sync: true,
-                        user_plan_limits: { current, next: { max_projects: 300 } },
-                    }),
-                ),
-            )
+        function mockPlanLimits(
+            current: Record<string, unknown>,
+            next: Record<string, unknown> | null = { max_projects: 300, activity_log: true },
+        ) {
+            mockApiResponse({
+                endpoint: `${getSyncBaseUri()}${ENDPOINT_SYNC}`,
+                data: {
+                    sync_token: 'token',
+                    full_sync: true,
+                    user_plan_limits: { current, next },
+                },
+                options: { method: 'POST' },
+            })
         }
 
         function mockProjectPages(pages: Array<Array<Record<string, unknown>>>) {
@@ -535,7 +538,7 @@ describe('TodoistApi project endpoints', () => {
         }
 
         test('counts active personal projects across every page against the current limit', async () => {
-            mockPlanLimits({ max_projects: 5 })
+            mockPlanLimits({ max_projects: 5, activity_log: true })
             const requestedCursors = mockProjectPages([
                 [
                     { ...DEFAULT_PROJECT, id: 'personal-1' },
@@ -556,7 +559,7 @@ describe('TodoistApi project endpoints', () => {
         })
 
         test('reports no remaining capacity when the account is over its limit', async () => {
-            mockPlanLimits({ max_projects: 1 })
+            mockPlanLimits({ max_projects: 1, activity_log: true }, null)
             mockProjectPages([
                 [
                     { ...DEFAULT_PROJECT, id: 'personal-1' },

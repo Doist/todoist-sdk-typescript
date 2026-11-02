@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const PlanLimitsSchema = z.looseObject({
     activeProjects: z.number().int().optional(),
-    activityLog: z.number().int().optional(),
+    activityLog: z.boolean().optional(),
     collaboratorsPerProject: z.number().int().optional(),
     commentsPerTask: z.number().int().optional(),
     fileUploadsPerComment: z.number().int().optional(),

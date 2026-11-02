@@ -1,7 +1,7 @@
 import { ZodError } from 'zod'
 import { TodoistApi } from '.'
 import { getSyncBaseUri, ENDPOINT_SYNC } from './consts/endpoints'
-import { server, http, HttpResponse } from './test-utils/msw-setup'
+import { server, http, HttpResponse, mockApiResponse } from './test-utils/msw-setup'
 import {
     DEFAULT_AUTH_TOKEN,
     DEFAULT_TASK,
@@ -105,6 +105,46 @@ describe('TodoistApi sync endpoint', () => {
             expect(response.items).toEqual([DEFAULT_TASK])
             expect(response.labels).toEqual([DEFAULT_LABEL])
             expect(response.sections).toEqual([DEFAULT_SECTION])
+        })
+
+        test.each([true, false])(
+            'parses activity_log: %s in user plan limits',
+            async (activityLog) => {
+                mockApiResponse({
+                    endpoint: `${getSyncBaseUri()}${ENDPOINT_SYNC}`,
+                    data: {
+                        user_plan_limits: {
+                            current: { activity_log: activityLog, activity_log_limit: 7 },
+                            next: { activity_log: !activityLog, activity_log_limit: 90 },
+                        },
+                    },
+                    options: { method: 'POST' },
+                })
+
+                const response = await getTarget().sync({
+                    resourceTypes: ['user_plan_limits'],
+                    syncToken: '*',
+                })
+
+                expect(response.userPlanLimits).toEqual({
+                    current: { activityLog, activityLogLimit: 7 },
+                    next: { activityLog: !activityLog, activityLogLimit: 90 },
+                })
+            },
+        )
+
+        test('rejects a numeric activity_log in user plan limits', async () => {
+            mockApiResponse({
+                endpoint: `${getSyncBaseUri()}${ENDPOINT_SYNC}`,
+                data: {
+                    user_plan_limits: { current: { activity_log: 1 }, next: null },
+                },
+                options: { method: 'POST' },
+            })
+
+            await expect(
+                getTarget().sync({ resourceTypes: ['user_plan_limits'], syncToken: '*' }),
+            ).rejects.toThrow(ZodError)
         })
 
         test('throws ZodError for invalid resource data', async () => {
