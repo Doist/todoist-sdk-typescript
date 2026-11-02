@@ -105,7 +105,7 @@ export const ProjectSchema = z.unknown().transform((val) => {
 export type Project = z.infer<typeof ProjectSchema>
 
 /** Available project view styles. */
-export const PROJECT_VIEW_STYLES = ['list', 'board', 'calendar'] as const
+export const PROJECT_VIEW_STYLES = ['list', 'board', 'calendar', 'table'] as const
 /**
  * View style for a project.
  * @see https://developer.todoist.com/api/v1/#tag/Projects
