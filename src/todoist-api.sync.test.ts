@@ -250,6 +250,136 @@ describe('TodoistApi sync endpoint', () => {
         })
     })
 
+    describe('view options', () => {
+        function mockSyncResponse(data: Record<string, unknown>) {
+            mockApiResponse({
+                endpoint: `${getSyncBaseUri()}${ENDPOINT_SYNC}`,
+                data,
+                options: { method: 'POST' },
+            })
+        }
+
+        test('parses the Table layout, Assigned to me view, and label sorting', async () => {
+            mockSyncResponse({
+                view_options: [
+                    { view_type: 'ASSIGNED_TO_ME', object_id: null, view_mode: 'TABLE' },
+                    { view_type: 'PROJECT', object_id: 'p1', sorted_by: 'LABEL' },
+                ],
+                project_view_options_defaults: [
+                    { project_id: 'p1', view_mode: 'TABLE', sorted_by: 'LABEL' },
+                ],
+            })
+
+            const response = await getTarget().sync({
+                resourceTypes: ['view_options', 'project_view_options_defaults'],
+                syncToken: '*',
+            })
+
+            expect(response.viewOptions).toEqual([
+                { viewType: 'ASSIGNED_TO_ME', objectId: null, viewMode: 'TABLE' },
+                { viewType: 'PROJECT', objectId: 'p1', sortedBy: 'LABEL' },
+            ])
+            expect(response.projectViewOptionsDefaults).toEqual([
+                { projectId: 'p1', viewMode: 'TABLE', sortedBy: 'LABEL' },
+            ])
+        })
+
+        test('keeps values added after this SDK version as sent', async () => {
+            mockSyncResponse({
+                view_options: [
+                    {
+                        view_type: 'NEW_VIEW',
+                        view_mode: 'NEW_MODE',
+                        grouped_by: 'NEW_GROUPING',
+                        sorted_by: 'NEW_SORTING',
+                        sort_order: 'NEW_ORDER',
+                        calendar_settings: { layout: 'NEW_LAYOUT', color: 'NEW_COLOR' },
+                    },
+                ],
+            })
+
+            const response = await getTarget().sync({
+                resourceTypes: ['view_options'],
+                syncToken: '*',
+            })
+
+            expect(response.viewOptions).toEqual([
+                {
+                    viewType: 'NEW_VIEW',
+                    viewMode: 'NEW_MODE',
+                    groupedBy: 'NEW_GROUPING',
+                    sortedBy: 'NEW_SORTING',
+                    sortOrder: 'NEW_ORDER',
+                    calendarSettings: { layout: 'NEW_LAYOUT', color: 'NEW_COLOR' },
+                },
+            ])
+        })
+
+        test('keeps tombstones from an incremental sync', async () => {
+            const emptied = {
+                view_mode: '',
+                grouped_by: '',
+                sorted_by: '',
+                sort_order: '',
+                filtered_by: '',
+                show_completed_tasks: false,
+                calendar_settings: null,
+                property_settings: null,
+                is_deleted: true,
+            }
+            const emptiedInSdk = {
+                viewMode: '',
+                groupedBy: '',
+                sortedBy: '',
+                sortOrder: '',
+                filteredBy: '',
+                showCompletedTasks: false,
+                calendarSettings: null,
+                propertySettings: null,
+                isDeleted: true,
+            }
+            mockSyncResponse({
+                full_sync: false,
+                view_options: [
+                    { id: '9', view_type: 'PROJECT', object_id: 'p1', ...emptied },
+                    { id: '10', view_type: 'TODAY', object_id: null, view_mode: 'TABLE' },
+                ],
+                project_view_options_defaults: [
+                    { project_id: 'p1', creator_uid: 0, updater_uid: 0, ...emptied },
+                ],
+            })
+
+            const response = await getTarget().sync({
+                resourceTypes: ['view_options', 'project_view_options_defaults'],
+                syncToken: 'previous-token',
+            })
+
+            expect(response.viewOptions).toEqual([
+                { id: '9', viewType: 'PROJECT', objectId: 'p1', ...emptiedInSdk },
+                { id: '10', viewType: 'TODAY', objectId: null, viewMode: 'TABLE' },
+            ])
+            expect(response.projectViewOptionsDefaults).toEqual([
+                { projectId: 'p1', creatorUid: 0, updaterUid: 0, ...emptiedInSdk },
+            ])
+        })
+
+        test.each([
+            { view_options: [{ view_type: 'TODAY', view_mode: 1 }] },
+            { view_options: [{ view_type: 'TODAY', sort_order: false }] },
+            { view_options: [{ view_type: 'TODAY', is_deleted: true, view_mode: 'LIST' }] },
+            { project_view_options_defaults: [{ project_id: 'p1', grouped_by: 2 }] },
+        ])('rejects malformed rows: %j', async (data) => {
+            mockSyncResponse(data)
+
+            await expect(
+                getTarget().sync({
+                    resourceTypes: ['view_options', 'project_view_options_defaults'],
+                    syncToken: '*',
+                }),
+            ).rejects.toThrow(ZodError)
+        })
+    })
+
     describe('property settings', () => {
         // `added_date` and `addedDate` are distinct property IDs that any case conversion would merge.
         const propertySettings = {

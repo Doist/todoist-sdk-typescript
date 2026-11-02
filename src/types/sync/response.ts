@@ -19,7 +19,9 @@ import {
     LocationReminderSchema,
     CompletedInfoSchema,
     ViewOptionsSchema,
+    ViewOptionsTombstoneSchema,
     ProjectViewOptionsDefaultsSchema,
+    ProjectViewOptionsDefaultsTombstoneSchema,
     UserPlanLimitsSchema,
     LiveNotificationSchema,
     SyncWorkspaceSchema,
@@ -65,8 +67,17 @@ export const SyncResponseSchema = z.looseObject({
     workspaces: z.array(SyncWorkspaceSchema).optional(),
     workspaceUsers: z.array(WorkspaceUserSchema).optional(),
     workspaceFilters: z.array(WorkspaceFilterSchema).optional(),
-    viewOptions: z.array(ViewOptionsSchema).optional(),
-    projectViewOptionsDefaults: z.array(ProjectViewOptionsDefaultsSchema).optional(),
+    viewOptions: z
+        .array(z.discriminatedUnion('isDeleted', [ViewOptionsSchema, ViewOptionsTombstoneSchema]))
+        .optional(),
+    projectViewOptionsDefaults: z
+        .array(
+            z.discriminatedUnion('isDeleted', [
+                ProjectViewOptionsDefaultsSchema,
+                ProjectViewOptionsDefaultsTombstoneSchema,
+            ]),
+        )
+        .optional(),
     roleActions: z.array(z.record(z.string(), z.unknown())).optional(),
     folders: z.array(FolderSchema).optional(),
     dayOrders: z.record(z.string(), z.number()).optional(),

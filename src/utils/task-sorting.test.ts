@@ -289,7 +289,7 @@ describe('sortTasks named sorting', () => {
         ).toEqual(['b-p4', 'a-p1', 'a-p4'])
     })
 
-    test.each([undefined, null, 'MANUAL' as const])(
+    test.each([undefined, null, 'MANUAL', 'LABEL', 'NEW_SORTING'])(
         'uses the default hierarchy for %s sorting',
         (sortedBy) => {
             const tasks = [makeTask({ id: 'p4' }), makeTask({ id: 'p1', priority: 4 })]

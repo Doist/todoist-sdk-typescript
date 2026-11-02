@@ -12,7 +12,12 @@ import { TooltipsSchema } from './tooltips'
 import { SyncUserSchema } from './user'
 import { UserPlanLimitsSchema, PlanLimitsSchema } from './user-plan-limits'
 import { UserSettingsSchema } from './user-settings'
-import { ViewOptionsSchema, ProjectViewOptionsDefaultsSchema } from './view-options'
+import {
+    ViewOptionsSchema,
+    ViewOptionsTombstoneSchema,
+    ProjectViewOptionsDefaultsSchema,
+    ProjectViewOptionsDefaultsTombstoneSchema,
+} from './view-options'
 import { WorkspaceFilterSchema } from './workspace-filters'
 import { SyncWorkspaceSchema } from './workspaces'
 
@@ -407,13 +412,30 @@ describe('Sync resource schemas', () => {
             expect(ViewOptionsSchema.parse(data)).toEqual(data)
         })
 
-        test('validates deletion tombstones', () => {
-            const data = { viewType: 'FILTER' as const, objectId: 'filter1', isDeleted: true }
+        test('rejects deletion tombstones', () => {
+            expect(() =>
+                ViewOptionsSchema.parse({
+                    viewType: 'FILTER',
+                    objectId: 'filter1',
+                    isDeleted: true,
+                }),
+            ).toThrow(ZodError)
+        })
+
+        test('keeps values the SDK does not know yet', () => {
+            const data = {
+                viewType: 'NEW_VIEW',
+                viewMode: 'NEW_MODE',
+                groupedBy: 'NEW_GROUPING',
+                sortedBy: 'NEW_SORTING',
+                sortOrder: 'NEW_ORDER',
+                calendarSettings: { layout: 'NEW_LAYOUT', color: 'NEW_COLOR' },
+            }
             expect(ViewOptionsSchema.parse(data)).toEqual(data)
         })
 
-        test('throws on invalid viewType', () => {
-            expect(() => ViewOptionsSchema.parse({ viewType: 'INVALID' })).toThrow(ZodError)
+        test('throws on a non-string viewType', () => {
+            expect(() => ViewOptionsSchema.parse({ viewType: 1 })).toThrow(ZodError)
         })
 
         test('preserves unknown fields via passthrough', () => {
@@ -460,6 +482,57 @@ describe('Sync resource schemas', () => {
             }
             const result = ProjectViewOptionsDefaultsSchema.parse(data)
             expect(result.calendarSettings).toEqual({ layout: 'MONTH' })
+        })
+
+        test('rejects deletion tombstones', () => {
+            expect(() =>
+                ProjectViewOptionsDefaultsSchema.parse({ projectId: 'proj1', isDeleted: true }),
+            ).toThrow(ZodError)
+        })
+    })
+
+    describe.each([
+        [
+            'ViewOptionsTombstoneSchema',
+            ViewOptionsTombstoneSchema,
+            { viewType: 'FILTER', objectId: 'filter1' },
+        ],
+        [
+            'ProjectViewOptionsDefaultsTombstoneSchema',
+            ProjectViewOptionsDefaultsTombstoneSchema,
+            { projectId: 'proj1' },
+        ],
+    ] as const)('%s', (_name, schema, identity) => {
+        const tombstone = {
+            ...identity,
+            isDeleted: true,
+            viewMode: '',
+            groupedBy: '',
+            sortedBy: '',
+            sortOrder: '',
+            filteredBy: '',
+            showCompletedTasks: false,
+            calendarSettings: null,
+            propertySettings: null,
+        }
+
+        test('validates tombstones as the API sends them', () => {
+            expect(schema.parse(tombstone)).toEqual(tombstone)
+        })
+
+        test('validates minimal tombstones', () => {
+            expect(schema.parse({ ...identity, isDeleted: true })).toEqual({
+                ...identity,
+                isDeleted: true,
+            })
+        })
+
+        test('rejects active rows', () => {
+            expect(() => schema.parse({ ...tombstone, isDeleted: false })).toThrow(ZodError)
+        })
+
+        test('rejects options that were not emptied', () => {
+            expect(() => schema.parse({ ...tombstone, viewMode: 'LIST' })).toThrow(ZodError)
         })
     })
 

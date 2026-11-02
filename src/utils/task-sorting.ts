@@ -7,7 +7,10 @@ export const DEFAULT_TASK_ORDERS = ['PRIORITY_FIRST', 'DATE_FIRST'] as const
 export type DefaultTaskOrder = (typeof DEFAULT_TASK_ORDERS)[number]
 
 export type TaskSortOptions = {
-    /** Saved or requested sort field. Null and MANUAL use defaultOrder. */
+    /**
+     * Saved or requested sort field. Null, MANUAL, and fields this SDK can't sort by
+     * (such as LABEL) use defaultOrder.
+     */
     sortedBy?: SortedBy | null
     /** Saved or requested direction. Defaults by field when absent. */
     sortOrder?: SortOrder | null
@@ -377,6 +380,9 @@ function comparePrimary({
         case 'WORKSPACE':
             return compareOptionalNumber(a.workspace, b.workspace)
         case 'MANUAL':
+            return 0
+        default:
+            // LABEL, and fields added after this SDK version, keep the default order.
             return 0
     }
 }

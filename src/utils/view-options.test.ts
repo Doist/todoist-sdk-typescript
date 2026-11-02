@@ -1,8 +1,8 @@
-import type { ViewOptions } from '../types/sync'
+import type { ViewOptions, ViewOptionsTombstone } from '../types/sync'
 import { findViewOptions, isActiveViewOption } from './view-options'
 
 describe('view option utilities', () => {
-    const options: ViewOptions[] = [
+    const options: (ViewOptions | ViewOptionsTombstone)[] = [
         { viewType: 'FILTER', objectId: 'filter1', sortedBy: 'DUE_DATE' },
         {
             viewType: 'WORKSPACE_FILTER',
