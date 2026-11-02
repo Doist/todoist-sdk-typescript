@@ -506,13 +506,16 @@ describe('TodoistApi project endpoints', () => {
     })
 
     describe('getPersonalProjectCapacity', () => {
-        function mockPlanLimits(current: Record<string, unknown>) {
+        function mockPlanLimits(
+            current: Record<string, unknown>,
+            next: Record<string, unknown> | null = { max_projects: 300, activity_log: true },
+        ) {
             server.use(
                 http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () =>
                     HttpResponse.json({
                         sync_token: 'token',
                         full_sync: true,
-                        user_plan_limits: { current, next: { max_projects: 300 } },
+                        user_plan_limits: { current, next },
                     }),
                 ),
             )
@@ -535,7 +538,7 @@ describe('TodoistApi project endpoints', () => {
         }
 
         test('counts active personal projects across every page against the current limit', async () => {
-            mockPlanLimits({ max_projects: 5 })
+            mockPlanLimits({ max_projects: 5, activity_log: true })
             const requestedCursors = mockProjectPages([
                 [
                     { ...DEFAULT_PROJECT, id: 'personal-1' },
@@ -556,7 +559,7 @@ describe('TodoistApi project endpoints', () => {
         })
 
         test('reports no remaining capacity when the account is over its limit', async () => {
-            mockPlanLimits({ max_projects: 1 })
+            mockPlanLimits({ max_projects: 1, activity_log: true }, null)
             mockProjectPages([
                 [
                     { ...DEFAULT_PROJECT, id: 'personal-1' },

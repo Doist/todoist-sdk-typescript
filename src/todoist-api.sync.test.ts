@@ -107,6 +107,46 @@ describe('TodoistApi sync endpoint', () => {
             expect(response.sections).toEqual([DEFAULT_SECTION])
         })
 
+        test.each([true, false])(
+            'parses activity_log: %s in user plan limits',
+            async (activityLog) => {
+                server.use(
+                    http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () =>
+                        HttpResponse.json({
+                            user_plan_limits: {
+                                current: { activity_log: activityLog, activity_log_limit: 7 },
+                                next: { activity_log: !activityLog, activity_log_limit: 90 },
+                            },
+                        }),
+                    ),
+                )
+
+                const response = await getTarget().sync({
+                    resourceTypes: ['user_plan_limits'],
+                    syncToken: '*',
+                })
+
+                expect(response.userPlanLimits).toEqual({
+                    current: { activityLog, activityLogLimit: 7 },
+                    next: { activityLog: !activityLog, activityLogLimit: 90 },
+                })
+            },
+        )
+
+        test('rejects a numeric activity_log in user plan limits', async () => {
+            server.use(
+                http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () =>
+                    HttpResponse.json({
+                        user_plan_limits: { current: { activity_log: 1 }, next: null },
+                    }),
+                ),
+            )
+
+            await expect(
+                getTarget().sync({ resourceTypes: ['user_plan_limits'], syncToken: '*' }),
+            ).rejects.toThrow(ZodError)
+        })
+
         test('throws ZodError for invalid resource data', async () => {
             server.use(
                 http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () => {
