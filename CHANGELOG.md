@@ -1,3 +1,9 @@
+## [15.13.1](https://github.com/Doist/todoist-sdk-typescript/compare/v15.13.0...v15.13.1) (2026-11-02)
+
+### Bug Fixes
+
+* **sync:** accept boolean activity log plan limits ([#741](https://github.com/Doist/todoist-sdk-typescript/issues/741)) ([5f355af](https://github.com/Doist/todoist-sdk-typescript/commit/5f355af69ad45fadf4ed14e7d98f41e7f38e2d75))
+
 ## [15.13.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.12.0...v15.13.0) (2026-10-31)
 
 ### Features
