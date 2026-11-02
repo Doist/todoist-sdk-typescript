@@ -1,7 +1,7 @@
 import { ZodError } from 'zod'
 import { TodoistApi } from '.'
 import { getSyncBaseUri, ENDPOINT_SYNC } from './consts/endpoints'
-import { server, http, HttpResponse } from './test-utils/msw-setup'
+import { server, http, HttpResponse, mockApiResponse } from './test-utils/msw-setup'
 import {
     DEFAULT_AUTH_TOKEN,
     DEFAULT_TASK,
@@ -110,16 +110,16 @@ describe('TodoistApi sync endpoint', () => {
         test.each([true, false])(
             'parses activity_log: %s in user plan limits',
             async (activityLog) => {
-                server.use(
-                    http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () =>
-                        HttpResponse.json({
-                            user_plan_limits: {
-                                current: { activity_log: activityLog, activity_log_limit: 7 },
-                                next: { activity_log: !activityLog, activity_log_limit: 90 },
-                            },
-                        }),
-                    ),
-                )
+                mockApiResponse({
+                    endpoint: `${getSyncBaseUri()}${ENDPOINT_SYNC}`,
+                    data: {
+                        user_plan_limits: {
+                            current: { activity_log: activityLog, activity_log_limit: 7 },
+                            next: { activity_log: !activityLog, activity_log_limit: 90 },
+                        },
+                    },
+                    options: { method: 'POST' },
+                })
 
                 const response = await getTarget().sync({
                     resourceTypes: ['user_plan_limits'],
@@ -134,13 +134,13 @@ describe('TodoistApi sync endpoint', () => {
         )
 
         test('rejects a numeric activity_log in user plan limits', async () => {
-            server.use(
-                http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () =>
-                    HttpResponse.json({
-                        user_plan_limits: { current: { activity_log: 1 }, next: null },
-                    }),
-                ),
-            )
+            mockApiResponse({
+                endpoint: `${getSyncBaseUri()}${ENDPOINT_SYNC}`,
+                data: {
+                    user_plan_limits: { current: { activity_log: 1 }, next: null },
+                },
+                options: { method: 'POST' },
+            })
 
             await expect(
                 getTarget().sync({ resourceTypes: ['user_plan_limits'], syncToken: '*' }),

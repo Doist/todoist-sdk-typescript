@@ -14,7 +14,7 @@ import {
     ENDPOINT_REST_PROJECT_JOIN,
     ENDPOINT_SYNC,
 } from './consts/endpoints'
-import { server, http, HttpResponse } from './test-utils/msw-setup'
+import { server, http, HttpResponse, mockApiResponse } from './test-utils/msw-setup'
 import {
     DEFAULT_AUTH_TOKEN,
     DEFAULT_PROJECT,
@@ -510,15 +510,15 @@ describe('TodoistApi project endpoints', () => {
             current: Record<string, unknown>,
             next: Record<string, unknown> | null = { max_projects: 300, activity_log: true },
         ) {
-            server.use(
-                http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () =>
-                    HttpResponse.json({
-                        sync_token: 'token',
-                        full_sync: true,
-                        user_plan_limits: { current, next },
-                    }),
-                ),
-            )
+            mockApiResponse({
+                endpoint: `${getSyncBaseUri()}${ENDPOINT_SYNC}`,
+                data: {
+                    sync_token: 'token',
+                    full_sync: true,
+                    user_plan_limits: { current, next },
+                },
+                options: { method: 'POST' },
+            })
         }
 
         function mockProjectPages(pages: Array<Array<Record<string, unknown>>>) {
