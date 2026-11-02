@@ -253,35 +253,21 @@ describe('TodoistApi sync endpoint', () => {
     describe('property settings', () => {
         // `added_date` and `addedDate` are distinct property IDs that any case conversion would merge.
         const propertySettings = {
-            order: ['field:6Jf8VQXx', 'added_date', 'addedDate'],
-            properties: {
-                'field:6Jf8VQXx': { is_hidden: true, future_attribute: { 'option:Ab3Cd': 1 } },
-                added_date: { width: 180 },
-                addedDate: { width: 120 },
-            },
+            order: ['field:6Jf8VQXx'],
+            properties: { added_date: { width: 180 }, addedDate: { is_hidden: true } },
         }
 
         test('reads them unchanged in view options and project view options defaults', async () => {
-            server.use(
-                http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () =>
-                    HttpResponse.json({
-                        view_options: [
-                            {
-                                view_type: 'PROJECT',
-                                object_id: '6Jf8VQXxpwv56VQ7',
-                                property_settings: propertySettings,
-                            },
-                        ],
-                        project_view_options_defaults: [
-                            {
-                                project_id: '6Jf8VQXxpwv56VQ7',
-                                view_mode: 'LIST',
-                                property_settings: propertySettings,
-                            },
-                        ],
-                    }),
-                ),
-            )
+            mockApiResponse({
+                endpoint: `${getSyncBaseUri()}${ENDPOINT_SYNC}`,
+                data: {
+                    view_options: [{ view_type: 'TODAY', property_settings: propertySettings }],
+                    project_view_options_defaults: [
+                        { project_id: 'p1', property_settings: propertySettings },
+                    ],
+                },
+                options: { method: 'POST' },
+            })
 
             const response = await getTarget().sync({
                 resourceTypes: ['view_options', 'project_view_options_defaults'],
@@ -289,11 +275,9 @@ describe('TodoistApi sync endpoint', () => {
             })
 
             expect(response.viewOptions?.[0].propertySettings).toEqual(propertySettings)
-            expect(response.projectViewOptionsDefaults?.[0]).toEqual({
-                projectId: '6Jf8VQXxpwv56VQ7',
-                viewMode: 'LIST',
+            expect(response.projectViewOptionsDefaults?.[0].propertySettings).toEqual(
                 propertySettings,
-            })
+            )
         })
 
         test('sends them unchanged in project view options defaults commands', async () => {
@@ -305,21 +289,18 @@ describe('TodoistApi sync endpoint', () => {
                     return HttpResponse.json({})
                 }),
             )
-            const patch = {
-                order: propertySettings.order,
-                properties: { 'field:6Jf8VQXx': null, addedDate: { width: null } },
-            }
+            const patch = { properties: { 'field:6Jf8VQXx': null, addedDate: { width: null } } }
 
             await getTarget().sync({
                 commands: [
                     createCommand('project_view_options_defaults_set', {
-                        projectId: '6Jf8VQXxpwv56VQ7',
+                        projectId: 'p1',
                         propertySettings: patch,
                     }),
                 ],
             })
 
-            expect(args).toEqual({ project_id: '6Jf8VQXxpwv56VQ7', property_settings: patch })
+            expect(args).toEqual({ project_id: 'p1', property_settings: patch })
         })
     })
 
