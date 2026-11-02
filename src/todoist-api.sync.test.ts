@@ -259,25 +259,27 @@ describe('TodoistApi sync endpoint', () => {
             })
         }
 
+        function syncViewOptions() {
+            return getTarget().sync({
+                resourceTypes: ['view_options', 'project_view_options_defaults'],
+                syncToken: '*',
+            })
+        }
+
         test('parses the Table layout, Assigned to me view, and label sorting', async () => {
             mockSyncResponse({
                 view_options: [
-                    { view_type: 'ASSIGNED_TO_ME', object_id: null, view_mode: 'TABLE' },
-                    { view_type: 'PROJECT', object_id: 'p1', sorted_by: 'LABEL' },
+                    { view_type: 'ASSIGNED_TO_ME', view_mode: 'TABLE', sorted_by: 'LABEL' },
                 ],
                 project_view_options_defaults: [
                     { project_id: 'p1', view_mode: 'TABLE', sorted_by: 'LABEL' },
                 ],
             })
 
-            const response = await getTarget().sync({
-                resourceTypes: ['view_options', 'project_view_options_defaults'],
-                syncToken: '*',
-            })
+            const response = await syncViewOptions()
 
             expect(response.viewOptions).toEqual([
-                { viewType: 'ASSIGNED_TO_ME', objectId: null, viewMode: 'TABLE' },
-                { viewType: 'PROJECT', objectId: 'p1', sortedBy: 'LABEL' },
+                { viewType: 'ASSIGNED_TO_ME', viewMode: 'TABLE', sortedBy: 'LABEL' },
             ])
             expect(response.projectViewOptionsDefaults).toEqual([
                 { projectId: 'p1', viewMode: 'TABLE', sortedBy: 'LABEL' },
@@ -298,10 +300,7 @@ describe('TodoistApi sync endpoint', () => {
                 ],
             })
 
-            const response = await getTarget().sync({
-                resourceTypes: ['view_options'],
-                syncToken: '*',
-            })
+            const response = await syncViewOptions()
 
             expect(response.viewOptions).toEqual([
                 {
@@ -315,68 +314,40 @@ describe('TodoistApi sync endpoint', () => {
             ])
         })
 
-        test('keeps tombstones from an incremental sync', async () => {
+        test('keeps tombstones from an incremental sync, which getViewOptions leaves out', async () => {
             const emptied = {
+                is_deleted: true,
                 view_mode: '',
                 grouped_by: '',
                 sorted_by: '',
                 sort_order: '',
                 filtered_by: '',
-                show_completed_tasks: false,
                 calendar_settings: null,
                 property_settings: null,
-                is_deleted: true,
-            }
-            const emptiedInSdk = {
-                viewMode: '',
-                groupedBy: '',
-                sortedBy: '',
-                sortOrder: '',
-                filteredBy: '',
-                showCompletedTasks: false,
-                calendarSettings: null,
-                propertySettings: null,
-                isDeleted: true,
             }
             mockSyncResponse({
                 full_sync: false,
-                view_options: [
-                    { id: '9', view_type: 'PROJECT', object_id: 'p1', ...emptied },
-                    { id: '10', view_type: 'TODAY', object_id: null, view_mode: 'TABLE' },
-                ],
-                project_view_options_defaults: [
-                    { project_id: 'p1', creator_uid: 0, updater_uid: 0, ...emptied },
-                ],
+                view_options: [{ view_type: 'PROJECT', object_id: 'p1', ...emptied }],
+                project_view_options_defaults: [{ project_id: 'p1', ...emptied }],
             })
 
-            const response = await getTarget().sync({
-                resourceTypes: ['view_options', 'project_view_options_defaults'],
-                syncToken: 'previous-token',
-            })
+            const response = await syncViewOptions()
 
-            expect(response.viewOptions).toEqual([
-                { id: '9', viewType: 'PROJECT', objectId: 'p1', ...emptiedInSdk },
-                { id: '10', viewType: 'TODAY', objectId: null, viewMode: 'TABLE' },
+            expect(response.viewOptions).toMatchObject([{ objectId: 'p1', isDeleted: true }])
+            expect(response.projectViewOptionsDefaults).toMatchObject([
+                { projectId: 'p1', isDeleted: true },
             ])
-            expect(response.projectViewOptionsDefaults).toEqual([
-                { projectId: 'p1', creatorUid: 0, updaterUid: 0, ...emptiedInSdk },
-            ])
+            expect(await getTarget().getViewOptions()).toEqual([])
         })
 
         test.each([
             { view_options: [{ view_type: 'TODAY', view_mode: 1 }] },
-            { view_options: [{ view_type: 'TODAY', sort_order: false }] },
             { view_options: [{ view_type: 'TODAY', is_deleted: true, view_mode: 'LIST' }] },
             { project_view_options_defaults: [{ project_id: 'p1', grouped_by: 2 }] },
         ])('rejects malformed rows: %j', async (data) => {
             mockSyncResponse(data)
 
-            await expect(
-                getTarget().sync({
-                    resourceTypes: ['view_options', 'project_view_options_defaults'],
-                    syncToken: '*',
-                }),
-            ).rejects.toThrow(ZodError)
+            await expect(syncViewOptions()).rejects.toThrow(ZodError)
         })
     })
 

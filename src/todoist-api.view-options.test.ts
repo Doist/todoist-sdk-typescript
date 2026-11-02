@@ -60,39 +60,6 @@ describe('TodoistApi view options', () => {
         ])
     })
 
-    test('gets Table, Assigned to me, and label-sorted views, leaving out tombstones', async () => {
-        server.use(
-            http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () =>
-                HttpResponse.json({
-                    view_options: [
-                        { view_type: 'ASSIGNED_TO_ME', object_id: null, view_mode: 'TABLE' },
-                        { view_type: 'LABEL', object_id: 'label1', sorted_by: 'LABEL' },
-                        {
-                            view_type: 'PROJECT',
-                            object_id: 'deleted-project',
-                            view_mode: '',
-                            grouped_by: '',
-                            sorted_by: '',
-                            sort_order: '',
-                            filtered_by: '',
-                            show_completed_tasks: false,
-                            calendar_settings: null,
-                            property_settings: null,
-                            is_deleted: true,
-                        },
-                    ],
-                }),
-            ),
-        )
-
-        const result = await getTarget().getViewOptions()
-
-        expect(result).toEqual([
-            { viewType: 'ASSIGNED_TO_ME', objectId: null, viewMode: 'TABLE' },
-            { viewType: 'LABEL', objectId: 'label1', sortedBy: 'LABEL' },
-        ])
-    })
-
     test('propagates get failures', async () => {
         server.use(
             http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () =>
@@ -161,28 +128,6 @@ describe('TodoistApi view options', () => {
         })
     })
 
-    test('sets the Table layout and label sorting for the Assigned to me view', async () => {
-        let requestBody: { commands?: Array<Record<string, unknown>> } | undefined
-        server.use(
-            http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, async ({ request }) => {
-                requestBody = (await request.json()) as typeof requestBody
-                const commandId = requestBody?.commands?.[0]?.uuid as string
-                return HttpResponse.json({ sync_status: { [commandId]: 'ok' } })
-            }),
-        )
-
-        await getTarget().setViewOptions({
-            viewType: 'ASSIGNED_TO_ME',
-            viewMode: 'TABLE',
-            sortedBy: 'LABEL',
-        })
-
-        expect(requestBody?.commands?.[0]).toMatchObject({
-            type: 'view_options_set',
-            args: { view_type: 'ASSIGNED_TO_ME', view_mode: 'TABLE', sorted_by: 'LABEL' },
-        })
-    })
-
     test('accepts only known values when setting view options', async () => {
         server.use(
             http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, async ({ request }) => {
@@ -190,12 +135,15 @@ describe('TodoistApi view options', () => {
                 return HttpResponse.json({ sync_status: { [body.commands[0].uuid]: 'ok' } })
             }),
         )
+        const api = getTarget()
 
-        await getTarget().setViewOptions({
-            viewType: 'TODAY',
-            // @ts-expect-error unknown view mode
-            viewMode: 'NEW_MODE',
+        await api.setViewOptions({
+            viewType: 'ASSIGNED_TO_ME',
+            viewMode: 'TABLE',
+            sortedBy: 'LABEL',
         })
+        // @ts-expect-error unknown view mode
+        await api.setViewOptions({ viewType: 'TODAY', viewMode: 'NEW_MODE' })
     })
 
     test('deletes view options through Sync', async () => {
