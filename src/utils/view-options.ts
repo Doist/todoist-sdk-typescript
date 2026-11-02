@@ -25,6 +25,6 @@ export function findViewOptions(
         (entry): entry is ViewOptions =>
             isActiveViewOption(entry) &&
             (entry.objectId ?? null) === targetObjectId &&
-            args.viewTypes.includes(entry.viewType),
+            args.viewTypes.some((viewType) => viewType === entry.viewType),
     )
 }

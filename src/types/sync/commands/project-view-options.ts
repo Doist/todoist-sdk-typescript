@@ -1,18 +1,18 @@
 import type {
     CalendarSettingsArgs,
-    KnownViewMode,
-    KnownGroupedBy,
-    KnownSortedBy,
-    KnownSortOrder,
+    ViewMode,
+    GroupedBy,
+    SortedBy,
+    SortOrder,
     PropertySettingsPatch,
 } from '../resources/view-options'
 
 export type ProjectViewOptionsDefaultsSetArgs = {
     projectId: string
-    viewMode?: KnownViewMode | null
-    groupedBy?: KnownGroupedBy | null
-    sortedBy?: KnownSortedBy | null
-    sortOrder?: KnownSortOrder | null
+    viewMode?: ViewMode | null
+    groupedBy?: GroupedBy | null
+    sortedBy?: SortedBy | null
+    sortOrder?: SortOrder | null
     showCompletedTasks?: boolean
     filteredBy?: string | null
     calendarSettings?: CalendarSettingsArgs | null

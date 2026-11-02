@@ -1,28 +1,28 @@
 import type {
     CalendarSettingsArgs,
-    KnownGroupedBy,
-    KnownSortedBy,
-    KnownSortOrder,
-    KnownViewMode,
-    KnownViewType,
+    GroupedBy,
+    SortedBy,
+    SortOrder,
+    ViewMode,
+    ViewType,
     PropertySettingsPatch,
 } from '../resources/view-options'
 
 export type ViewOptionsSetArgs = {
-    viewType: KnownViewType
+    viewType: ViewType
     objectId?: string
-    groupedBy?: KnownGroupedBy | null
+    groupedBy?: GroupedBy | null
     filteredBy?: string | null
-    viewMode?: KnownViewMode
+    viewMode?: ViewMode
     showCompletedTasks?: boolean
-    sortedBy?: KnownSortedBy | null
-    sortOrder?: KnownSortOrder | null
+    sortedBy?: SortedBy | null
+    sortOrder?: SortOrder | null
     calendarSettings?: CalendarSettingsArgs | null
     /** Merged into the saved property settings; `null` clears them all. */
     propertySettings?: PropertySettingsPatch | null
 }
 
 export type ViewOptionsDeleteArgs = {
-    viewType: KnownViewType
+    viewType: ViewType
     objectId?: string
 }

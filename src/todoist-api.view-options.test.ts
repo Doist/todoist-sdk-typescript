@@ -2,6 +2,7 @@ import { TodoistApi } from '.'
 import { ENDPOINT_SYNC, getSyncBaseUri } from './consts/endpoints'
 import { HttpResponse, http, server } from './test-utils/msw-setup'
 import { DEFAULT_AUTH_TOKEN, DEFAULT_REQUEST_ID } from './test-utils/test-defaults'
+import type { ViewOptions } from './types/sync'
 
 function getTarget() {
     return new TodoistApi(DEFAULT_AUTH_TOKEN)
@@ -144,6 +145,9 @@ describe('TodoistApi view options', () => {
         })
         // @ts-expect-error unknown view mode
         await api.setViewOptions({ viewType: 'TODAY', viewMode: 'NEW_MODE' })
+        const saved: ViewOptions['viewMode'] = 'NEW_MODE'
+        // @ts-expect-error a response value can be one the SDK doesn't know
+        await api.setViewOptions({ viewType: 'TODAY', viewMode: saved })
     })
 
     test('deletes view options through Sync', async () => {

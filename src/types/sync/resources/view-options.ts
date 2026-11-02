@@ -1,9 +1,8 @@
 import { z } from 'zod'
 
 /**
- * Accepts any string, typed as one of the `Known` values or an unknown string: the API adds
- * values over time, and one this SDK version doesn't know yet is kept as sent rather than
- * failing the whole response.
+ * Parses a response field that the API can extend: any string is kept as sent, typed as one
+ * of the `Known` values or another string. Parsing doesn't check that a value is known.
  */
 function openEnumSchema<Known extends string>(): z.ZodType<Known | (string & {})> {
     return z.string()
@@ -26,21 +25,17 @@ export const VIEW_TYPES = [
     'OVERDUE',
     'WORKSPACE_OVERVIEW',
 ] as const
-/** A view type the SDK knows. Write arguments accept only these. */
-export type KnownViewType = (typeof VIEW_TYPES)[number]
-/** Type of view in the Todoist UI: a known type, or a newer one kept as sent. */
-export type ViewType = KnownViewType | (string & {})
+/** A view type the SDK knows. Response fields can also hold newer ones. */
+export type ViewType = (typeof VIEW_TYPES)[number]
 
-export const ViewTypeSchema = openEnumSchema<KnownViewType>()
+export const ViewTypeSchema = openEnumSchema<ViewType>()
 
 /** View modes the SDK knows. */
 export const VIEW_MODES = ['LIST', 'BOARD', 'CALENDAR', 'TABLE'] as const
-/** A view mode the SDK knows. Write arguments accept only these. */
-export type KnownViewMode = (typeof VIEW_MODES)[number]
-/** Display mode for a view: a known mode, or a newer one kept as sent. */
-export type ViewMode = KnownViewMode | (string & {})
+/** A view mode the SDK knows. Response fields can also hold newer ones. */
+export type ViewMode = (typeof VIEW_MODES)[number]
 
-export const ViewModeSchema = openEnumSchema<KnownViewMode>()
+export const ViewModeSchema = openEnumSchema<ViewMode>()
 
 /** Grouping options the SDK knows. */
 export const GROUPED_BY_OPTIONS = [
@@ -53,12 +48,10 @@ export const GROUPED_BY_OPTIONS = [
     'PROJECT',
     'WORKSPACE',
 ] as const
-/** A grouping option the SDK knows. Write arguments accept only these. */
-export type KnownGroupedBy = (typeof GROUPED_BY_OPTIONS)[number]
-/** Field to group tasks by: a known field, or a newer one kept as sent. */
-export type GroupedBy = KnownGroupedBy | (string & {})
+/** A grouping option the SDK knows. Response fields can also hold newer ones. */
+export type GroupedBy = (typeof GROUPED_BY_OPTIONS)[number]
 
-export const GroupedBySchema = openEnumSchema<KnownGroupedBy>().nullable()
+export const GroupedBySchema = openEnumSchema<GroupedBy>().nullable()
 
 /** Sorting options the SDK knows. */
 export const SORTED_BY_OPTIONS = [
@@ -73,52 +66,44 @@ export const SORTED_BY_OPTIONS = [
     'PROJECT',
     'WORKSPACE',
 ] as const
-/** A sorting option the SDK knows. Write arguments accept only these. */
-export type KnownSortedBy = (typeof SORTED_BY_OPTIONS)[number]
-/** Field to sort tasks by: a known field, or a newer one kept as sent. */
-export type SortedBy = KnownSortedBy | (string & {})
+/** A sorting option the SDK knows. Response fields can also hold newer ones. */
+export type SortedBy = (typeof SORTED_BY_OPTIONS)[number]
 
-export const SortedBySchema = openEnumSchema<KnownSortedBy>().nullable()
+export const SortedBySchema = openEnumSchema<SortedBy>().nullable()
 
 /** Sort directions the SDK knows. */
 export const SORT_ORDERS = ['ASC', 'DESC'] as const
-/** A sort direction the SDK knows. Write arguments accept only these. */
-export type KnownSortOrder = (typeof SORT_ORDERS)[number]
-/** Sort direction: a known direction, or a newer one kept as sent. */
-export type SortOrder = KnownSortOrder | (string & {})
+/** A sort direction the SDK knows. Response fields can also hold newer ones. */
+export type SortOrder = (typeof SORT_ORDERS)[number]
 
-export const SortOrderSchema = openEnumSchema<KnownSortOrder>().nullable()
+export const SortOrderSchema = openEnumSchema<SortOrder>().nullable()
 
 /** Calendar layout modes the SDK knows. */
 export const CALENDAR_LAYOUTS = ['WEEK', 'MONTH'] as const
-/** A calendar layout mode the SDK knows. Write arguments accept only these. */
-export type KnownCalendarLayout = (typeof CALENDAR_LAYOUTS)[number]
-/** Calendar layout mode: a known mode, or a newer one kept as sent. */
-export type CalendarLayout = KnownCalendarLayout | (string & {})
+/** A calendar layout mode the SDK knows. Response fields can also hold newer ones. */
+export type CalendarLayout = (typeof CALENDAR_LAYOUTS)[number]
 
 /** Task color sources for calendar views the SDK knows. */
 export const CALENDAR_COLORS = ['PRIORITY', 'LABEL', 'PROJECT'] as const
-/** A calendar task color source the SDK knows. Write arguments accept only these. */
-export type KnownCalendarColor = (typeof CALENDAR_COLORS)[number]
-/** Task color source for a calendar view: a known source, or a newer one kept as sent. */
-export type CalendarColor = KnownCalendarColor | (string & {})
+/** A calendar task color source the SDK knows. Response fields can also hold newer ones. */
+export type CalendarColor = (typeof CALENDAR_COLORS)[number]
 
 export const CalendarSettingsSchema = z.looseObject({
-    layout: openEnumSchema<KnownCalendarLayout>().nullable().optional(),
+    layout: openEnumSchema<CalendarLayout>().nullable().optional(),
     visibleDayCount: z
         .union([z.literal(1), z.literal(3), z.literal(7)])
         .nullable()
         .optional(),
-    color: openEnumSchema<KnownCalendarColor>().nullable().optional(),
+    color: openEnumSchema<CalendarColor>().nullable().optional(),
 })
 
 export type CalendarSettings = z.infer<typeof CalendarSettingsSchema>
 
 /** Calendar settings to save, limited to values the SDK knows. */
 export type CalendarSettingsArgs = {
-    layout?: KnownCalendarLayout | null
+    layout?: CalendarLayout | null
     visibleDayCount?: CalendarSettings['visibleDayCount']
-    color?: KnownCalendarColor | null
+    color?: CalendarColor | null
 }
 
 /** How a view shows one task property. Attributes the SDK doesn't know are kept. */
