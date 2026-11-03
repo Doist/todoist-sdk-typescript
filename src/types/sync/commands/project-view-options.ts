@@ -2,6 +2,7 @@ import type {
     CalendarSettings,
     ViewMode,
     GroupedBy,
+    PropertySettingsPatch,
     SortedBy,
     SortOrder,
 } from '../resources/view-options'
@@ -15,4 +16,6 @@ export type ProjectViewOptionsDefaultsSetArgs = {
     showCompletedTasks?: boolean
     filteredBy?: string | null
     calendarSettings?: CalendarSettings | null
+    /** Merged into the saved property settings; `null` clears them all. */
+    propertySettings?: PropertySettingsPatch | null
 }

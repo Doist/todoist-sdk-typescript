@@ -1,6 +1,7 @@
 import type {
     CalendarSettings,
     GroupedBy,
+    PropertySettingsPatch,
     SortedBy,
     SortOrder,
     ViewMode,
@@ -17,6 +18,8 @@ export type ViewOptionsSetArgs = {
     sortedBy?: SortedBy | null
     sortOrder?: SortOrder | null
     calendarSettings?: CalendarSettings | null
+    /** Merged into the saved property settings; `null` clears them all. */
+    propertySettings?: PropertySettingsPatch | null
 }
 
 export type ViewOptionsDeleteArgs = {

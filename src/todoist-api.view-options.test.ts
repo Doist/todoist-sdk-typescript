@@ -145,4 +145,46 @@ describe('TodoistApi view options', () => {
             args: { view_type: 'TODAY' },
         })
     })
+
+    describe('property settings', () => {
+        // `added_date` and `addedDate` are distinct property IDs that any case conversion would merge.
+        const properties = {
+            'field:6Jf8VQXx': { width: 180, future_attribute: { 'option:Ab3Cd': 'x' } },
+            added_date: { is_hidden: true },
+            addedDate: { width: 120 },
+        }
+
+        test('gets property settings with every key as the API sent it', async () => {
+            const propertySettings = { order: ['field:6Jf8VQXx', 'addedDate'], properties }
+            server.use(
+                http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () =>
+                    HttpResponse.json({
+                        view_options: [{ view_type: 'TODAY', property_settings: propertySettings }],
+                    }),
+                ),
+            )
+
+            const [result] = await getTarget().getViewOptions()
+
+            expect(result.propertySettings).toEqual(propertySettings)
+        })
+
+        test('sets a property settings patch, nulls included, with every key as given', async () => {
+            let args: unknown
+            server.use(
+                http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, async ({ request }) => {
+                    const body = (await request.json()) as {
+                        commands: Array<{ uuid: string; args: unknown }>
+                    }
+                    args = body.commands[0].args
+                    return HttpResponse.json({ sync_status: { [body.commands[0].uuid]: 'ok' } })
+                }),
+            )
+            const patch = { order: null, properties: { ...properties, due: { width: null } } }
+
+            await getTarget().setViewOptions({ viewType: 'TODAY', propertySettings: patch })
+
+            expect(args).toEqual({ view_type: 'TODAY', property_settings: patch })
+        })
+    })
 })

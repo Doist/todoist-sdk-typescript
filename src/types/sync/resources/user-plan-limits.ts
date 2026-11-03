@@ -12,6 +12,8 @@ export const PlanLimitsSchema = z.looseObject({
     maxProjects: z.number().int().optional(),
     remindersPerUser: z.number().int().optional(),
     sectionsPerProject: z.number().int().optional(),
+    /** Whether the plan includes the Table layout for views. */
+    tableLayout: z.boolean().optional(),
     tasksPerProject: z.number().int().optional(),
 })
 

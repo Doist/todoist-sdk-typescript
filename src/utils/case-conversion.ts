@@ -26,6 +26,14 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 /**
+ * Fields, by their API name, whose value crosses case conversion untouched in both
+ * directions; only the field name itself is converted. View options' `property_settings`
+ * is keyed by opaque property IDs (`field:6Jf8VQXx`) and keeps attributes the SDK doesn't
+ * know, which can hold IDs of their own, so no key inside it is safe to rename.
+ */
+const VERBATIM_FIELDS: ReadonlySet<string> = new Set(['property_settings'])
+
+/**
  * Converts object keys from snake_case to camelCase recursively
  *
  * @param obj - The value to convert.
@@ -50,6 +58,10 @@ export function camelCaseKeys<T>(
         const converted: Record<string, unknown> = {}
         for (const [key, value] of Object.entries(obj)) {
             const camelKey = customCamelCase(key)
+            if (VERBATIM_FIELDS.has(key)) {
+                converted[camelKey] = value
+                continue
+            }
             converted[camelKey] =
                 opaqueKeyMaps?.has(key) && isPlainObject(value)
                     ? Object.fromEntries(
@@ -80,7 +92,7 @@ export function snakeCaseKeys<T>(obj: T): T {
         for (const [key, value] of Object.entries(obj)) {
             // Convert camelCase to snake_case
             const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase()
-            converted[snakeKey] = snakeCaseKeys(value)
+            converted[snakeKey] = VERBATIM_FIELDS.has(snakeKey) ? value : snakeCaseKeys(value)
         }
         return converted as T
     }
