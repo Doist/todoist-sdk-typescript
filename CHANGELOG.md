@@ -1,3 +1,15 @@
+## [16.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.13.1...v16.0.0) (2026-11-03)
+
+### ⚠ BREAKING CHANGES
+
+* **sync:** keep unknown view option values instead of throwing (#743)
+
+### Features
+
+* **projects:** accept the table view style ([#745](https://github.com/Doist/todoist-sdk-typescript/issues/745)) ([15224c2](https://github.com/Doist/todoist-sdk-typescript/commit/15224c242050a9bbf3918b38bf8f5e83dc2964a0))
+* **sync:** add view property settings without renaming their keys ([#742](https://github.com/Doist/todoist-sdk-typescript/issues/742)) ([813fcd1](https://github.com/Doist/todoist-sdk-typescript/commit/813fcd17e29558a1d748d4d91598b593d330e700))
+* **sync:** keep unknown view option values instead of throwing ([#743](https://github.com/Doist/todoist-sdk-typescript/issues/743)) ([526e7d3](https://github.com/Doist/todoist-sdk-typescript/commit/526e7d3e803b8cce9c959c4f927fa3204a6b353e))
+
 ## [15.13.1](https://github.com/Doist/todoist-sdk-typescript/compare/v15.13.0...v15.13.1) (2026-11-02)
 
 ### Bug Fixes
