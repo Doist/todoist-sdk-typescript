@@ -1,4 +1,4 @@
-import type { SortOrder, SortedBy } from '../types/sync'
+import type { SortOrder, ViewOptions } from '../types/sync'
 import type { Task } from '../types/tasks'
 
 /** Todoist's default task-ordering hierarchies. */
@@ -6,11 +6,17 @@ export const DEFAULT_TASK_ORDERS = ['PRIORITY_FIRST', 'DATE_FIRST'] as const
 /** Default hierarchy used when a view has no named sorting. */
 export type DefaultTaskOrder = (typeof DEFAULT_TASK_ORDERS)[number]
 
+/** A saved sort field, which can be one this SDK version doesn't know. */
+type SavedSortedBy = NonNullable<ViewOptions['sortedBy']>
+
 export type TaskSortOptions = {
-    /** Saved or requested sort field. Null and MANUAL use defaultOrder. */
-    sortedBy?: SortedBy | null
+    /**
+     * Saved or requested sort field. Null, MANUAL, and fields this SDK can't sort by
+     * (such as LABEL) use defaultOrder.
+     */
+    sortedBy?: ViewOptions['sortedBy']
     /** Saved or requested direction. Defaults by field when absent. */
-    sortOrder?: SortOrder | null
+    sortOrder?: ViewOptions['sortOrder']
     /**
      * Default hierarchy for this view or filter query. Today and Upcoming are
      * date-first; for a filter, {@link isDateDrivenQuery} reads it off the query.
@@ -354,7 +360,7 @@ function comparePrimary({
     b,
     collator,
 }: {
-    sortedBy: SortedBy
+    sortedBy: SavedSortedBy
     a: PreparedTask
     b: PreparedTask
     collator: Intl.Collator
@@ -376,12 +382,13 @@ function comparePrimary({
             return compareOptionalNumber(a.project, b.project)
         case 'WORKSPACE':
             return compareOptionalNumber(a.workspace, b.workspace)
-        case 'MANUAL':
+        default:
+            // MANUAL, LABEL, and fields added after this SDK version keep the default order.
             return 0
     }
 }
 
-function defaultSortOrder(sortedBy: SortedBy): SortOrder {
+function defaultSortOrder(sortedBy: SavedSortedBy): SortOrder {
     return sortedBy === 'PRIORITY' ? 'DESC' : 'ASC'
 }
 

@@ -2,6 +2,7 @@ import { TodoistApi } from '.'
 import { ENDPOINT_SYNC, getSyncBaseUri } from './consts/endpoints'
 import { HttpResponse, http, server } from './test-utils/msw-setup'
 import { DEFAULT_AUTH_TOKEN, DEFAULT_REQUEST_ID } from './test-utils/test-defaults'
+import type { ViewOptions } from './types/sync'
 
 function getTarget() {
     return new TodoistApi(DEFAULT_AUTH_TOKEN)
@@ -126,6 +127,27 @@ describe('TodoistApi view options', () => {
             type: 'view_options_set',
             args: { view_type: 'TODAY', calendar_settings: null },
         })
+    })
+
+    test('accepts only known values when setting view options, at compile time', async () => {
+        server.use(
+            http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, async ({ request }) => {
+                const body = (await request.json()) as { commands: Array<{ uuid: string }> }
+                return HttpResponse.json({ sync_status: { [body.commands[0].uuid]: 'ok' } })
+            }),
+        )
+        const api = getTarget()
+
+        await api.setViewOptions({
+            viewType: 'ASSIGNED_TO_ME',
+            viewMode: 'TABLE',
+            sortedBy: 'LABEL',
+        })
+        // @ts-expect-error unknown view mode
+        await api.setViewOptions({ viewType: 'TODAY', viewMode: 'NEW_MODE' })
+        const saved: ViewOptions['viewMode'] = 'NEW_MODE'
+        // @ts-expect-error a response value can be one the SDK doesn't know
+        await api.setViewOptions({ viewType: 'TODAY', viewMode: saved })
     })
 
     test('deletes view options through Sync', async () => {

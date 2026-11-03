@@ -407,15 +407,6 @@ describe('Sync resource schemas', () => {
             expect(ViewOptionsSchema.parse(data)).toEqual(data)
         })
 
-        test('validates deletion tombstones', () => {
-            const data = { viewType: 'FILTER' as const, objectId: 'filter1', isDeleted: true }
-            expect(ViewOptionsSchema.parse(data)).toEqual(data)
-        })
-
-        test('throws on invalid viewType', () => {
-            expect(() => ViewOptionsSchema.parse({ viewType: 'INVALID' })).toThrow(ZodError)
-        })
-
         test('preserves unknown fields via passthrough', () => {
             const withExtra = { ...validViewOptions, futureOption: true }
             const result = ViewOptionsSchema.parse(withExtra)

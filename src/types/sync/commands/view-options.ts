@@ -1,11 +1,11 @@
 import type {
-    CalendarSettings,
+    CalendarSettingsArgs,
     GroupedBy,
-    PropertySettingsPatch,
     SortedBy,
     SortOrder,
     ViewMode,
     ViewType,
+    PropertySettingsPatch,
 } from '../resources/view-options'
 
 export type ViewOptionsSetArgs = {
@@ -17,7 +17,7 @@ export type ViewOptionsSetArgs = {
     showCompletedTasks?: boolean
     sortedBy?: SortedBy | null
     sortOrder?: SortOrder | null
-    calendarSettings?: CalendarSettings | null
+    calendarSettings?: CalendarSettingsArgs | null
     /** Merged into the saved property settings; `null` clears them all. */
     propertySettings?: PropertySettingsPatch | null
 }

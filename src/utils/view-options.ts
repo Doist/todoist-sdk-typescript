@@ -1,4 +1,4 @@
-import type { ViewOptions, ViewType } from '../types/sync'
+import type { ViewOptions, ViewOptionsTombstone, ViewType } from '../types/sync'
 
 export type FindViewOptionsArgs = {
     /** View types that identify the logical view. */
@@ -8,21 +8,23 @@ export type FindViewOptionsArgs = {
 }
 
 /** Returns whether saved view options are active rather than a deletion tombstone. */
-export function isActiveViewOption(options: ViewOptions): boolean {
+export function isActiveViewOption(
+    options: ViewOptions | ViewOptionsTombstone,
+): options is ViewOptions {
     return options.isDeleted !== true
 }
 
 /** Finds the active saved options for one logical view. */
 export function findViewOptions(
-    options: readonly ViewOptions[],
+    options: readonly (ViewOptions | ViewOptionsTombstone)[],
     args: FindViewOptionsArgs,
 ): ViewOptions | undefined {
     const targetObjectId = args.objectId ?? null
 
     return options.find(
-        (entry) =>
+        (entry): entry is ViewOptions =>
             isActiveViewOption(entry) &&
             (entry.objectId ?? null) === targetObjectId &&
-            args.viewTypes.includes(entry.viewType),
+            args.viewTypes.some((viewType) => viewType === entry.viewType),
     )
 }

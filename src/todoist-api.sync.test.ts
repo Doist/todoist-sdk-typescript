@@ -250,6 +250,107 @@ describe('TodoistApi sync endpoint', () => {
         })
     })
 
+    describe('view options', () => {
+        function mockSyncResponse(data: Record<string, unknown>) {
+            mockApiResponse({
+                endpoint: `${getSyncBaseUri()}${ENDPOINT_SYNC}`,
+                data,
+                options: { method: 'POST' },
+            })
+        }
+
+        function syncViewOptions() {
+            return getTarget().sync({
+                resourceTypes: ['view_options', 'project_view_options_defaults'],
+                syncToken: '*',
+            })
+        }
+
+        test('parses the Table layout, Assigned to me view, and label sorting', async () => {
+            mockSyncResponse({
+                view_options: [
+                    { view_type: 'ASSIGNED_TO_ME', view_mode: 'TABLE', sorted_by: 'LABEL' },
+                ],
+                project_view_options_defaults: [
+                    { project_id: 'p1', view_mode: 'TABLE', sorted_by: 'LABEL' },
+                ],
+            })
+
+            const response = await syncViewOptions()
+
+            expect(response.viewOptions).toEqual([
+                { viewType: 'ASSIGNED_TO_ME', viewMode: 'TABLE', sortedBy: 'LABEL' },
+            ])
+            expect(response.projectViewOptionsDefaults).toEqual([
+                { projectId: 'p1', viewMode: 'TABLE', sortedBy: 'LABEL' },
+            ])
+        })
+
+        test('keeps values added after this SDK version as sent', async () => {
+            mockSyncResponse({
+                view_options: [
+                    {
+                        view_type: 'NEW_VIEW',
+                        view_mode: 'NEW_MODE',
+                        grouped_by: 'NEW_GROUPING',
+                        sorted_by: 'NEW_SORTING',
+                        sort_order: 'NEW_ORDER',
+                        calendar_settings: { layout: 'NEW_LAYOUT', color: 'NEW_COLOR' },
+                    },
+                ],
+            })
+
+            const response = await syncViewOptions()
+
+            expect(response.viewOptions).toEqual([
+                {
+                    viewType: 'NEW_VIEW',
+                    viewMode: 'NEW_MODE',
+                    groupedBy: 'NEW_GROUPING',
+                    sortedBy: 'NEW_SORTING',
+                    sortOrder: 'NEW_ORDER',
+                    calendarSettings: { layout: 'NEW_LAYOUT', color: 'NEW_COLOR' },
+                },
+            ])
+        })
+
+        test('keeps tombstones from an incremental sync, which getViewOptions leaves out', async () => {
+            const emptied = {
+                is_deleted: true,
+                view_mode: '',
+                grouped_by: '',
+                sorted_by: '',
+                sort_order: '',
+                filtered_by: '',
+                calendar_settings: null,
+                property_settings: null,
+            }
+            mockSyncResponse({
+                full_sync: false,
+                view_options: [{ view_type: 'PROJECT', object_id: 'p1', ...emptied }],
+                project_view_options_defaults: [{ project_id: 'p1', ...emptied }],
+            })
+
+            const response = await syncViewOptions()
+
+            expect(response.viewOptions).toMatchObject([{ objectId: 'p1', isDeleted: true }])
+            expect(response.projectViewOptionsDefaults).toMatchObject([
+                { projectId: 'p1', isDeleted: true },
+            ])
+            expect(await getTarget().getViewOptions()).toEqual([])
+        })
+
+        test.each([
+            { view_options: [{ view_type: 'TODAY', view_mode: 1 }] },
+            { view_options: [{ view_type: 'TODAY', is_deleted: true, view_mode: 'LIST' }] },
+            { project_view_options_defaults: [{ project_id: 'p1', grouped_by: 2 }] },
+        ])('rejects malformed rows: %j', async (data) => {
+            mockSyncResponse(data)
+
+            await expect(syncViewOptions()).rejects.toThrow(ZodError)
+        })
+    })
+
     describe('property settings', () => {
         // `added_date` and `addedDate` are distinct property IDs that any case conversion would merge.
         const propertySettings = {
