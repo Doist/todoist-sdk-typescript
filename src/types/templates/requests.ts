@@ -1,6 +1,8 @@
+import type { ColorKey } from '../../utils/colors'
 import type { Comment } from '../comments/types'
 import type { PersonalProject, WorkspaceProject } from '../projects/types'
 import type { Section } from '../sections/types'
+import type { TemplateType } from '../sync/resources/suggestions'
 import type { Task } from '../tasks/types'
 
 /**
@@ -97,4 +99,48 @@ export type ImportTemplateResponse = {
     sections: Section[]
     tasks: Task[]
     comments: Comment[]
+}
+
+/**
+ * Arguments for saving a project as a user template.
+ * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/create_user_template_api_v1_templates_user_post
+ */
+export type CreateUserTemplateArgs = {
+    /** The project to save as a template. */
+    projectId: string
+    /** Name of the template. */
+    name: string
+    /** Description shown with the template. */
+    description: string
+    /** Color of the template. */
+    color: ColorKey
+    /** Template type (default: `'project'`). */
+    templateType?: TemplateType
+    /** Save the template to the project's workspace instead of the user's personal templates. */
+    forWorkspace?: boolean
+}
+
+/**
+ * Arguments for creating a new project from a template ID.
+ * @see https://developer.todoist.com/api/v1/#tag/Projects/operation/create_project_from_template_api_v1_projects_from_template_post
+ */
+export type CreateProjectFromTemplateIdArgs = {
+    /** The template to create the project from. Setup templates are not supported. */
+    templateId: string
+    /** Name for the new project. Defaults to the template's localized name. */
+    name?: string
+    /** Locale for the template content (default: `'en'`). */
+    locale?: string
+    /** Workspace to create the project in. Workspace templates can only be used in their own workspace. */
+    workspaceId?: string | null
+    /** Folder to create the project in. */
+    folderId?: string | null
+}
+
+/**
+ * Response from creating a new project from a template ID.
+ */
+export type CreateProjectFromTemplateIdResponse = {
+    status: string
+    projectId: string
 }

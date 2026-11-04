@@ -170,6 +170,10 @@ import {
     ExportTemplateUrlResponse,
     CreateProjectFromTemplateArgs,
     CreateProjectFromTemplateResponse,
+    CreateProjectFromTemplateIdArgs,
+    CreateProjectFromTemplateIdResponse,
+    CreateUserTemplateArgs,
+    Template,
     ImportTemplateIntoProjectArgs,
     ImportTemplateFromIdArgs,
     ImportTemplateResponse,
@@ -1716,6 +1720,35 @@ export class TodoistApi {
         requestId?: string,
     ): Promise<CreateProjectFromTemplateResponse> {
         return this.templateClient.createProjectFromTemplate(args, requestId)
+    }
+
+    /**
+     * Creates a new project from a template ID.
+     *
+     * Setup templates are not supported. Workspace templates can only be used in their own workspace.
+     *
+     * @param args - Arguments including the template ID and optional name, locale, workspace and folder.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the new project's ID.
+     */
+    async createProjectFromTemplateId(
+        args: CreateProjectFromTemplateIdArgs,
+        requestId?: string,
+    ): Promise<CreateProjectFromTemplateIdResponse> {
+        return this.templateClient.createProjectFromTemplateId(args, requestId)
+    }
+
+    /**
+     * Saves a project as a user template.
+     *
+     * Task assignments are kept only when the template is saved to a workspace.
+     *
+     * @param args - Arguments including the project ID, template name, description and color.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the saved template.
+     */
+    async createUserTemplate(args: CreateUserTemplateArgs, requestId?: string): Promise<Template> {
+        return this.templateClient.createUserTemplate(args, requestId)
     }
 
     /**
