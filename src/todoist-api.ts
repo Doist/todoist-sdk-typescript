@@ -174,7 +174,13 @@ import {
     CreateProjectFromTemplateIdResponse,
     SaveProjectAsTemplateArgs,
     TemplateContentResponse,
+    GetTemplateArgs,
+    GetTemplateCategoriesArgs,
+    GetTemplatesArgs,
+    GetTemplatesByIdsArgs,
+    GetTemplatesResponse,
     Template,
+    TemplateCategory,
     ImportTemplateIntoProjectArgs,
     ImportTemplateFromIdArgs,
     ImportTemplateResponse,
@@ -1722,6 +1728,51 @@ export class TodoistApi {
         requestId?: string,
     ): Promise<CreateProjectFromTemplateResponse> {
         return this.templateClient.createProjectFromTemplate(args, requestId)
+    }
+
+    /**
+     * Discovers templates: curated by Doist, saved by the user, or saved to the user's workspaces.
+     *
+     * Lists curated templates unless `templateSource` says otherwise. Personal and workspace
+     * templates require the `data:read` scope. With a `query`, each page puts personal, then
+     * workspace, then curated templates first, ranked by the query.
+     *
+     * @param args - Optional filters, search query and pagination.
+     * @returns A promise that resolves to a page of templates and the cursor for the next one.
+     */
+    async getTemplates(args: GetTemplatesArgs = {}): Promise<GetTemplatesResponse> {
+        return this.templateClient.getTemplates(args)
+    }
+
+    /**
+     * Looks up templates by ID. Missing IDs and templates the user cannot see are omitted.
+     *
+     * @param args - Up to 100 curated slugs or `UT_` template IDs, plus optional locale and pagination.
+     * @returns A promise that resolves to a page of templates and the cursor for the next one.
+     */
+    async getTemplatesByIds(args: GetTemplatesByIdsArgs): Promise<GetTemplatesResponse> {
+        return this.templateClient.getTemplatesByIds(args)
+    }
+
+    /**
+     * Gets a single template by curated slug or `UT_` template ID.
+     *
+     * @param id - The template ID.
+     * @param args - Optional locale.
+     * @returns A promise that resolves to the template.
+     */
+    async getTemplate(id: string, args?: GetTemplateArgs): Promise<Template> {
+        return this.templateClient.getTemplate(id, args)
+    }
+
+    /**
+     * Lists the curated template categories, in gallery display order.
+     *
+     * @param args - Optional template type and locale.
+     * @returns A promise that resolves to the categories.
+     */
+    async getTemplateCategories(args?: GetTemplateCategoriesArgs): Promise<TemplateCategory[]> {
+        return this.templateClient.getTemplateCategories(args)
     }
 
     /**
