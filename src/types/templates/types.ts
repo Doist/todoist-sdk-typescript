@@ -3,9 +3,15 @@ import { PROJECT_VIEW_STYLES } from '../projects/types'
 import { TEMPLATE_TYPES } from '../sync/resources/suggestions'
 
 /** Template source values returned on template objects. */
-export const TEMPLATE_SOURCES = ['doist', 'user'] as const
-/** Whether a template is curated by Doist or saved by a user. */
+export const TEMPLATE_SOURCES = ['todoist', 'user'] as const
+/** Whether a template is curated by Doist (`'todoist'`) or saved by a user (`'user'`). */
 export type TemplateSource = (typeof TEMPLATE_SOURCES)[number]
+
+// Template discovery reports curated templates as `todoist`, but the user template
+// routes document `doist` for the same thing. Accept both and keep one spelling.
+const TemplateSourceSchema = z
+    .enum([...TEMPLATE_SOURCES, 'doist'])
+    .transform((source): TemplateSource => (source === 'doist' ? 'todoist' : source))
 
 export const TemplatePersonSchema = z.object({
     userId: z.string().nullable().optional(),
@@ -34,7 +40,7 @@ export const TemplateSchema = z.object({
     id: z.string(),
     name: z.string(),
     templateType: z.enum(TEMPLATE_TYPES),
-    templateSource: z.enum(TEMPLATE_SOURCES),
+    templateSource: TemplateSourceSchema,
     shortDescription: z.string(),
     longDescription: z.string(),
     instructions: z.string().nullable(),

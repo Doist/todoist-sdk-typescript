@@ -269,6 +269,24 @@ describe('TodoistApi template endpoints', () => {
             })
         })
 
+        test('reports a curated source as todoist, however the API spells it', async () => {
+            server.use(
+                http.post(`${getSyncBaseUri()}templates/user`, () =>
+                    HttpResponse.json({ ...mockTemplate, template_source: 'doist' }),
+                ),
+            )
+            const api = getTarget()
+
+            const result = await api.createUserTemplate({
+                projectId: '123',
+                name: 'Launch plan',
+                description: '',
+                color: 'blue',
+            })
+
+            expect(result.templateSource).toBe('todoist')
+        })
+
         test('rejects a response that is not a template', async () => {
             server.use(
                 http.post(`${getSyncBaseUri()}templates/user`, () =>
