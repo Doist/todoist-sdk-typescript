@@ -8,10 +8,13 @@ import {
     ENDPOINT_REST_TEMPLATES,
     ENDPOINT_REST_TEMPLATES_CATEGORIES,
     ENDPOINT_REST_TEMPLATES_USER,
+    ENDPOINT_REST_TEMPLATES_USER_IMPORT,
+    ENDPOINT_REST_TEMPLATES_USER_PREVIEW,
     TEMPLATES_API_VERSION,
     ENDPOINT_REST_PROJECTS_FROM_TEMPLATE,
 } from '../consts/endpoints'
 import { request } from '../transport/http-client'
+import { TodoistArgumentError } from '../types/errors'
 import type {
     CreateProjectFromTemplateArgs,
     CreateProjectFromTemplateIdArgs,
@@ -20,6 +23,7 @@ import type {
     SaveProjectAsTemplateArgs,
     TemplateContent,
     TemplateContentResponse,
+    CreateUserTemplateFromFileArgs,
     GetTemplateArgs,
     GetTemplateCategoriesArgs,
     GetTemplatesArgs,
@@ -31,6 +35,9 @@ import type {
     ImportTemplateFromIdArgs,
     ImportTemplateIntoProjectArgs,
     ImportTemplateResponse,
+    PreviewUserTemplateFromFileArgs,
+    UpdateUserTemplateArgs,
+    UserTemplatePreview,
     Template,
     TemplateCategory,
 } from '../types/templates'
@@ -46,6 +53,7 @@ import {
     validateTemplateContentResponse,
     validateTemplateArray,
     validateTemplateCategoryArray,
+    validateUserTemplatePreview,
 } from '../utils/validators'
 import { BaseClient } from './base-client'
 
@@ -220,6 +228,89 @@ export class TemplateClient extends BaseClient {
                 ...(content ? { content: toApiTemplateContent(content) } : {}),
             },
             requestId: requestId,
+        })
+        return validateTemplate(data)
+    }
+
+    async updateUserTemplate(
+        templateId: string,
+        args: UpdateUserTemplateArgs,
+        requestId?: string,
+    ): Promise<Template> {
+        IdSchema.parse(templateId)
+        const { data } = await request<unknown>({
+            httpMethod: 'PUT',
+            baseUri: this.syncApiBase,
+            relativePath: generatePath(ENDPOINT_REST_TEMPLATES_USER, templateId),
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            customHeaders: this.customHeaders,
+            payload: args,
+            requestId: requestId,
+        })
+        return validateTemplate(data)
+    }
+
+    async previewUserTemplateFromFile(
+        args: PreviewUserTemplateFromFileArgs,
+        requestId?: string,
+    ): Promise<UserTemplatePreview> {
+        const data = await uploadMultipartFile({
+            baseUrl: this.syncApiBase,
+            authToken: this.authToken,
+            endpoint: ENDPOINT_REST_TEMPLATES_USER_PREVIEW,
+            file: args.file,
+            fileName: args.fileName,
+            additionalFields: {},
+            customFetch: this.customFetch,
+            customHeaders: this.customHeaders,
+            requestId,
+        })
+        return validateUserTemplatePreview(data)
+    }
+
+    async createUserTemplateFromFile(
+        args: CreateUserTemplateFromFileArgs,
+        requestId?: string,
+    ): Promise<Template> {
+        const { file, fileName, uploadedFileName, name, description, color } = args
+        const fields = { templateType: 'project', name, description, color }
+
+        if (file === undefined) {
+            if (!uploadedFileName) {
+                throw new TodoistArgumentError(
+                    'createUserTemplateFromFile needs either `file` or `uploadedFileName`.',
+                )
+            }
+            // The server reuses the staged file, so there is nothing to upload.
+            const { data } = await request<unknown>({
+                httpMethod: 'POST',
+                baseUri: this.syncApiBase,
+                relativePath: ENDPOINT_REST_TEMPLATES_USER_IMPORT,
+                apiToken: this.authToken,
+                customFetch: this.customFetch,
+                customHeaders: this.customHeaders,
+                payload: { ...fields, uploadedFileName },
+                requestId: requestId,
+            })
+            return validateTemplate(data)
+        }
+
+        const data = await uploadMultipartFile({
+            baseUrl: this.syncApiBase,
+            authToken: this.authToken,
+            endpoint: ENDPOINT_REST_TEMPLATES_USER_IMPORT,
+            file,
+            fileName,
+            additionalFields: {
+                template_type: fields.templateType,
+                name,
+                description,
+                color: String(color),
+            },
+            customFetch: this.customFetch,
+            customHeaders: this.customHeaders,
+            requestId,
         })
         return validateTemplate(data)
     }

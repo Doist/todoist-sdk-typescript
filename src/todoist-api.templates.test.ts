@@ -2,7 +2,13 @@ import { vi } from 'vitest'
 import { TodoistApi } from '.'
 import { getSyncBaseUri } from './consts/endpoints'
 import { server, http, HttpResponse } from './test-utils/msw-setup'
-import { DEFAULT_AUTH_TOKEN, DEFAULT_SECTION, DEFAULT_TASK } from './test-utils/test-defaults'
+import {
+    DEFAULT_AUTH_TOKEN,
+    DEFAULT_PROJECT,
+    DEFAULT_RAW_COMMENT,
+    DEFAULT_SECTION,
+    DEFAULT_TASK,
+} from './test-utils/test-defaults'
 import { uploadMultipartFile } from './utils/multipart-upload'
 
 // Mock the multipart upload helper
@@ -491,6 +497,153 @@ describe('TodoistApi template endpoints', () => {
                     seo: { title: 'Work templates', description: null },
                 },
             ])
+        })
+    })
+
+    describe('updateUserTemplate', () => {
+        test('puts only the given fields and returns the validated template', async () => {
+            let body: unknown
+            server.use(
+                http.put(
+                    `${getTemplatesBaseUri()}templates/user/UT_28Rc62VC22j439VcPJMw9xgWx2`,
+                    async ({ request }) => {
+                        body = await request.json()
+                        return HttpResponse.json({ status: 'ok', ...RAW_TEMPLATE, name: 'Renamed' })
+                    },
+                ),
+            )
+            const api = getTarget()
+
+            const result = await api.updateUserTemplate('UT_28Rc62VC22j439VcPJMw9xgWx2', {
+                name: 'Renamed',
+                projectId: '123',
+                sharedWithWorkspaceMembers: true,
+            })
+
+            expect(body).toEqual({
+                name: 'Renamed',
+                project_id: '123',
+                shared_with_workspace_members: true,
+            })
+            expect(result.name).toBe('Renamed')
+        })
+
+        test('rejects an empty template ID before making a request', async () => {
+            const api = getTarget()
+
+            await expect(api.updateUserTemplate('', { name: 'x' })).rejects.toThrow()
+        })
+    })
+
+    describe('previewUserTemplateFromFile', () => {
+        test('uploads the CSV and renames sync names to SDK ones', async () => {
+            mockedUploadMultipartFile.mockResolvedValue({
+                uploadedFileName: '1234567_abcdef_weekly.csv',
+                templateType: 'project',
+                projects: [DEFAULT_PROJECT],
+                sections: [DEFAULT_SECTION],
+                items: [DEFAULT_TASK],
+                notes: [DEFAULT_RAW_COMMENT],
+                projectNotes: [],
+                projectViewOptionsDefaults: [],
+                reminders: [],
+            })
+            const api = getTarget()
+
+            const result = await api.previewUserTemplateFromFile({
+                file: Buffer.from('TYPE,CONTENT\ntask,Plan'),
+                fileName: 'weekly.csv',
+            })
+
+            expect(mockedUploadMultipartFile).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    endpoint: 'templates/user/preview',
+                    fileName: 'weekly.csv',
+                }),
+            )
+            expect(result.uploadedFileName).toBe('1234567_abcdef_weekly.csv')
+            expect(result.tasks).toHaveLength(1)
+            expect(result.comments).toHaveLength(1)
+            expect(result.projectComments).toEqual([])
+            expect(result).not.toHaveProperty('items')
+        })
+    })
+
+    describe('createUserTemplateFromFile', () => {
+        test('uploads a file with the template fields as form fields', async () => {
+            mockedUploadMultipartFile.mockResolvedValue({
+                ...RAW_TEMPLATE,
+                templateType: 'project',
+                templateSource: 'user',
+                shortDescription: '',
+                longDescription: '',
+                thumbnailImage: null,
+                thumbnailImageDark: null,
+                coverImage: null,
+                previewImage: null,
+                templateColor: null,
+                backgroundColor: null,
+                backgroundColorDark: null,
+                moreResources: [],
+                categoryIds: [],
+            })
+            const api = getTarget()
+
+            const result = await api.createUserTemplateFromFile({
+                file: Buffer.from('TYPE,CONTENT\ntask,Plan'),
+                fileName: 'weekly.csv',
+                name: 'Weekly',
+                description: 'Plan the week',
+                color: 30,
+            })
+
+            expect(mockedUploadMultipartFile).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    endpoint: 'templates/user/import',
+                    additionalFields: {
+                        template_type: 'project',
+                        name: 'Weekly',
+                        description: 'Plan the week',
+                        color: '30',
+                    },
+                }),
+            )
+            expect(result.id).toBe('UT_28Rc62VC22j439VcPJMw9xgWx2')
+        })
+
+        test('saves a staged file as JSON without uploading again', async () => {
+            let body: unknown
+            server.use(
+                http.post(`${getTemplatesBaseUri()}templates/user/import`, async ({ request }) => {
+                    body = await request.json()
+                    return HttpResponse.json(RAW_TEMPLATE)
+                }),
+            )
+            const api = getTarget()
+
+            await api.createUserTemplateFromFile({
+                uploadedFileName: '1234567_abcdef_weekly.csv',
+                name: 'Weekly',
+                description: 'Plan the week',
+                color: 'blue',
+            })
+
+            expect(mockedUploadMultipartFile).not.toHaveBeenCalled()
+            expect(body).toEqual({
+                template_type: 'project',
+                name: 'Weekly',
+                description: 'Plan the week',
+                color: 'blue',
+                uploaded_file_name: '1234567_abcdef_weekly.csv',
+            })
+        })
+
+        test('needs either a file or a staged file name', async () => {
+            const api = getTarget()
+
+            await expect(
+                api.createUserTemplateFromFile({ name: 'Weekly', description: '', color: 'blue' }),
+            ).rejects.toThrow('needs either `file` or `uploadedFileName`')
         })
     })
 
