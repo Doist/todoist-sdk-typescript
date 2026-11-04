@@ -4,17 +4,23 @@ import {
     ENDPOINT_REST_TEMPLATES_IMPORT_FROM_FILE,
     ENDPOINT_REST_TEMPLATES_IMPORT_FROM_ID,
     ENDPOINT_REST_TEMPLATES_URL,
+    ENDPOINT_REST_TEMPLATES_USER,
+    ENDPOINT_REST_PROJECTS_FROM_TEMPLATE,
 } from '../consts/endpoints'
 import { request } from '../transport/http-client'
 import type {
     CreateProjectFromTemplateArgs,
+    CreateProjectFromTemplateIdArgs,
+    CreateProjectFromTemplateIdResponse,
     CreateProjectFromTemplateResponse,
+    CreateUserTemplateArgs,
     ExportTemplateFileArgs,
     ExportTemplateUrlArgs,
     ExportTemplateUrlResponse,
     ImportTemplateFromIdArgs,
     ImportTemplateIntoProjectArgs,
     ImportTemplateResponse,
+    Template,
 } from '../types/templates'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import {
@@ -22,6 +28,7 @@ import {
     validateProjectArray,
     validateSectionArray,
     validateTaskArray,
+    validateTemplate,
 } from '../utils/validators'
 import { BaseClient } from './base-client'
 
@@ -121,6 +128,38 @@ export class TemplateClient extends BaseClient {
             requestId: requestId,
         })
         return this.validateTemplateResponse(data) as ImportTemplateResponse
+    }
+
+    async createUserTemplate(args: CreateUserTemplateArgs, requestId?: string): Promise<Template> {
+        const { templateType = 'project', ...rest } = args
+        const { data } = await request<unknown>({
+            httpMethod: 'POST',
+            baseUri: this.syncApiBase,
+            relativePath: ENDPOINT_REST_TEMPLATES_USER,
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            customHeaders: this.customHeaders,
+            payload: { ...rest, templateType },
+            requestId: requestId,
+        })
+        return validateTemplate(data)
+    }
+
+    async createProjectFromTemplateId(
+        args: CreateProjectFromTemplateIdArgs,
+        requestId?: string,
+    ): Promise<CreateProjectFromTemplateIdResponse> {
+        const { data } = await request<CreateProjectFromTemplateIdResponse>({
+            httpMethod: 'POST',
+            baseUri: this.syncApiBase,
+            relativePath: ENDPOINT_REST_PROJECTS_FROM_TEMPLATE,
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            customHeaders: this.customHeaders,
+            payload: args,
+            requestId: requestId,
+        })
+        return data
     }
 
     private validateTemplateResponse(data: Record<string, unknown>) {
