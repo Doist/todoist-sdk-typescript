@@ -4,6 +4,10 @@ import type { PersonalProject, WorkspaceProject } from '../projects/types'
 import type { Section } from '../sections/types'
 import type { TemplateType } from '../sync/resources/suggestions'
 import type { Task } from '../tasks/types'
+import type { UploadFileArgs } from '../uploads/requests'
+
+/** The template file to upload, for routes that accept a template CSV. */
+type TemplateFileUpload = Pick<UploadFileArgs, 'file' | 'fileName'>
 
 /**
  * Arguments for exporting a project as a template file.
@@ -39,13 +43,9 @@ export type ExportTemplateUrlResponse = {
  * Arguments for creating a project from a template file.
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/create_project_from_file_api_v1_templates_create_project_from_file_post
  */
-export type CreateProjectFromTemplateArgs = {
+export type CreateProjectFromTemplateArgs = TemplateFileUpload & {
     /** Name for the new project. */
     name: string
-    /** The template file content. */
-    file: Buffer | NodeJS.ReadableStream | string | Blob
-    /** Optional file name (required for Buffer/Stream). */
-    fileName?: string
     /** Optional workspace ID. */
     workspaceId?: string | null
 }
@@ -67,13 +67,9 @@ export type CreateProjectFromTemplateResponse = {
  * Arguments for importing a template file into an existing project.
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/import_into_project_from_file_api_v1_templates_import_into_project_from_file_post
  */
-export type ImportTemplateIntoProjectArgs = {
+export type ImportTemplateIntoProjectArgs = TemplateFileUpload & {
     /** The project ID to import into. */
     projectId: string
-    /** The template file content. */
-    file: Buffer | NodeJS.ReadableStream | string | Blob
-    /** Optional file name (required for Buffer/Stream). */
-    fileName?: string
 }
 
 /**
@@ -112,8 +108,8 @@ export type CreateUserTemplateArgs = {
     name: string
     /** Description shown with the template. */
     description: string
-    /** Color of the template. */
-    color: ColorKey
+    /** Color of the template: a color key (e.g. `'lime_green'`) or its numeric ID (30-49). */
+    color: ColorKey | number
     /** Template type (default: `'project'`). */
     templateType?: TemplateType
     /** Save the template to the project's workspace instead of the user's personal templates. */
