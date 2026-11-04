@@ -269,6 +269,26 @@ describe('TodoistApi template endpoints', () => {
             })
         })
 
+        test('sends a numeric color ID as a number', async () => {
+            let body: unknown
+            server.use(
+                http.post(`${getSyncBaseUri()}templates/user`, async ({ request }) => {
+                    body = await request.json()
+                    return HttpResponse.json(mockTemplate)
+                }),
+            )
+            const api = getTarget()
+
+            await api.createUserTemplate({
+                projectId: '123',
+                name: 'Launch plan',
+                description: '',
+                color: 30,
+            })
+
+            expect(body).toMatchObject({ color: 30 })
+        })
+
         test('reports a curated source as todoist, however the API spells it', async () => {
             server.use(
                 http.post(`${getSyncBaseUri()}templates/user`, () =>
