@@ -218,3 +218,47 @@ export type GetTemplateCategoriesArgs = {
     /** Locale for category names and descriptions (default: `'en'`). */
     locale?: string
 }
+
+/**
+ * Arguments for updating a user template. Omitted fields stay unchanged.
+ * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/update_user_template_api_v1_templates_user__template_id__put
+ */
+export type UpdateUserTemplateArgs = {
+    /** New name, up to 255 characters. */
+    name?: string
+    /** New description, up to 1,000 characters. */
+    description?: string
+    /** Replace the template's content with this project's current content. */
+    projectId?: string
+    /** New color: a color key (e.g. `'lime_green'`) or its numeric ID (30-49). */
+    color?: ColorKey | number
+    /** Move a personal template into this workspace, keeping its ID. Workspace templates cannot move again. */
+    workspaceId?: string
+    /** Share the template with workspace members, or stop sharing it. Only the author can change this. */
+    sharedWithWorkspaceMembers?: boolean
+}
+
+/**
+ * Arguments for staging a CSV template to preview it before saving.
+ * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/preview_user_template_api_v1_templates_user_preview_post
+ */
+export type PreviewUserTemplateFromFileArgs = TemplateFileUpload
+
+/**
+ * Arguments for saving a CSV template as a personal user template.
+ *
+ * Provide either `file`, or the `uploadedFileName` returned by `previewUserTemplateFromFile`
+ * to save a staged file without uploading it again.
+ *
+ * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/import_user_template_from_file_api_v1_templates_user_import_post
+ */
+export type CreateUserTemplateFromFileArgs = Partial<TemplateFileUpload> & {
+    /** Name of the template, up to 255 characters. */
+    name: string
+    /** Description shown with the template, up to 1,000 characters. */
+    description: string
+    /** Color of the template: a color key (e.g. `'lime_green'`) or its numeric ID (30-49). */
+    color: ColorKey | number
+    /** A staged file from `previewUserTemplateFromFile`. Used when `file` is omitted. */
+    uploadedFileName?: string
+}
