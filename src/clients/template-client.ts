@@ -218,7 +218,7 @@ export class TemplateClient extends BaseClient {
         IdSchema.parse(templateId)
         const { data } = await request<unknown>({
             httpMethod: 'PUT',
-            baseUri: this.syncApiBase,
+            baseUri: this.templatesApiBase,
             relativePath: generatePath(ENDPOINT_REST_TEMPLATES_USER, templateId),
             apiToken: this.authToken,
             customFetch: this.customFetch,
@@ -234,7 +234,7 @@ export class TemplateClient extends BaseClient {
         requestId?: string,
     ): Promise<TemplateFromCSVPreview> {
         const data = await uploadMultipartFile({
-            baseUrl: this.syncApiBase,
+            baseUrl: this.templatesApiBase,
             authToken: this.authToken,
             endpoint: ENDPOINT_REST_TEMPLATES_USER_PREVIEW,
             file: args.file,
@@ -263,7 +263,7 @@ export class TemplateClient extends BaseClient {
             // The server reuses the staged file, so there is nothing to upload.
             const { data } = await request<unknown>({
                 httpMethod: 'POST',
-                baseUri: this.syncApiBase,
+                baseUri: this.templatesApiBase,
                 relativePath: ENDPOINT_REST_TEMPLATES_USER_IMPORT,
                 apiToken: this.authToken,
                 customFetch: this.customFetch,
@@ -275,7 +275,7 @@ export class TemplateClient extends BaseClient {
         }
 
         const data = await uploadMultipartFile({
-            baseUrl: this.syncApiBase,
+            baseUrl: this.templatesApiBase,
             authToken: this.authToken,
             endpoint: ENDPOINT_REST_TEMPLATES_USER_IMPORT,
             file,
