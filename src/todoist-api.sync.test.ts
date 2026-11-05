@@ -147,6 +147,37 @@ describe('TodoistApi sync endpoint', () => {
             ).rejects.toThrow(ZodError)
         })
 
+        test.each([0, 1, 2, 3, 25])(
+            'keeps legacy_pricing: %i in user settings as the price version number',
+            async (legacyPricing) => {
+                mockApiResponse({
+                    endpoint: `${getSyncBaseUri()}${ENDPOINT_SYNC}`,
+                    data: {
+                        user_settings: {
+                            completed_sound_desktop: true,
+                            completed_sound_mobile: true,
+                            legacy_pricing: legacyPricing,
+                            navigation: { counts_shown: true, features: [] },
+                            reminder_desktop: true,
+                            reminder_email: true,
+                            reminder_push: true,
+                            reset_recurring_subtasks: false,
+                            ai_email_assist: false,
+                            quick_add: { labels_shown: true, features: [] },
+                        },
+                    },
+                    options: { method: 'POST' },
+                })
+
+                const response = await getTarget().sync({
+                    resourceTypes: ['user_settings'],
+                    syncToken: '*',
+                })
+
+                expect(response.userSettings?.legacyPricing).toBe(legacyPricing)
+            },
+        )
+
         test('throws ZodError for invalid resource data', async () => {
             server.use(
                 http.post(`${getSyncBaseUri()}${ENDPOINT_SYNC}`, () => {
