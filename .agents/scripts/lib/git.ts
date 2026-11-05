@@ -1,9 +1,8 @@
 import { spawnSync } from 'node:child_process'
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
 
 /** The checkout this copy of the tooling lives in, whatever the caller's working directory. */
-export const CHECKOUT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
+export const CHECKOUT_ROOT = resolve(import.meta.dirname, '../../..')
 
 // Git exports GIT_DIR, GIT_INDEX_FILE and friends to hooks. A tool that runs git with them in
 // place acts on whatever repository they name, not the one it was asked about.

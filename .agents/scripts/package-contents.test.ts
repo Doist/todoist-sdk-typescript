@@ -8,7 +8,7 @@ import { isolatedEnv, REPO_ROOT } from './lib/test-repo.ts'
 // only `dist/` today; this checks the packed tarball, so widening `files` can't ship it.
 const DEV_ONLY = ['.agents/', '.claude/', '.codex/', '.cursor/', '.tmp/']
 
-// npm pack takes several seconds, more when `npm run verify` runs other checks alongside.
+// npm pack takes several seconds, more when other checks run alongside it.
 it('keeps agent tooling out of the published package', { timeout: 30_000 }, () => {
     expect(existsSync(join(REPO_ROOT, '.agents/scripts'))).toBe(true)
 
