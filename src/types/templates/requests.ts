@@ -101,7 +101,7 @@ export type ImportTemplateResponse = {
  * Arguments for saving a project as a user template.
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/create_user_template_api_v1_templates_user_post
  */
-export type CreateUserTemplateArgs = {
+export type SaveProjectAsTemplateArgs = {
     /** The project to save as a template. */
     projectId: string
     /** Name of the template. */
