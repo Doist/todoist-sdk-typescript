@@ -1,6 +1,6 @@
 # Check: security
 
-Every consumer runs this code with a user's API token, and OAuth apps with their client secret. Apply to changes in `src/` and `scripts/`, and to any file that could carry a secret into a commit.
+Every consumer runs this code with a user's API token, and OAuth apps with their client secret. Apply to changes in `src/`, `scripts/`, `.agents/scripts/`, `package.json` and `package-lock.json`, and to any file that could carry a secret into a commit.
 
 ## Report
 
@@ -10,6 +10,8 @@ Every consumer runs this code with a user's API token, and OAuth apps with their
 - Webhook verification that stops being constant-time, or accepts a payload before checking its signature (`src/utils/webhook-parser.ts`).
 - A file path for an upload built from API data rather than the caller's input.
 - `npm run api:request` printing the token, or a `.env` value reaching a commit.
+- A dependency that installs from outside the npm registry (a git or tarball URL), or a new one with an install script (`hasInstallScript` in `package-lock.json`): it runs on every consumer's install.
+- Agent tooling that passes a token to a child process, or shells out with a command built as a string from file names or hook input.
 
 ## Fine
 

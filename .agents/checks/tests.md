@@ -18,4 +18,5 @@ Apply to every change that touches code or tests. The quality bar is `.agents/sk
 - `.not.toHaveBeenCalled()`, guards like `toBeDefined()` before reading a value, and a partial match on a captured request body when one field is the point, as the test rules describe.
 - A test changing its assertions because the behaviour changed on purpose, when the description says so.
 - A refactor changing import paths, names or call sites in tests.
+- `skipIf` or `runIf` for an environment the test can't run in (a platform, root, a missing tool), with the reason next to it.
 - A real server on `127.0.0.1`, with msw told to let its requests through, where the point is real bytes on the wire: the dispatcher's gzip test in `src/transport/http-dispatcher.test.ts`.
