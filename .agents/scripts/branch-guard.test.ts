@@ -211,6 +211,23 @@ describe('pre-commit', () => {
         ])
     })
 
+    it('passes hostile file names to the tools as plain arguments', () => {
+        repo.git(['switch', '--quiet', '-c', 'feature'])
+        const files = ['src/x;touch PWNED1.ts', 'src/$(touch PWNED2).ts', 'src/`touch PWNED3`.ts']
+        for (const file of files) repo.write(file, 'export const x = 0\n')
+        repo.git(['add', '--', ...files])
+        const result = repo.git(['commit', '--quiet', '-m', 'names'], { env: { PATH: path } })
+        expect(result.status).toBe(0)
+        for (const name of ['PWNED1.ts', 'PWNED2.ts', 'PWNED3.ts']) {
+            expect(existsSync(join(repo.dir, name)), name).toBe(false)
+            expect(existsSync(join(repo.dir, 'src', name)), name).toBe(false)
+        }
+        const lint = calls()
+            .split('\n')
+            .find((line) => line.startsWith('npx oxlint --fix '))
+        for (const file of files) expect(lint).toContain(file)
+    })
+
     it('runs no linter or formatter when the commit stages no file to check', () => {
         repo.git(['switch', '--quiet', '-c', 'feature'])
         const empty = repo.git(['commit', '--allow-empty', '--quiet', '-m', 'empty'], {
