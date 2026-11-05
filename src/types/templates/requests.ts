@@ -4,7 +4,7 @@ import type { Section } from '../sections/types'
 import type { Task } from '../tasks/types'
 
 /**
- * Arguments for exporting a project as a CSV template file.
+ * Arguments for exporting a project as a CSV file.
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/export_as_file_api_v1_templates_file_get
  */
 export type ExportProjectAsCSVArgs = {
@@ -34,7 +34,7 @@ export type ExportTemplateUrlResponse = {
 }
 
 /**
- * Arguments for creating a project from a CSV template file.
+ * Arguments for creating a project from a CSV file.
  * @see https://developer.todoist.com/api/v1/#tag/Projects/operation/create_project_from_csv_api_v1_projects_import_post
  */
 export type CreateProjectFromCSVArgs = {
@@ -49,7 +49,7 @@ export type CreateProjectFromCSVArgs = {
 }
 
 /**
- * Response from creating a project from a CSV template file.
+ * Response from creating a project from a CSV file.
  */
 export type CreateProjectFromCSVResponse = {
     status: string
@@ -62,7 +62,7 @@ export type CreateProjectFromCSVResponse = {
 }
 
 /**
- * Arguments for importing a CSV template file into an existing project.
+ * Arguments for importing a CSV file into an existing project.
  * @see https://developer.todoist.com/api/v1/#tag/Projects/operation/import_project_csv_api_v1_projects__project_id__import_post
  */
 export type ImportCSVIntoProjectArgs = {

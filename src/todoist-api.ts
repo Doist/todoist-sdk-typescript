@@ -1685,7 +1685,7 @@ export class TodoistApi {
     // ── Templates ──
 
     /**
-     * Exports a project as a CSV template file.
+     * Exports a project as a CSV file.
      *
      * @param args - Arguments including project ID and optional date format preference.
      * @returns A promise that resolves to the CSV content as a string.
@@ -1705,7 +1705,7 @@ export class TodoistApi {
     }
 
     /**
-     * Creates a new project from a CSV template file.
+     * Creates a new project from a CSV file.
      *
      * @param args - Arguments including project name, CSV file, and optional workspace ID.
      * @param requestId - Optional custom identifier for the request.
@@ -1719,7 +1719,7 @@ export class TodoistApi {
     }
 
     /**
-     * Imports a CSV template file into an existing project.
+     * Imports a CSV file into an existing project.
      *
      * @param args - Arguments including project ID and CSV file.
      * @param requestId - Optional custom identifier for the request.
