@@ -9,6 +9,10 @@ import { uploadMultipartFile } from './utils/multipart-upload'
 vi.mock('./utils/multipart-upload')
 const mockedUploadMultipartFile = vi.mocked(uploadMultipartFile)
 
+function getTemplatesBaseUri() {
+    return getSyncBaseUri().replace('/api/v1/', '/api/v1.6/')
+}
+
 function getTarget() {
     return new TodoistApi(DEFAULT_AUTH_TOKEN)
 }
@@ -237,7 +241,7 @@ describe('TodoistApi template endpoints', () => {
         test('defaults to a project template and returns the validated template', async () => {
             let body: unknown
             server.use(
-                http.post(`${getSyncBaseUri()}templates/user`, async ({ request }) => {
+                http.post(`${getTemplatesBaseUri()}templates/user`, async ({ request }) => {
                     body = await request.json()
                     return HttpResponse.json(mockTemplate)
                 }),
@@ -272,7 +276,7 @@ describe('TodoistApi template endpoints', () => {
         test('sends a numeric color ID as a number', async () => {
             let body: unknown
             server.use(
-                http.post(`${getSyncBaseUri()}templates/user`, async ({ request }) => {
+                http.post(`${getTemplatesBaseUri()}templates/user`, async ({ request }) => {
                     body = await request.json()
                     return HttpResponse.json(mockTemplate)
                 }),
@@ -291,7 +295,7 @@ describe('TodoistApi template endpoints', () => {
 
         test('reports a curated source as todoist, however the API spells it', async () => {
             server.use(
-                http.post(`${getSyncBaseUri()}templates/user`, () =>
+                http.post(`${getTemplatesBaseUri()}templates/user`, () =>
                     HttpResponse.json({ ...mockTemplate, template_source: 'doist' }),
                 ),
             )
@@ -309,7 +313,7 @@ describe('TodoistApi template endpoints', () => {
 
         test('rejects a response that is not a template', async () => {
             server.use(
-                http.post(`${getSyncBaseUri()}templates/user`, () =>
+                http.post(`${getTemplatesBaseUri()}templates/user`, () =>
                     HttpResponse.json({ status: 'ok' }),
                 ),
             )
