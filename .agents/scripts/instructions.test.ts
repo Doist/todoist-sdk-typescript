@@ -10,7 +10,10 @@ import { REPO_ROOT } from './lib/test-repo.ts'
 import { AGENT_DOCS } from './lib/tree.ts'
 
 const SKILLS_DIR = join(REPO_ROOT, '.agents/skills')
-const skills = readdirSync(SKILLS_DIR).filter((name) => !name.startsWith('.'))
+// Only folders are skills; a stray file such as a README in .agents/skills/ is not one.
+const skills = readdirSync(SKILLS_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+    .map((entry) => entry.name)
 
 function markdownFiles(dir: string): string[] {
     return readdirSync(dir, { recursive: true, encoding: 'utf8' })
@@ -79,6 +82,12 @@ function resolveReference(
     }
 }
 
+/** Lines in a file, not counting the empty one `split` finds after a final newline. */
+function lineCount(text: string): number {
+    const lines = text.split('\n')
+    return text.endsWith('\n') ? lines.length - 1 : lines.length
+}
+
 function brokenReferences(text: string, doc: string): string[] {
     return namedPaths(text).flatMap(({ path, line }) => {
         const resolved = resolveReference(path, doc)
@@ -86,7 +95,7 @@ function brokenReferences(text: string, doc: string): string[] {
         if (line === undefined) return []
         const full = join(REPO_ROOT, resolved)
         if (lstatSync(full).isDirectory()) return [`${path}:${line} names a line in a folder`]
-        const lines = readFileSync(full, 'utf8').split('\n').length
+        const lines = lineCount(readFileSync(full, 'utf8'))
         return line > lines ? [`${path}:${line} is past the end (${lines} lines)`] : []
     })
 }
@@ -115,6 +124,20 @@ describe.each(DOCS.map((path) => [relative(REPO_ROOT, path), path]))('%s', (_nam
         const named = [...text.matchAll(/npm run (?:--silent )?([\w:-]+)/g)].map((m) => m[1] ?? '')
         expect(named.filter((script) => !scripts.includes(script))).toEqual([])
     })
+})
+
+it('counts lines without the empty one after a final newline', () => {
+    expect([lineCount('a\nb\n'), lineCount('a\nb'), lineCount('a\n')]).toEqual([2, 2, 1])
+})
+
+it('treats a line just past the end of a file as broken', () => {
+    const doc = join(REPO_ROOT, 'AGENTS.md')
+    // lefthook.yml ends with a newline, so it has as many lines as newlines.
+    const last = readFileSync(join(REPO_ROOT, 'lefthook.yml'), 'utf8').match(/\n/g)?.length ?? 0
+    expect(brokenReferences(`\`lefthook.yml:${last}\``, doc)).toEqual([])
+    expect(brokenReferences(`\`lefthook.yml:${last + 1}\``, doc)).toEqual([
+        `lefthook.yml:${last + 1} is past the end (${last} lines)`,
+    ])
 })
 
 it('resolves a bare file name only to a file still on disk', () => {
