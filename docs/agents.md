@@ -38,7 +38,7 @@ The release workflow commits and pushes to `main` from GitHub Actions, and `npm 
 
 ## `npm run verify`
 
-One command, every check the pull-request workflows run (`CI.yml`, `validate-docs.yml`): lint, format, both type checks, the build, all tests and the package check (`attw`), all of `npm run integrity-checks`. It takes about twenty seconds, so it always checks the whole tree. Picking only the affected tests would save a few seconds and add a way to miss something.
+One command, every check the pull-request workflows run (`CI.yml`, `validate-docs.yml`): lint, format, both type checks, the build, all tests and the package check (`attw`), all of `npm run integrity-checks`. It takes about twenty-five seconds, so it always checks the whole tree. Picking only the affected tests would save a few seconds and add a way to miss something.
 
 - **Before the checks** it stops if Node is older than `package.json` requires, or if `node_modules` does not match the lockfile in either direction, transitive dependencies included (npm's own record of what it installed, `node_modules/.package-lock.json`, against `package-lock.json`): a package still installed after the lockfile dropped it counts too. Both make checks fail, or pass, for reasons unrelated to your change. The Node check runs first, in `.agents/scripts/verify.mjs`, plain JavaScript, so an older Node gets that message instead of failing on the `.ts` extension.
 - **Only docs changed** since the branch left `main`: it runs only the format check, since `oxfmt` formats Markdown and YAML too, and records nothing.

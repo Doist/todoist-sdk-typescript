@@ -29,7 +29,7 @@ After cloning the repository and installing dependencies with `npm install`, sev
 - `npm test`: Runs all tests with Vitest
 - `npm run test:watch`: Runs tests in watch mode
 - `npm run integrity-checks`: Runs the full CI validation pipeline (lint, test, build, type checks)
-- `npm run verify`: Runs every check CI runs, in parallel, in about twenty seconds; run it before opening a pull request
+- `npm run verify`: Runs every check CI runs, in parallel, in about twenty-five seconds; run it before opening a pull request
 
 `npm install` also installs the git hooks, run by [lefthook](https://github.com/evilmartians/lefthook) and configured in `lefthook.yml`: commits and pushes to `main` are refused, `pre-commit` lints and formats the staged files and runs the type check, and `pre-push` runs the tests. [`docs/agents.md`](docs/agents.md) explains them.
 

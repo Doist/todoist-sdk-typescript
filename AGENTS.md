@@ -5,7 +5,7 @@ The official TypeScript SDK for the Todoist API, published to npm as `@doist/tod
 ## Definition of done
 
 - **Done means proven:** a test that failed before the change and passes after, at the public interface (a `TodoistApi` method or an export, against the API mocked with msw), or a real call (`npm run api:request`, on a test account). For a refactor: tests that pin the behaviour, passing before and after. Reading code or a passing compile is not proof.
-- **Run `npm run verify` before calling a change done.** It runs every check CI runs, in about twenty seconds, and records the pass. It prints what it cannot see, and when only docs changed it checks just their formatting.
+- **Run `npm run verify` before calling a change done.** It runs every check CI runs, in about twenty-five seconds, and records the pass. It prints what it cannot see, and when only docs changed it checks just their formatting.
 - **Never weaken a check to pass it.** Don't skip, delete or loosen tests, edit lint, type or test config to get green, or use `--no-verify`. If a check looks wrong, say so and stop.
 - **Report honestly:** what ran, what it showed, and what you did not verify.
 
