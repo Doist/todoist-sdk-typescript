@@ -5,6 +5,7 @@ import {
     ENDPOINT_REST_TEMPLATES_IMPORT_FROM_ID,
     ENDPOINT_REST_TEMPLATES_URL,
     ENDPOINT_REST_TEMPLATES_USER,
+    TEMPLATES_API_VERSION,
     ENDPOINT_REST_PROJECTS_FROM_TEMPLATE,
 } from '../consts/endpoints'
 import { request } from '../transport/http-client'
@@ -40,6 +41,11 @@ import { BaseClient } from './base-client'
  * JSDoc.
  */
 export class TemplateClient extends BaseClient {
+    /** Base URI for saved-template routes, on `TEMPLATES_API_VERSION`. */
+    private get templatesApiBase(): string {
+        return new URL(`/api/${TEMPLATES_API_VERSION}/`, this.syncApiBase).toString()
+    }
+
     async exportTemplateAsFile(args: ExportTemplateFileArgs): Promise<string> {
         const response = await request<string>({
             httpMethod: 'GET',
@@ -137,7 +143,7 @@ export class TemplateClient extends BaseClient {
         const { templateType = 'project', ...rest } = args
         const { data } = await request<unknown>({
             httpMethod: 'POST',
-            baseUri: this.syncApiBase,
+            baseUri: this.templatesApiBase,
             relativePath: ENDPOINT_REST_TEMPLATES_USER,
             apiToken: this.authToken,
             customFetch: this.customFetch,
