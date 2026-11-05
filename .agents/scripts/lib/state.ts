@@ -10,10 +10,12 @@ export function stateDir(root: string): string {
 
 /**
  * A name made safe to use as a file name under the state directory: anything but letters, digits,
- * `.`, `-` and `_` becomes `_`, so a hook's session id cannot point outside it.
+ * `.`, `-` and `_` becomes `_`, and so does every dot of a name made only of dots (`.`, `..`), so
+ * a hook's session id cannot point outside it.
  */
 export function safeName(name: string): string {
-    return name.replace(/[^\w.-]/g, '_')
+    const safe = name.replace(/[^\w.-]/g, '_')
+    return /^\.+$/.test(safe) ? safe.replace(/\./g, '_') : safe
 }
 
 export function readJson<T>(path: string): T | undefined {

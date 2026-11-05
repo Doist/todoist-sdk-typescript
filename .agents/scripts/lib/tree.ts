@@ -43,8 +43,10 @@ function hashPath(path: string): string | undefined {
  */
 export const CHECKED_WORKFLOWS = ['.github/workflows/CI.yml', '.github/workflows/validate-docs.yml']
 
+/** The kinds of file, as far as local checks are concerned. */
+export const FILE_KINDS = ['docs', 'unchecked', 'code'] as const
 /** The kind of file, as far as local checks are concerned. */
-export type FileKind = 'docs' | 'unchecked' | 'code'
+export type FileKind = (typeof FILE_KINDS)[number]
 
 /**
  * - docs: prose no check reads. Markdown under src/ is excluded, since it could be loaded at runtime.
