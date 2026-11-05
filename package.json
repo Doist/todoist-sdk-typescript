@@ -33,7 +33,7 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "verify": "node .agents/scripts/verify.ts",
+        "verify": "node .agents/scripts/verify.mjs",
         "api:request": "node ./scripts/todoist-api-request.cjs",
         "build:esm": "npx tsc -p tsconfig.esm.json",
         "build:fix-esm": "node scripts/fix-esm-imports.cjs",
