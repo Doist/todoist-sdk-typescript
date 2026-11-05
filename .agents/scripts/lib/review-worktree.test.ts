@@ -78,6 +78,27 @@ it('leaves out a nested repository, and the ignored files inside it', () => {
     expect(existsSync(join(target, 'nested'))).toBe(false)
 })
 
+it('applies a mid-file edit when the user has diff.context set to 0', () => {
+    const lines = Array.from({ length: 10 }, (_, i) => `line ${i + 1}`)
+    repo.write('src/a.ts', `${lines.join('\n')}\n`)
+    repo.git(['commit', '--quiet', '-am', 'ten lines'])
+    repo.git(['config', 'diff.context', '0'])
+    const edited = [...lines.slice(0, 4), 'line 5 edited', ...lines.slice(5)]
+    repo.write('src/a.ts', `${edited.join('\n')}\n`)
+    createReviewWorktree(repo.dir, target)
+    expect(readFileSync(join(target, 'src/a.ts'), 'utf8')).toBe(`${edited.join('\n')}\n`)
+})
+
+it('leaves out an earlier review worktree inside the checkout', () => {
+    const earlier = join(repo.dir, 'review-1')
+    createReviewWorktree(repo.dir, earlier)
+    repo.write('src/new.ts', 'untracked\n')
+    createReviewWorktree(repo.dir, target)
+    expect(readFileSync(join(target, 'src/new.ts'), 'utf8')).toBe('untracked\n')
+    expect(existsSync(join(target, 'review-1'))).toBe(false)
+    repo.git(['worktree', 'remove', '--force', earlier])
+})
+
 it('applies the real change when a textconv driver is configured', () => {
     repo.write('.gitattributes', '*.txt diff=upper\n')
     repo.write('notes.txt', 'hello\n')
@@ -132,7 +153,8 @@ it('works from the command line, in a checkout whose path has a space', () => {
     repo.git(['commit', '--quiet', '-m', 'tools'])
     repo.write('src/a.ts', 'unstaged edit\n')
     const result = repo.run(process.execPath, ['.agents/scripts/review-worktree.ts', target])
-    expect(result.stderr).toBe('')
+    expect(result.status, result.stderr).toBe(0)
+    expect(result.stderr).not.toContain('review-worktree:')
     expect(result.stdout).toContain('Review worktree ready')
     expect(result.stdout).toContain(`cd '${target}' && npm ci`)
     expect(readFileSync(join(target, 'src/a.ts'), 'utf8')).toBe('unstaged edit\n')

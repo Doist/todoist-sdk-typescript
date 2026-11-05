@@ -11,12 +11,14 @@ export function createReviewWorktree(root: string, target: string): void {
     if (existsSync(target)) throw new Error(`${target} already exists`)
 
     // Read the change before the worktree exists: a target inside the checkout would otherwise be
-    // listed as an untracked folder and copied into itself. Fixed prefixes and no external diff,
-    // textconv or colour, whatever the user's git config says, so `git apply` can read the patch.
+    // listed as an untracked folder and copied into itself. Fixed prefixes and context, and no
+    // external diff, textconv or colour, whatever the user's git config says, so `git apply` can
+    // read the patch: it rejects zero-context hunks, which diff.context=0 would produce.
     const diff = git(root, [
         'diff',
         'HEAD',
         '--binary',
+        '--unified=3',
         '--no-ext-diff',
         '--no-textconv',
         '--no-color',
