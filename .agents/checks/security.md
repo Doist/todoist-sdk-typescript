@@ -1,6 +1,6 @@
 # Check: security
 
-Every consumer runs this code with a user's API token, and OAuth apps with their client secret. Apply to changes in `src/` and `scripts/`.
+Every consumer runs this code with a user's API token, and OAuth apps with their client secret. Apply to changes in `src/` and `scripts/`, and to any file that could carry a secret into a commit.
 
 ## Report
 

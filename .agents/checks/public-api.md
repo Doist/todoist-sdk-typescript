@@ -4,7 +4,7 @@ What consumers see: everything reachable from `src/index.ts` (`TodoistApi` and i
 
 ## Report
 
-- A renamed or removed export, method, argument or response field, a narrowed argument type, a widened response type, a schema that now rejects data it accepted, or a changed default, without a breaking-change PR title (`feat!:`, `fix!:`).
+- A renamed or removed export, method, argument or response field, a narrowed argument type, a widened response type, a schema that now rejects data it accepted, or a changed default, without a breaking-change PR title (a `!` after the type, such as `feat!:` or `refactor!:`).
 - A raised Node engine, a raised `type-fest` peer range, or a changed `package.json#exports`, without a breaking-change title.
 - A new method or option in a `fix:` PR, or a behaviour fix in a `feat:` one: the title sets the version bump.
 - A change in what a method sends to the API (path, method, body or query keys) without a test that pins the request.

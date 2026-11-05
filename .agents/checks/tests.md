@@ -9,7 +9,7 @@ Apply to every change that touches code or tests. The quality bar is `.agents/sk
 - New behaviour with no test, or a test that would still pass with the change undone.
 - A `TodoistApi` test that stubs the method or its sub-client instead of answering the request with msw, a new `vi.mock` of an internal module that holds logic, or a mock of the function under test.
 - An expected value computed by the code under test.
-- A test that reaches the real API or the network instead of an msw handler.
+- A test that reaches the real API or another outside host instead of an msw handler.
 - A type contract that rests on `@ts-expect-error` alone: no check type-checks the test files.
 - Config that runs fewer tests: `vitest.config.ts` `include`, `exclude` or `setupFiles`, the scripts in `package.json`, the steps in `.github/workflows/CI.yml`.
 
@@ -18,3 +18,4 @@ Apply to every change that touches code or tests. The quality bar is `.agents/sk
 - `.not.toHaveBeenCalled()`, guards like `toBeDefined()` before reading a value, and a partial match on a captured request body when one field is the point, as the test rules describe.
 - A test changing its assertions because the behaviour changed on purpose, when the description says so.
 - A refactor changing import paths, names or call sites in tests.
+- A real server on `127.0.0.1`, with msw told to let its requests through, where the point is real bytes on the wire: the dispatcher's gzip test in `src/transport/http-dispatcher.test.ts`.
