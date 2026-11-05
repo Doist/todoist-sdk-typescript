@@ -165,7 +165,7 @@ import {
     GetAllCompletedTasksResponse,
 } from './types/tasks'
 import {
-    ExportTemplateFileArgs,
+    ExportProjectAsCSVArgs,
     ExportTemplateUrlArgs,
     ExportTemplateUrlResponse,
     CreateProjectFromCSVArgs,
@@ -1686,13 +1686,13 @@ export class TodoistApi {
     // ── Templates ──
 
     /**
-     * Exports a project as a template file (CSV format).
+     * Exports a project as a CSV template file.
      *
      * @param args - Arguments including project ID and optional date format preference.
-     * @returns A promise that resolves to the template file content as a string.
+     * @returns A promise that resolves to the CSV content as a string.
      */
-    async exportTemplateAsFile(args: ExportTemplateFileArgs): Promise<string> {
-        return this.templateClient.exportTemplateAsFile(args)
+    async exportProjectAsCSV(args: ExportProjectAsCSVArgs): Promise<string> {
+        return this.templateClient.exportProjectAsCSV(args)
     }
 
     /**
