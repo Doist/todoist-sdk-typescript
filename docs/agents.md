@@ -40,7 +40,7 @@ The release workflow commits and pushes to `main` from GitHub Actions, and `npm 
 
 One command, every check the pull-request workflows run (`CI.yml`, `validate-docs.yml`): lint, format, both type checks, the build, all tests and the package check (`attw`), all of `npm run integrity-checks`. It takes about twenty seconds, so it always checks the whole tree. Picking only the affected tests would save a few seconds and add a way to miss something.
 
-- **Before the checks** it stops if Node is older than `package.json` requires, or if `node_modules` does not match the lockfile, transitive dependencies included (npm's own record of what it installed, `node_modules/.package-lock.json`, against `package-lock.json`). Both make checks fail, or pass, for reasons unrelated to your change.
+- **Before the checks** it stops if Node is older than `package.json` requires, or if `node_modules` does not match the lockfile in either direction, transitive dependencies included (npm's own record of what it installed, `node_modules/.package-lock.json`, against `package-lock.json`): a package still installed after the lockfile dropped it counts too. Both make checks fail, or pass, for reasons unrelated to your change.
 - **Only docs changed** since the branch left `main`: it runs only the format check, since `oxfmt` formats Markdown and YAML too, and records nothing.
 - **Only files CI alone reads changed** (the docs site in `website/` and `tsconfig.docs.json`, Renovate, `.github/` config other than workflows): it runs only the format check and says CI is the only other check for them. Every workflow counts as code, since a local test compares verify with the two above and checks no other workflow runs commands on pull requests.
 - **The docs site build** (`validate-docs.yml`) is the one CI check verify leaves out: it needs its own install in `website/` and takes over a minute. Verify names it after every pass. Run `npm ci && npm run build` in `website/` when a change touches TSDoc comments or the site.
@@ -49,7 +49,7 @@ One command, every check the pull-request workflows run (`CI.yml`, `validate-doc
 - **Output:** one line per step. A failing step prints the last 30 lines of its log and the log's path under `.tmp/agents/logs/`.
 - **The record:** after a full pass it writes a content hash of every file local checks read (not docs, not CI-only files) to `.tmp/agents/verified.json` (gitignored). A run that fails, or sees files change while it runs, deletes it.
 - **Platforms:** macOS, Linux and WSL. Like the git hooks, it assumes a POSIX shell and runs npm's POSIX launchers in `node_modules/.bin`; on native Windows, run it in WSL.
-- **What it cannot see:** the docs site build, the real Todoist API, the projects that depend on this package, and the other Node version CI tests on. It prints these after every pass.
+- **What it cannot see:** the docs site build, the real Todoist API, the projects that depend on this package, and the other Node version CI tests on. It prints these after every run that passes, docs-only ones included.
 
 If a pull-request workflow gains a step, `.agents/scripts/lib/steps.test.ts` fails until verify gains it too, or says why it can't.
 
