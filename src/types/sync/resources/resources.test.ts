@@ -880,7 +880,7 @@ describe('Sync resource schemas', () => {
             completedSoundDesktop: true,
             completedSoundMobile: true,
             debugLogSendingEnabledUntil: null,
-            legacyPricing: false,
+            legacyPricing: 0,
             navigation: {
                 countsShown: true,
                 features: [
@@ -918,23 +918,16 @@ describe('Sync resource schemas', () => {
             expect(result.debugLogSendingEnabledUntil).toBeUndefined()
         })
 
-        test('coerces numeric legacyPricing to boolean', () => {
-            const withIntPricing = { ...validSettings, legacyPricing: 0 }
-            expect(UserSettingsSchema.parse(withIntPricing).legacyPricing).toBe(false)
-            const withTruthyIntPricing = { ...validSettings, legacyPricing: 1 }
-            expect(UserSettingsSchema.parse(withTruthyIntPricing).legacyPricing).toBe(true)
+        test.each([0, 1, 2, 3, 25])('keeps legacyPricing %i as a number', (legacyPricing) => {
+            expect(
+                UserSettingsSchema.parse({ ...validSettings, legacyPricing }).legacyPricing,
+            ).toBe(legacyPricing)
         })
 
-        test('rejects legacyPricing values outside boolean and 0/1', () => {
-            expect(() => UserSettingsSchema.parse({ ...validSettings, legacyPricing: 2 })).toThrow(
+        test.each([true, 2.5, '2', null])('rejects legacyPricing %j', (legacyPricing) => {
+            expect(() => UserSettingsSchema.parse({ ...validSettings, legacyPricing })).toThrow(
                 ZodError,
             )
-            expect(() =>
-                UserSettingsSchema.parse({ ...validSettings, legacyPricing: 'true' }),
-            ).toThrow(ZodError)
-            expect(() =>
-                UserSettingsSchema.parse({ ...validSettings, legacyPricing: null }),
-            ).toThrow(ZodError)
         })
 
         test('throws on invalid data', () => {

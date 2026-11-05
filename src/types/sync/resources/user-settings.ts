@@ -17,7 +17,11 @@ export const UserSettingsSchema = z.looseObject({
     completedSoundDesktop: z.boolean(),
     completedSoundMobile: z.boolean(),
     debugLogSendingEnabledUntil: z.string().nullish(),
-    legacyPricing: z.union([z.boolean(), z.literal(0), z.literal(1)]).transform(Boolean),
+    /**
+     * The Pro price version kept for the account, or `0` when none is kept.
+     * Version numbers are not sequential, and new ones can appear at any time.
+     */
+    legacyPricing: z.number().int(),
     navigation: z
         .object({
             countsShown: z.boolean(),
