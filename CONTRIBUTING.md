@@ -25,12 +25,12 @@ After cloning the repository and installing dependencies with `npm install`, sev
 - `npm run build`: Builds the package for publishing to npm
 - `npm run check`: Validates code quality with oxlint and formatting with oxfmt
 - `npm run check:fix`: Auto-fixes lint and formatting issues
-- `npm run type-check`: Type-checks the source the build compiles, without writing `dist/`
+- `npm run type-check`: Type-checks the source the build compiles, without writing `dist/`, and the agent tooling in `.agents/scripts/`
 - `npm test`: Runs all tests with Vitest
 - `npm run test:watch`: Runs tests in watch mode
 - `npm run integrity-checks`: Runs the full CI validation pipeline (lint, test, build, type checks)
 
-`npm install` also installs the git hooks, run by [lefthook](https://github.com/evilmartians/lefthook) and configured in `lefthook.yml`: `pre-commit` lints and formats the staged files and runs the type check, and `pre-push` runs the tests.
+`npm install` also installs the git hooks, run by [lefthook](https://github.com/evilmartians/lefthook) and configured in `lefthook.yml`: commits and pushes to `main` are refused, `pre-commit` lints and formats the staged files and runs the type check, and `pre-push` runs the tests. [`docs/agents.md`](docs/agents.md) explains them.
 
 ## Sending a Pull Request
 

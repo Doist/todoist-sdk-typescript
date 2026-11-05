@@ -1,5 +1,11 @@
 # Agent Guidelines
 
+## Git hooks and agent tooling
+
+- Commits and pushes to `main` are refused by the git hooks. Work on a branch.
+- Agent tooling lives in `.agents/scripts/`, apart from the build and maintenance scripts in `scripts/`. It never ships: `package.json#files` lists only `dist/`, and a test checks the packed tarball.
+- How it all fits together: [`docs/agents.md`](docs/agents.md).
+
 ## String Union Types
 
 When defining a string union type, always derive it from a `const` array with `as const`. This gives you both a runtime array and a type from a single source of truth.
