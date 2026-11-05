@@ -164,7 +164,8 @@ describe('a code change', () => {
         await verify([pass('lint')])
         const earlier = readVerified(repo.dir)
         repo.git(['add', '.'])
-        repo.git(['commit', '--quiet', '-m', 'code'])
+        // Commits the code change, so the docs below are all that differ from the new base.
+        expect(repo.git(['commit', '--quiet', '-m', 'code']).status).toBe(0)
         const head = repo.git(['rev-parse', 'HEAD']).stdout.trim()
         repo.write('README.md', 'edited\n')
         await runVerify({ root: repo.dir, steps: [pass('lint')], base: head, out: () => {} })

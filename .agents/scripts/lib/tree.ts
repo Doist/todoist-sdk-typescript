@@ -84,7 +84,8 @@ export function codeFingerprint(files: Snapshot): string {
     for (const path of Object.keys(files).sort()) {
         const kind = classify(path)
         if (kind === 'code') hash.update(`${path}\0${files[path]}\n`)
-        else if (kind === 'docs' && present(files, path)) hash.update(`${path}\0doc\n`)
+        // Every key is a file on disk, so a doc counts by name alone.
+        else if (kind === 'docs') hash.update(`${path}\0doc\n`)
     }
     return hash.digest('hex')
 }
@@ -105,12 +106,17 @@ export function changedPaths(before: Snapshot, after: Snapshot): string[] {
 }
 
 /**
- * Whether a file that differs from the default branch needs the checks: code, or a doc that was
- * deleted or renamed, since the agent docs may name it.
+ * The kind a file that differs from the default branch counts as: its own, except that a doc that
+ * was deleted or renamed counts as code, since the agent docs may name it.
  */
-export function needsChecks(root: string, path: string): boolean {
+export function checkKind(root: string, path: string): FileKind {
     const kind = classify(path)
-    return kind === 'code' || (kind === 'docs' && !existsSync(join(root, path)))
+    return kind === 'docs' && !existsSync(join(root, path)) ? 'code' : kind
+}
+
+/** Whether a file that differs from the default branch needs the checks. */
+export function needsChecks(root: string, path: string): boolean {
+    return checkKind(root, path) === 'code'
 }
 
 /** Files that differ from `base`: committed, staged, unstaged and untracked. */

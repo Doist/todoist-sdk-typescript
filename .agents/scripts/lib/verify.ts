@@ -5,10 +5,10 @@ import { cleanGitEnv, git } from './git.ts'
 import { clearVerified, readVerified, safeName, stateDir, writeVerified } from './state.ts'
 import {
     changedSince,
+    checkKind,
     classify,
     codeFingerprint,
     fingerprintChanges,
-    needsChecks,
     snapshot,
 } from './tree.ts'
 
@@ -83,9 +83,7 @@ async function check(
         out(`No ${baseName} branch found, so checking the whole tree.`)
     } else {
         const changes = changedSince(root, base)
-        const kinds = new Set(
-            changes.map((path) => (needsChecks(root, path) ? 'code' : classify(path))),
-        )
+        const kinds = new Set(changes.map((path) => checkKind(root, path)))
         if (changes.length > 0 && !kinds.has('code')) {
             // Docs and CI config are still formatted, and CI checks that, so the format step runs.
             const format = steps.find((step) => step.name === 'format')
