@@ -53,8 +53,16 @@ function namedPaths(text: string): Reference[] {
         .filter(({ path }) => ROOTED.test(path) || FILE_NAME.test(path) || RELATIVE_FILE.test(path))
 }
 
-/** The repository path a reference names, or why it doesn't resolve. */
-function resolveReference(path: string, doc: string): string | { problem: string } {
+/**
+ * The repository path a reference names, or why it doesn't resolve. A bare file name resolves
+ * through the files git lists, but only to one still on disk: git keeps listing a deleted file
+ * until the deletion is staged.
+ */
+function resolveReference(
+    path: string,
+    doc: string,
+    files: string[] = tracked,
+): string | { problem: string } {
     if (!ROOTED.test(path) && path.includes('/')) {
         const local = relative(REPO_ROOT, resolve(dirname(doc), path))
         if (existsSync(join(REPO_ROOT, local))) return local
@@ -62,7 +70,9 @@ function resolveReference(path: string, doc: string): string | { problem: string
     if (ROOTED.test(path) || path.includes('/') || existsSync(join(REPO_ROOT, path))) {
         return existsSync(join(REPO_ROOT, path)) ? path : { problem: 'does not exist' }
     }
-    const matches = tracked.filter((candidate) => basename(candidate) === path)
+    const matches = files.filter(
+        (candidate) => basename(candidate) === path && existsSync(join(REPO_ROOT, candidate)),
+    )
     if (matches.length === 1) return matches[0] ?? path
     return {
         problem: matches.length === 0 ? 'does not exist' : `is ambiguous: ${matches.join(', ')}`,
@@ -105,6 +115,17 @@ describe.each(DOCS.map((path) => [relative(REPO_ROOT, path), path]))('%s', (_nam
         const named = [...text.matchAll(/npm run (?:--silent )?([\w:-]+)/g)].map((m) => m[1] ?? '')
         expect(named.filter((script) => !scripts.includes(script))).toEqual([])
     })
+})
+
+it('resolves a bare file name only to a file still on disk', () => {
+    const doc = join(REPO_ROOT, 'AGENTS.md')
+    expect(resolveReference('lefthook.yml', doc, ['lefthook.yml'])).toBe('lefthook.yml')
+    expect(resolveReference('gone.md', doc, ['docs/gone.md'])).toEqual({
+        problem: 'does not exist',
+    })
+    expect(resolveReference('agents.md', doc, ['docs/agents.md', 'old/agents.md'])).toBe(
+        'docs/agents.md',
+    )
 })
 
 describe.each(skills)('skill %s', (skill) => {
