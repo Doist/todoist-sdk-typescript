@@ -1,13 +1,3 @@
-## [17.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v16.0.0...v17.0.0) (2026-11-05)
-
-### ⚠ BREAKING CHANGES
-
-* keep legacyPricing in user settings as the price version number (#762)
-
-### Bug Fixes
-
-* keep legacyPricing in user settings as the price version number ([#762](https://github.com/Doist/todoist-sdk-typescript/issues/762)) ([5ee97a3](https://github.com/Doist/todoist-sdk-typescript/commit/5ee97a3cbe855d3588317d314da60ee8f5cae075))
-
 ## [16.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v15.13.1...v16.0.0) (2026-11-03)
 
 ### ⚠ BREAKING CHANGES
