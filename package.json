@@ -46,7 +46,7 @@
         "prepare": "node -e \"require('fs').existsSync('.git') && require('child_process').execSync('lefthook install --reset-hooks-path', { stdio: 'inherit' })\" && npm run build"
     },
     "overrides": {
-        "fflate": "0.8.2"
+        "fflate": "0.8.3"
     },
     "dependencies": {
         "@doist/sdk-kmp": "0.6.0",
