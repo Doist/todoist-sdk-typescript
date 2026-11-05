@@ -2,7 +2,14 @@ import { rmSync, utimesSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createTempRepo, type TempRepo } from './test-repo.ts'
-import { changedPaths, changedSince, classify, codeFingerprint, snapshot } from './tree.ts'
+import {
+    changedPaths,
+    changedSince,
+    classify,
+    codeFingerprint,
+    fingerprintChanges,
+    snapshot,
+} from './tree.ts'
 
 let repo: TempRepo
 
@@ -81,15 +88,36 @@ describe('snapshot', () => {
 describe('codeFingerprint', () => {
     useRepo()
 
-    it('ignores docs and files only CI reads, and nothing else', () => {
+    it('ignores edits to docs and files only CI reads, and nothing else', () => {
         const before = codeFingerprint(snapshot(repo.dir))
         repo.write('README.md', 'changed\n')
-        repo.write('docs/guide.md', 'new\n')
         repo.write('.github/renovate.json', '{}\n')
         repo.write('website/docs/about.md', 'about\n')
         expect(codeFingerprint(snapshot(repo.dir))).toBe(before)
         repo.write('src/prompt.md', 'markdown the SDK could load\n')
         expect(codeFingerprint(snapshot(repo.dir))).not.toBe(before)
+    })
+
+    it('changes when a doc is added or deleted, since the agent docs may name it', () => {
+        const before = codeFingerprint(snapshot(repo.dir))
+        repo.write('docs/guide.md', 'new\n')
+        expect(codeFingerprint(snapshot(repo.dir))).not.toBe(before)
+        rmSync(join(repo.dir, 'docs/guide.md'))
+        expect(codeFingerprint(snapshot(repo.dir))).toBe(before)
+        rmSync(join(repo.dir, 'README.md'))
+        expect(codeFingerprint(snapshot(repo.dir))).not.toBe(before)
+    })
+})
+
+describe('fingerprintChanges', () => {
+    useRepo()
+
+    it('names code, and docs added or deleted, but not edited docs', () => {
+        const before = snapshot(repo.dir)
+        repo.write('README.md', 'edited\n')
+        repo.write('docs/new.md', 'new\n')
+        repo.write('src/a.ts', 'export const a = 2\n')
+        expect(fingerprintChanges(before, snapshot(repo.dir))).toEqual(['docs/new.md', 'src/a.ts'])
     })
 })
 
@@ -101,6 +129,10 @@ describe('classify', () => {
         ['docs/guide.md', 'docs'],
         ['.github/ISSUE_TEMPLATE/bug_report.md', 'docs'],
         ['LICENSE', 'docs'],
+        ['CLAUDE.md', 'docs'],
+        ['AGENTS.md', 'code'],
+        ['docs/agents.md', 'code'],
+        ['.agents/skills/verify/SKILL.md', 'code'],
         ['.github/workflows/CI.yml', 'code'],
         ['.github/workflows/validate-docs.yml', 'code'],
         ['.github/workflows/release.yml', 'code'],

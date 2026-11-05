@@ -2,8 +2,15 @@ import { spawn } from 'node:child_process'
 import { closeSync, createWriteStream, fstatSync, mkdirSync, openSync, readSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { cleanGitEnv, git } from './git.ts'
-import { clearVerified, safeName, stateDir, writeVerified } from './state.ts'
-import { changedPaths, changedSince, classify, codeFingerprint, snapshot } from './tree.ts'
+import { clearVerified, readVerified, safeName, stateDir, writeVerified } from './state.ts'
+import {
+    changedSince,
+    checkKind,
+    classify,
+    codeFingerprint,
+    fingerprintChanges,
+    snapshot,
+} from './tree.ts'
 
 export type Step = {
     name: string
@@ -76,8 +83,15 @@ async function check(
         out(`No ${baseName} branch found, so checking the whole tree.`)
     } else {
         const changes = changedSince(root, base)
-        const kinds = new Set(changes.map(classify))
+        const kinds = new Set(changes.map((path) => checkKind(root, path)))
         if (changes.length > 0 && !kinds.has('code')) {
+            // Docs count by name in the fingerprint, so an added or removed doc makes an earlier
+            // pass describe a different tree. Cleared first, so a failing format step can't leave
+            // it behind.
+            const earlier = readVerified(root)
+            if (earlier && earlier.fingerprint !== codeFingerprint(snapshot(root))) {
+                clearVerified(root)
+            }
             // Docs and CI config are still formatted, and CI checks that, so the format step runs.
             const format = steps.find((step) => step.name === 'format')
             if (format && !(await runStep(format, { root, logDir: logDirFor(root), out }))) {
@@ -97,8 +111,8 @@ async function check(
     }
 
     // From here the checks run, so a run that does not end in a pass must not leave an earlier
-    // pass behind. (A docs-only run returns above: docs are outside the fingerprint, so an
-    // earlier pass is still valid.)
+    // pass behind. (A docs-only run returns above: edited docs leave the fingerprint as it was,
+    // so an earlier pass for the same tree is still valid.)
     clearVerified(root)
     const before = snapshot(root)
 
@@ -108,7 +122,7 @@ async function check(
     const after = snapshot(root)
     const fingerprint = codeFingerprint(after)
     if (fingerprint !== codeFingerprint(before)) {
-        const changed = changedPaths(before, after).filter((path) => classify(path) === 'code')
+        const changed = fingerprintChanges(before, after)
         out(`Files changed during the run: ${changed.join(', ')}. Nothing recorded; run it again.`)
         return { ok: false, recorded: false }
     }
