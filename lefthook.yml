@@ -1,20 +1,26 @@
 # Git hooks for everyone, people and agents alike. `npm install` installs them (the
-# `prepare` script).
+# `prepare` script). See docs/agents.md.
 #
-# GUI git clients often run hooks without node on PATH: the node checks are skipped with a
-# message, and CI runs them.
+# Lefthook skips every pre-commit job when nothing is staged, even jobs without a glob, so the
+# branch rule also runs in commit-msg, which empty commits reach.
+# GUI git clients often run hooks without node on PATH: the branch rule is plain sh and always
+# runs; the node checks are skipped with a message, and CI runs them.
 
 pre-commit:
     piped: true
     jobs:
+        - name: branch-guard
+          run: sh .agents/scripts/branch-guard.sh commit
         - name: no-node
           skip:
               - run: command -v node >/dev/null 2>&1 && command -v npx >/dev/null 2>&1
           run: echo "pre-commit - node or npx not found, so lint, format and the type check were skipped. CI still runs them."
         - name: lint
           # The files `npm run check` lints; website/ and release.config.js follow their own
-          # tools' conventions. Lefthook's `*` also matches `/`, so this takes every depth.
-          glob: 'src/*.{ts,tsx}'
+          # tools' conventions. Lefthook's `*` also matches `/`, so these take every depth.
+          glob:
+              - 'src/*.{ts,tsx}'
+              - '.agents/scripts/*.ts'
           skip: &no-node
               - run: '! command -v node >/dev/null 2>&1 || ! command -v npx >/dev/null 2>&1'
           run: npx oxlint --fix {staged_files}
@@ -29,9 +35,18 @@ pre-commit:
           skip: *no-node
           run: npm run type-check
 
+commit-msg:
+    jobs:
+        - name: branch-guard
+          run: sh .agents/scripts/branch-guard.sh commit
+
 pre-push:
     piped: true
     jobs:
+        - name: branch-guard
+          # The guard reads the pushed refs from stdin; without this it sees none and allows all.
+          use_stdin: true
+          run: sh .agents/scripts/branch-guard.sh push
         - name: no-node
           skip:
               - run: command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1
