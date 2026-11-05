@@ -23,7 +23,7 @@ import type {
     SaveProjectAsTemplateArgs,
     TemplateContent,
     TemplateContentResponse,
-    CreateUserTemplateFromFileArgs,
+    CreateTemplateFromCSVArgs,
     GetTemplateArgs,
     GetTemplateCategoriesArgs,
     GetTemplatesArgs,
@@ -35,7 +35,7 @@ import type {
     ImportTemplateFromIdArgs,
     ImportTemplateIntoProjectArgs,
     ImportTemplateResponse,
-    PreviewUserTemplateFromFileArgs,
+    PreviewTemplateFromCSVArgs,
     UpdateUserTemplateArgs,
     UserTemplatePreview,
     Template,
@@ -251,8 +251,8 @@ export class TemplateClient extends BaseClient {
         return validateTemplate(data)
     }
 
-    async previewUserTemplateFromFile(
-        args: PreviewUserTemplateFromFileArgs,
+    async previewTemplateFromCSV(
+        args: PreviewTemplateFromCSVArgs,
         requestId?: string,
     ): Promise<UserTemplatePreview> {
         const data = await uploadMultipartFile({
@@ -269,8 +269,8 @@ export class TemplateClient extends BaseClient {
         return validateUserTemplatePreview(data)
     }
 
-    async createUserTemplateFromFile(
-        args: CreateUserTemplateFromFileArgs,
+    async createTemplateFromCSV(
+        args: CreateTemplateFromCSVArgs,
         requestId?: string,
     ): Promise<Template> {
         const { file, fileName, uploadedFileName, name, description, color } = args
@@ -279,7 +279,7 @@ export class TemplateClient extends BaseClient {
         if (file === undefined) {
             if (!uploadedFileName) {
                 throw new TodoistArgumentError(
-                    'createUserTemplateFromFile needs either `file` or `uploadedFileName`.',
+                    'createTemplateFromCSV needs either `file` or `uploadedFileName`.',
                 )
             }
             // The server reuses the staged file, so there is nothing to upload.

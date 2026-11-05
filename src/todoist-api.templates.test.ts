@@ -535,7 +535,7 @@ describe('TodoistApi template endpoints', () => {
         })
     })
 
-    describe('previewUserTemplateFromFile', () => {
+    describe('previewTemplateFromCSV', () => {
         test('uploads the CSV and renames sync names to SDK ones', async () => {
             mockedUploadMultipartFile.mockResolvedValue({
                 uploadedFileName: '1234567_abcdef_weekly.csv',
@@ -550,7 +550,7 @@ describe('TodoistApi template endpoints', () => {
             })
             const api = getTarget()
 
-            const result = await api.previewUserTemplateFromFile({
+            const result = await api.previewTemplateFromCSV({
                 file: Buffer.from('TYPE,CONTENT\ntask,Plan'),
                 fileName: 'weekly.csv',
             })
@@ -569,7 +569,7 @@ describe('TodoistApi template endpoints', () => {
         })
     })
 
-    describe('createUserTemplateFromFile', () => {
+    describe('createTemplateFromCSV', () => {
         test('uploads a file with the template fields as form fields', async () => {
             mockedUploadMultipartFile.mockResolvedValue({
                 ...RAW_TEMPLATE,
@@ -589,7 +589,7 @@ describe('TodoistApi template endpoints', () => {
             })
             const api = getTarget()
 
-            const result = await api.createUserTemplateFromFile({
+            const result = await api.createTemplateFromCSV({
                 file: Buffer.from('TYPE,CONTENT\ntask,Plan'),
                 fileName: 'weekly.csv',
                 name: 'Weekly',
@@ -621,7 +621,7 @@ describe('TodoistApi template endpoints', () => {
             )
             const api = getTarget()
 
-            await api.createUserTemplateFromFile({
+            await api.createTemplateFromCSV({
                 uploadedFileName: '1234567_abcdef_weekly.csv',
                 name: 'Weekly',
                 description: 'Plan the week',
@@ -642,7 +642,7 @@ describe('TodoistApi template endpoints', () => {
             const api = getTarget()
 
             await expect(
-                api.createUserTemplateFromFile({ name: 'Weekly', description: '', color: 'blue' }),
+                api.createTemplateFromCSV({ name: 'Weekly', description: '', color: 'blue' }),
             ).rejects.toThrow('needs either `file` or `uploadedFileName`')
         })
     })

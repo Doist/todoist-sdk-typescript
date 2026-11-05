@@ -174,8 +174,8 @@ import {
     CreateProjectFromTemplateIdResponse,
     SaveProjectAsTemplateArgs,
     TemplateContentResponse,
-    CreateUserTemplateFromFileArgs,
-    PreviewUserTemplateFromFileArgs,
+    CreateTemplateFromCSVArgs,
+    PreviewTemplateFromCSVArgs,
     UpdateUserTemplateArgs,
     UserTemplatePreview,
     GetTemplateArgs,
@@ -1847,21 +1847,21 @@ export class TodoistApi {
     }
 
     /**
-     * Stages a CSV template and returns the content it would create, without saving it.
+     * Stages a CSV file and returns the template content it would create, without saving it.
      *
      * @param args - The CSV file to stage.
      * @param requestId - Optional custom identifier for the request.
      * @returns A promise that resolves to the staged content and its `uploadedFileName`.
      */
-    async previewUserTemplateFromFile(
-        args: PreviewUserTemplateFromFileArgs,
+    async previewTemplateFromCSV(
+        args: PreviewTemplateFromCSVArgs,
         requestId?: string,
     ): Promise<UserTemplatePreview> {
-        return this.templateClient.previewUserTemplateFromFile(args, requestId)
+        return this.templateClient.previewTemplateFromCSV(args, requestId)
     }
 
     /**
-     * Saves a CSV template as a personal user template.
+     * Creates a personal template from a CSV file.
      *
      * Task assignees are discarded. Use `updateUserTemplate` with `workspaceId` to move the
      * template into a workspace afterwards.
@@ -1870,11 +1870,11 @@ export class TodoistApi {
      * @param requestId - Optional custom identifier for the request.
      * @returns A promise that resolves to the saved template.
      */
-    async createUserTemplateFromFile(
-        args: CreateUserTemplateFromFileArgs,
+    async createTemplateFromCSV(
+        args: CreateTemplateFromCSVArgs,
         requestId?: string,
     ): Promise<Template> {
-        return this.templateClient.createUserTemplateFromFile(args, requestId)
+        return this.templateClient.createTemplateFromCSV(args, requestId)
     }
 
     /**

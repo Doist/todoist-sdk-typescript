@@ -218,7 +218,7 @@ export const UserTemplatePreviewSchema = z
         projectComments: projectNotes,
     }))
 /**
- * A staged CSV template and the content it would create.
- * Pass `uploadedFileName` to `createUserTemplateFromFile` to save it without uploading again.
+ * A staged CSV file and the template content it would create.
+ * Pass `uploadedFileName` to `createTemplateFromCSV` to save it without uploading again.
  */
 export type UserTemplatePreview = z.infer<typeof UserTemplatePreviewSchema>

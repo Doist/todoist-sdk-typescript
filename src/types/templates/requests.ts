@@ -244,26 +244,26 @@ export type UpdateUserTemplateArgs = {
 }
 
 /**
- * Arguments for staging a CSV template to preview it before saving.
+ * Arguments for staging a CSV file to preview the template it would create.
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/preview_user_template_api_v1_templates_user_preview_post
  */
-export type PreviewUserTemplateFromFileArgs = TemplateFileUpload
+export type PreviewTemplateFromCSVArgs = TemplateFileUpload
 
 /**
- * Arguments for saving a CSV template as a personal user template.
+ * Arguments for creating a personal template from a CSV file.
  *
- * Provide either `file`, or the `uploadedFileName` returned by `previewUserTemplateFromFile`
+ * Provide either `file`, or the `uploadedFileName` returned by `previewTemplateFromCSV`
  * to save a staged file without uploading it again.
  *
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/import_user_template_from_file_api_v1_templates_user_import_post
  */
-export type CreateUserTemplateFromFileArgs = Partial<TemplateFileUpload> & {
+export type CreateTemplateFromCSVArgs = Partial<TemplateFileUpload> & {
     /** Name of the template, up to 255 characters. */
     name: string
     /** Description shown with the template, up to 1,000 characters. */
     description: string
     /** Color of the template: a color key (e.g. `'lime_green'`) or its numeric ID (30-49). */
     color: ColorKey | number
-    /** A staged file from `previewUserTemplateFromFile`. Used when `file` is omitted. */
+    /** A staged file from `previewTemplateFromCSV`. Used when `file` is omitted. */
     uploadedFileName?: string
 }
