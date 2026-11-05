@@ -34,10 +34,10 @@ export type ExportTemplateUrlResponse = {
 }
 
 /**
- * Arguments for creating a project from a template file.
+ * Arguments for creating a project from a CSV template file.
  * @see https://developer.todoist.com/api/v1/#tag/Projects/operation/create_project_from_csv_api_v1_projects_import_post
  */
-export type CreateProjectFromTemplateArgs = {
+export type CreateProjectFromCsvArgs = {
     /** Name for the new project. */
     name: string
     /** The template file content. */
@@ -49,9 +49,9 @@ export type CreateProjectFromTemplateArgs = {
 }
 
 /**
- * Response from creating a project from a template.
+ * Response from creating a project from a CSV template file.
  */
-export type CreateProjectFromTemplateResponse = {
+export type CreateProjectFromCsvResponse = {
     status: string
     projectId: string
     templateType: string
@@ -62,10 +62,10 @@ export type CreateProjectFromTemplateResponse = {
 }
 
 /**
- * Arguments for importing a template file into an existing project.
+ * Arguments for importing a CSV template file into an existing project.
  * @see https://developer.todoist.com/api/v1/#tag/Projects/operation/import_project_csv_api_v1_projects__project_id__import_post
  */
-export type ImportTemplateIntoProjectArgs = {
+export type ImportCsvIntoProjectArgs = {
     /** The project ID to import into. */
     projectId: string
     /** The template file content. */

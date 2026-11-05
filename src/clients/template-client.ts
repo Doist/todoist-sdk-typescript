@@ -8,13 +8,13 @@ import {
 } from '../consts/endpoints'
 import { request } from '../transport/http-client'
 import type {
-    CreateProjectFromTemplateArgs,
-    CreateProjectFromTemplateResponse,
+    CreateProjectFromCsvArgs,
+    CreateProjectFromCsvResponse,
     ExportTemplateFileArgs,
     ExportTemplateUrlArgs,
     ExportTemplateUrlResponse,
     ImportTemplateFromIdArgs,
-    ImportTemplateIntoProjectArgs,
+    ImportCsvIntoProjectArgs,
     ImportTemplateResponse,
 } from '../types/templates'
 import { uploadMultipartFile } from '../utils/multipart-upload'
@@ -62,10 +62,10 @@ export class TemplateClient extends BaseClient {
         return data
     }
 
-    async createProjectFromTemplate(
-        args: CreateProjectFromTemplateArgs,
+    async createProjectFromCsv(
+        args: CreateProjectFromCsvArgs,
         requestId?: string,
-    ): Promise<CreateProjectFromTemplateResponse> {
+    ): Promise<CreateProjectFromCsvResponse> {
         const { file, fileName, name, workspaceId } = args
         const additionalFields: Record<string, string> = { name }
         if (workspaceId !== undefined && workspaceId !== null) {
@@ -85,11 +85,11 @@ export class TemplateClient extends BaseClient {
         })
         return this.validateTemplateResponse(
             data as Record<string, unknown>,
-        ) as CreateProjectFromTemplateResponse
+        ) as CreateProjectFromCsvResponse
     }
 
-    async importTemplateIntoProject(
-        args: ImportTemplateIntoProjectArgs,
+    async importCsvIntoProject(
+        args: ImportCsvIntoProjectArgs,
         requestId?: string,
     ): Promise<ImportTemplateResponse> {
         const { file, fileName, projectId } = args

@@ -168,9 +168,9 @@ import {
     ExportTemplateFileArgs,
     ExportTemplateUrlArgs,
     ExportTemplateUrlResponse,
-    CreateProjectFromTemplateArgs,
-    CreateProjectFromTemplateResponse,
-    ImportTemplateIntoProjectArgs,
+    CreateProjectFromCsvArgs,
+    CreateProjectFromCsvResponse,
+    ImportCsvIntoProjectArgs,
     ImportTemplateFromIdArgs,
     ImportTemplateResponse,
 } from './types/templates'
@@ -1705,31 +1705,31 @@ export class TodoistApi {
     }
 
     /**
-     * Creates a new project from a template file.
+     * Creates a new project from a CSV template file.
      *
-     * @param args - Arguments including project name, template file, and optional workspace ID.
+     * @param args - Arguments including project name, CSV file, and optional workspace ID.
      * @param requestId - Optional custom identifier for the request.
      * @returns A promise that resolves to the created project data.
      */
-    async createProjectFromTemplate(
-        args: CreateProjectFromTemplateArgs,
+    async createProjectFromCsv(
+        args: CreateProjectFromCsvArgs,
         requestId?: string,
-    ): Promise<CreateProjectFromTemplateResponse> {
-        return this.templateClient.createProjectFromTemplate(args, requestId)
+    ): Promise<CreateProjectFromCsvResponse> {
+        return this.templateClient.createProjectFromCsv(args, requestId)
     }
 
     /**
-     * Imports a template file into an existing project.
+     * Imports a CSV template file into an existing project.
      *
-     * @param args - Arguments including project ID and template file.
+     * @param args - Arguments including project ID and CSV file.
      * @param requestId - Optional custom identifier for the request.
      * @returns A promise that resolves to the import result.
      */
-    async importTemplateIntoProject(
-        args: ImportTemplateIntoProjectArgs,
+    async importCsvIntoProject(
+        args: ImportCsvIntoProjectArgs,
         requestId?: string,
     ): Promise<ImportTemplateResponse> {
-        return this.templateClient.importTemplateIntoProject(args, requestId)
+        return this.templateClient.importCsvIntoProject(args, requestId)
     }
 
     /**
