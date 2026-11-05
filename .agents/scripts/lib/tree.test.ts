@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createTempRepo, type TempRepo } from './test-repo.ts'
 import {
+    changedCodePaths,
     changedPaths,
     changedSince,
     classify,
@@ -118,6 +119,18 @@ describe('fingerprintChanges', () => {
         repo.write('docs/new.md', 'new\n')
         repo.write('src/a.ts', 'export const a = 2\n')
         expect(fingerprintChanges(before, snapshot(repo.dir))).toEqual(['docs/new.md', 'src/a.ts'])
+    })
+})
+
+describe('changedCodePaths', () => {
+    useRepo()
+
+    it('counts a deleted doc, but not an edited or added one', () => {
+        const before = snapshot(repo.dir)
+        repo.write('docs/guide.md', 'new\n')
+        expect(changedCodePaths(before, snapshot(repo.dir))).toEqual([])
+        rmSync(join(repo.dir, 'README.md'))
+        expect(changedCodePaths(before, snapshot(repo.dir))).toEqual(['README.md'])
     })
 })
 
