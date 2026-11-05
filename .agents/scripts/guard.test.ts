@@ -46,15 +46,16 @@ it('sends the agent back with the block decision every agent reads', () => {
     expect(end.json).toEqual({ decision: 'block', reason: expect.stringContaining('src/a.ts') })
 })
 
-it('sends the agent back on the first stop even if another hook set stop_hook_active or loop_count', () => {
-    for (const reentry of [{ stop_hook_active: true }, { loop_count: 1 }]) {
+it.each([{ stop_hook_active: true }, { loop_count: 1 }])(
+    'sends the agent back on the first stop even if another hook set %j',
+    (reentry) => {
         guard('turn-start')
         repo.write('src/a.ts', `export const a = ${JSON.stringify(reentry)}\n`)
         expect(guard('turn-end', { session_id: 's1', ...reentry }).json?.decision).toBe('block')
         const second = guard('turn-end', { session_id: 's1', ...reentry })
         expect(second.json).toEqual({ systemMessage: expect.stringContaining('agent-guard:') })
-    }
-})
+    },
+)
 
 it('guards the checkout it lives in, whatever the working directory and git variables', () => {
     const elsewhere = mkdtempSync(join(tmpdir(), 'agent-elsewhere-'))
@@ -69,8 +70,9 @@ it('guards the checkout it lives in, whatever the working directory and git vari
     }
 })
 
-it('takes the session from conversation_id or thread_id when there is no session_id', () => {
-    for (const key of ['conversation_id', 'thread_id']) {
+it.each(['conversation_id', 'thread_id'])(
+    'takes the session from %s when there is no session_id',
+    (key) => {
         guard('turn-start', { [key]: `s-${key}` })
         repo.write('src/a.ts', `export const a = '${key}'\n`)
         // Another session's stop doesn't use this session's record.
@@ -78,8 +80,8 @@ it('takes the session from conversation_id or thread_id when there is no session
             'no turn-start record',
         )
         expect(guard('turn-end', { [key]: `s-${key}` }).json?.decision).toBe('block')
-    }
-})
+    },
+)
 
 it('uses one default session when the payload has no id', () => {
     guard('turn-start', {})
