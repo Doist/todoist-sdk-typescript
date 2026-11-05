@@ -63,7 +63,7 @@
         "@semantic-release/git": "10.0.1",
         "@types/node": "24.9.2",
         "conventional-changelog-conventionalcommits": "9.3.1",
-        "dotenv": "17.4.1",
+        "dotenv": "17.4.2",
         "lefthook": "2.2.2",
         "msw": "2.13.2",
         "npm-run-all2": "8.0.4",
