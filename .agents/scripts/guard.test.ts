@@ -69,6 +69,18 @@ it('guards the checkout it lives in, whatever the working directory and git vari
     }
 })
 
+it('takes the session from conversation_id or thread_id when there is no session_id', () => {
+    for (const key of ['conversation_id', 'thread_id']) {
+        guard('turn-start', { [key]: `s-${key}` })
+        repo.write('src/a.ts', `export const a = '${key}'\n`)
+        // Another session's stop doesn't use this session's record.
+        expect(guard('turn-end', { [key]: 'another' }).json?.systemMessage).toContain(
+            'no turn-start record',
+        )
+        expect(guard('turn-end', { [key]: `s-${key}` }).json?.decision).toBe('block')
+    }
+})
+
 it('uses one default session when the payload has no id', () => {
     guard('turn-start', {})
     repo.write('src/a.ts', 'export const a = 2\n')

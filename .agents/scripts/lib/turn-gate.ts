@@ -8,7 +8,6 @@ import { branchBase } from './git.ts'
 import { readJson, readVerified, safeName, stateDir, writeJson } from './state.ts'
 import { listSome } from './text.ts'
 import {
-    changedCodePaths,
     changedPaths,
     changedSince,
     classify,
@@ -49,20 +48,18 @@ function pruneStaleTurns(root: string, now = Date.now()): void {
     }
     for (const name of names) {
         const path = join(dir, name)
-        if (now - statSync(path).mtimeMs > STALE_TURN_MS) rmSync(path, { force: true })
+        let modified: number
+        try {
+            modified = statSync(path).mtimeMs
+        } catch {
+            // Another session's prune got there first.
+            continue
+        }
+        if (now - modified > STALE_TURN_MS) rmSync(path, { force: true })
     }
 }
 
-export function endTurn({
-    root,
-    sessionId,
-    base = branchBase(root),
-}: {
-    root: string
-    sessionId: string
-    /** Where the branch left the default branch; undefined when there is none. */
-    base?: string
-}): Verdict {
+export function endTurn({ root, sessionId }: { root: string; sessionId: string }): Verdict {
     const path = turnPath(root, sessionId)
     const state = readJson<TurnState>(path)
     if (!state?.start) {
@@ -74,7 +71,8 @@ export function endTurn({
 
     const now = snapshot(root)
     const changed = changedPaths(state.start, now)
-    const code = changedCodePaths(state.start, now, changed)
+    // Code, and docs deleted or renamed, since the agent docs may name them: what verify checks.
+    const code = changed.filter((file) => needsChecks(root, file))
     const ciOnly = changed.filter((file) => classify(file) === 'unchecked')
     const ciNote = ciOnly.length
         ? `only CI checks ${list(ciOnly)}; say so in your report`
@@ -88,6 +86,8 @@ export function endTurn({
     // The code is back to what the default branch has (an undo, a stash, a branch switch), which
     // CI already checked. verify says "only docs changed" here and records nothing, so asking for
     // it would send the agent back for nothing.
+    // Only now, since finding the base costs several git calls and most turns end above.
+    const base = branchBase(root)
     if (base && !changedSince(root, base).some((file) => needsChecks(root, file))) {
         return { decision: 'allow', note: ciNote }
     }

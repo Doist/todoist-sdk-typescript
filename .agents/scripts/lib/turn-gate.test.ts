@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync, utimesSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, utimesSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { writeVerified } from './state.ts'
@@ -133,6 +133,15 @@ describe('turns that changed code without verifying', () => {
         expect(end().decision).toBe('block')
     })
 
+    it('catches a deleted code file', () => {
+        start()
+        rmSync(join(repo.dir, 'src/a.ts'))
+        expect(end()).toMatchObject({
+            decision: 'block',
+            reason: expect.stringContaining('src/a.ts'),
+        })
+    })
+
     it('catches a deleted doc, which the agent docs may name', () => {
         start()
         rmSync(join(repo.dir, 'README.md'))
@@ -182,6 +191,14 @@ describe('a branch', () => {
         repo.write('src/a.ts', 'export const a = 2\n')
         expect(end().decision).toBe('block')
     })
+})
+
+it('starts a turn when a turn record vanishes while it prunes them', () => {
+    // A dangling link fails statSync just as a record another session deleted mid-prune does.
+    mkdirSync(join(repo.dir, '.tmp/agents/turns'), { recursive: true })
+    symlinkSync('gone.json', join(repo.dir, '.tmp/agents/turns/vanished.json'))
+    expect(() => start()).not.toThrow()
+    expect(existsSync(join(repo.dir, `.tmp/agents/turns/${session}.json`))).toBe(true)
 })
 
 it('removes turn records older than a week when a turn starts', () => {
