@@ -9,6 +9,17 @@ The official TypeScript SDK for the Todoist API, published to npm as `@doist/tod
 - **Never weaken a check to pass it.** Don't skip, delete or loosen tests, edit lint, type or test config to get green, or use `--no-verify`. If a check looks wrong, say so and stop.
 - **Report honestly:** what ran, what it showed, and what you did not verify.
 
+## Skills
+
+Use the matching skill without being asked. They live in `.agents/skills/` (Claude Code reads them through `.claude/skills/`).
+
+- `verify`: before saying a change is done, fixed or ready.
+- `fix-bug`: something is broken or wrong.
+- `build-feature`: a new method, endpoint, option or behaviour.
+- `refactor`: changing structure without changing behaviour. Other tasks send restructuring here, as a separate change.
+- `write-tests`: writing or changing tests; `.agents/skills/write-tests/references/test-rules.md` is the quality bar.
+- `learn`: after a correction, to turn it into a check.
+
 ## Commands
 
 ```bash
@@ -25,7 +36,7 @@ npm run verify            # every CI check at once, with a recorded pass; run it
 
 - `src/index.ts` is the public API: everything it re-exports ships to every consumer.
 - `src/todoist-api.ts` holds `TodoistApi`, with the user-facing JSDoc for every method. Most methods delegate to an internal sub-client in `src/clients/` (`label-client.ts` and so on), which calls `request` from `src/transport/http-client.ts` and validates the response; `sync` goes through `src/transport/sync-request.ts`.
-- `src/types/<area>/` holds the Zod schemas and the types derived from them (`types.ts`) and the request and response shapes (`requests.ts`). `src/consts/endpoints.ts` holds the endpoint paths.
+- `src/types/<area>/` holds the Zod schemas and the types derived from them (`src/types/<area>/types.ts`) and the request and response shapes (`src/types/<area>/requests.ts`). `src/consts/endpoints.ts` holds the endpoint paths.
 - `src/authentication.ts` holds the OAuth helpers; `src/utils/` the helpers, some exported through `src/utils/index.ts`.
 - Tests sit next to the code. `TodoistApi` tests are `src/todoist-api.<area>.test.ts`, with the API mocked by msw (`src/test-utils/msw-setup.ts`) and fixtures from `src/test-utils/test-defaults.ts`.
 
