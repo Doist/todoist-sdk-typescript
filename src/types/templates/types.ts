@@ -110,11 +110,23 @@ export const TemplateFromCSVPreviewSchema = z
  */
 export type TemplateFromCSVPreview = z.infer<typeof TemplateFromCSVPreviewSchema>
 
-export const TemplateContentDateSchema = z.looseObject({
-    string: z.string(),
-    lang: z.string().nullable().optional(),
-})
-/** A due date or deadline in template content, kept as the text it was written in, e.g. "every monday". */
+export const TemplateContentDateSchema = z
+    .looseObject({
+        date: z.string().optional(),
+        string: z.string().optional(),
+        lang: z.string().nullable().optional(),
+        isRecurring: z.boolean().optional(),
+        timezone: z.string().nullable().optional(),
+    })
+    .refine((value) => value.date !== undefined || value.string !== undefined, {
+        message: 'A template date needs a `date` or a `string`.',
+    })
+/**
+ * A due date or deadline in template content: either a complete date object (`date`, with
+ * `string`, `isRecurring` and `timezone` for dues), as `getTemplateContent` returns it, or just the
+ * text, e.g. `{ string: "every monday" }`. Fields the SDK doesn't know are kept, so content read
+ * with `getTemplateContent` can be sent back without losing them.
+ */
 export type TemplateContentDate = z.infer<typeof TemplateContentDateSchema>
 
 export const TemplateContentProjectSchema = z.object({

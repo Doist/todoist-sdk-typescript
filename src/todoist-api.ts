@@ -1814,9 +1814,9 @@ export class TodoistApi {
     /**
      * Gets a template's full content: its layout, sections, tasks and comments.
      *
-     * Dates are returned as the text they were written in, e.g. "every monday", which is the
-     * form `updateTemplate` accepts back. To edit a saved template's content, read it with this
-     * method, change it, and pass it to `updateTemplate` as `content`.
+     * Dates are returned as complete objects, with their type, time and timezone, which
+     * `updateTemplate` accepts back unchanged. To edit a saved template's content, read it with
+     * this method, change it, and pass it to `updateTemplate` as `content`.
      *
      * @param templateId - A curated slug or a `UT_` template ID.
      * @param args - Optional locale.

@@ -221,13 +221,14 @@ export class TemplateClient extends BaseClient {
         IdSchema.parse(templateId)
         const { data } = await request<unknown>({
             httpMethod: 'GET',
-            baseUri: this.syncApiBase,
+            baseUri: this.templatesApiBase,
             relativePath: generatePath(ENDPOINT_REST_TEMPLATES, templateId, 'preview'),
             apiToken: this.authToken,
             customFetch: this.customFetch,
             customHeaders: this.customHeaders,
-            // Raw dates ("every monday") are what the update route accepts back.
-            payload: { ...args, resolveDates: false },
+            // Read on the same API version as the update, so dates come back as complete
+            // objects that the update accepts back unchanged.
+            payload: args,
         })
         return validateTemplateContentResponse(data)
     }

@@ -634,7 +634,13 @@ describe('TodoistApi template endpoints', () => {
                     parent_id: null,
                     priority: 4,
                     labels: ['work'],
-                    due: { string: 'every monday', lang: 'en' },
+                    due: {
+                        date: '2026-11-09T09:00:00',
+                        string: 'every monday at 9am',
+                        lang: 'en',
+                        is_recurring: true,
+                        timezone: 'Europe/Rome',
+                    },
                     deadline: null,
                     duration: null,
                     responsible_uid: '42',
@@ -658,10 +664,10 @@ describe('TodoistApi template endpoints', () => {
             reminders: [],
         }
 
-        test('reads raw dates and returns content in the shape updateTemplate takes', async () => {
+        test('reads on API v1.6 with full date objects, in the shape updateTemplate takes', async () => {
             let resolveDates: string | null | undefined
             server.use(
-                http.get(`${getSyncBaseUri()}templates/UT_1/preview`, ({ request }) => {
+                http.get(`${getTemplatesBaseUri()}templates/UT_1/preview`, ({ request }) => {
                     resolveDates = new URL(request.url).searchParams.get('resolve_dates')
                     return HttpResponse.json(RAW_CONTENT)
                 }),
@@ -670,7 +676,7 @@ describe('TodoistApi template endpoints', () => {
 
             const result = await api.getTemplateContent('UT_1')
 
-            expect(resolveDates).toBe('false')
+            expect(resolveDates).toBeNull()
             expect(result.templateType).toBe('project')
             expect(result.workspaceId).toBe('486413')
             expect(result.content.projects).toEqual([
@@ -684,7 +690,13 @@ describe('TodoistApi template endpoints', () => {
                     parentId: null,
                     priority: 4,
                     labels: ['work'],
-                    due: { string: 'every monday', lang: 'en' },
+                    due: {
+                        date: '2026-11-09T09:00:00',
+                        string: 'every monday at 9am',
+                        lang: 'en',
+                        isRecurring: true,
+                        timezone: 'Europe/Rome',
+                    },
                     deadline: null,
                     duration: null,
                     responsibleUid: '42',
@@ -705,10 +717,10 @@ describe('TodoistApi template endpoints', () => {
         test('sends content read with getTemplateContent back to the API unchanged', async () => {
             let body: unknown
             server.use(
-                http.get(`${getSyncBaseUri()}templates/UT_1/preview`, () =>
+                http.get(`${getTemplatesBaseUri()}templates/UT_1/preview`, () =>
                     HttpResponse.json(RAW_CONTENT),
                 ),
-                http.put(`${getSyncBaseUri()}templates/user/UT_1`, async ({ request }) => {
+                http.put(`${getTemplatesBaseUri()}templates/user/UT_1`, async ({ request }) => {
                     body = await request.json()
                     return HttpResponse.json({ status: 'ok', ...RAW_TEMPLATE })
                 }),
@@ -730,7 +742,13 @@ describe('TodoistApi template endpoints', () => {
                             parent_id: null,
                             priority: 4,
                             labels: ['work'],
-                            due: { string: 'every monday', lang: 'en' },
+                            due: {
+                                date: '2026-11-09T09:00:00',
+                                string: 'every monday at 9am',
+                                lang: 'en',
+                                is_recurring: true,
+                                timezone: 'Europe/Rome',
+                            },
                             deadline: null,
                             duration: null,
                             responsible_uid: '42',
@@ -750,6 +768,20 @@ describe('TodoistApi template endpoints', () => {
                     project_view_options_defaults: [],
                 },
             })
+        })
+
+        test('rejects a date with neither a date nor a string', async () => {
+            server.use(
+                http.get(`${getTemplatesBaseUri()}templates/UT_1/preview`, () =>
+                    HttpResponse.json({
+                        ...RAW_CONTENT,
+                        items: [{ ...RAW_CONTENT.items[0], due: { lang: 'en' } }],
+                    }),
+                ),
+            )
+            const api = getTarget()
+
+            await expect(api.getTemplateContent('UT_1')).rejects.toThrow()
         })
 
         test('rejects content and projectId together before making a request', async () => {
