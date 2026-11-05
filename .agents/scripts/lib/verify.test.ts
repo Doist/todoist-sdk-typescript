@@ -270,6 +270,13 @@ describe('what counts as a change', () => {
         expect(await verify([pass('lint'), fail('format')])).toEqual({ ok: false, recorded: false })
     })
 
+    it('forgets an earlier pass for another tree even when the docs fail their format check', async () => {
+        writeVerified(repo.dir, { fingerprint: 'another tree', head: 'x', at: 'then' })
+        repo.write('docs/new.md', 'new\n')
+        expect(await verify([pass('lint'), fail('format')])).toEqual({ ok: false, recorded: false })
+        expect(readVerified(repo.dir)).toBeUndefined()
+    })
+
     it('runs the checks when a doc is deleted, since the agent docs may name it', async () => {
         rmSync(join(repo.dir, 'README.md'))
         expect(await verify([pass('lint')])).toEqual({ ok: true, recorded: true })
