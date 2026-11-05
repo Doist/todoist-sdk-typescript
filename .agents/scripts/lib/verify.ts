@@ -22,6 +22,8 @@ export type VerifyOptions = {
     /** Where the branch left the default branch; undefined when there is no default branch. */
     base: string | undefined
     baseName?: string
+    /** What the checks cannot see, printed after every run that passes, docs-only ones included. */
+    blindSpots?: string[]
     out?: (line: string) => void
 }
 
@@ -32,12 +34,24 @@ type RunContext = { root: string; logDir: string; out: (line: string) => void }
 
 const LOG_TAIL_LINES = 30
 
-function print(line: string): void {
+export function print(line: string): void {
     process.stdout.write(`${line}\n`)
 }
 
 export async function runVerify(options: VerifyOptions): Promise<VerifyResult> {
-    const { root, steps, base, baseName = 'main', out = print } = options
+    const { blindSpots = [], out = print } = options
+    const result = await check({ ...options, out })
+    if (result.ok && blindSpots.length > 0) {
+        out('Not covered by these checks:')
+        for (const spot of blindSpots) out(`- ${spot}`)
+    }
+    return result
+}
+
+async function check(
+    options: VerifyOptions & { out: (line: string) => void },
+): Promise<VerifyResult> {
+    const { root, steps, base, baseName = 'main', out } = options
 
     if (base === undefined) {
         out(`No ${baseName} branch found, so checking the whole tree.`)
@@ -98,9 +112,18 @@ function logDirFor(root: string): string {
 
 async function runSteps(steps: Step[], context: RunContext): Promise<boolean> {
     const results = new Map<string, Promise<boolean>>()
+    // The steps being started right now, so a loop of after/waitFor fails with its names instead
+    // of exhausting the stack.
+    const starting: string[] = []
     function start(step: Step): Promise<boolean> {
         const existing = results.get(step.name)
         if (existing) return existing
+        if (starting.includes(step.name)) {
+            throw new Error(
+                `steps wait for each other in a loop: ${[...starting, step.name].join(' → ')}`,
+            )
+        }
+        starting.push(step.name)
         function find(name: string): Step {
             const found = steps.find((s) => s.name === name)
             if (!found) throw new Error(`step ${step.name} runs after unknown ${name}`)
@@ -117,6 +140,7 @@ async function runSteps(steps: Step[], context: RunContext): Promise<boolean> {
             return false
         })
         results.set(step.name, result)
+        starting.pop()
         return result
     }
     const outcomes = await Promise.all(steps.map(start))

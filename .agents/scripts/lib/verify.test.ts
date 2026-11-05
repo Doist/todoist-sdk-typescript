@@ -99,6 +99,13 @@ describe('a code change', () => {
         expect(readVerified(repo.dir)).toBeUndefined()
     })
 
+    it('names the steps when after and waitFor make a loop', async () => {
+        const looping = [pass('lint', { after: 'build' }), pass('build', { waitFor: ['lint'] })]
+        await expect(verify(looping)).rejects.toThrow(
+            'steps wait for each other in a loop: lint → build → lint',
+        )
+    })
+
     it('fails when a command cannot start', async () => {
         const result = await verify([{ name: 'lint', command: 'no-such-command-xyz', args: [] }])
         expect(result.ok).toBe(false)
@@ -145,6 +152,38 @@ describe('a code change', () => {
         await verify([pass('lint')])
         expect(existsSync(join(stateDir(repo.dir), 'logs/lint.log'))).toBe(true)
         expect(readVerified(repo.dir)?.fingerprint).toBe(codeFingerprint(snapshot(repo.dir)))
+    })
+})
+
+describe('what it cannot see', () => {
+    const blindSpots = ['the real API']
+
+    function run(steps: Step[]) {
+        return runVerify({
+            root: repo.dir,
+            steps,
+            base,
+            blindSpots,
+            out: (line) => lines.push(line),
+        })
+    }
+
+    it('names it after a pass', async () => {
+        repo.write('src/a.ts', 'export const a = 2\n')
+        expect(await run([pass('lint')])).toEqual({ ok: true, recorded: true })
+        expect(lines.slice(-2)).toEqual(['Not covered by these checks:', '- the real API'])
+    })
+
+    it('names it after a docs-only run too, which records nothing', async () => {
+        repo.write('README.md', 'changed\n')
+        expect(await run([pass('format')])).toEqual({ ok: true, recorded: false })
+        expect(lines.slice(-2)).toEqual(['Not covered by these checks:', '- the real API'])
+    })
+
+    it('says nothing of it after a failure', async () => {
+        repo.write('src/a.ts', 'export const a = 2\n')
+        expect(await run([fail('lint')])).toEqual({ ok: false, recorded: false })
+        expect(lines).not.toContain('Not covered by these checks:')
     })
 })
 
