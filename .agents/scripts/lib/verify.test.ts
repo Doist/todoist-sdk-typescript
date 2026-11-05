@@ -77,6 +77,21 @@ describe('a code change', () => {
         expect(readFileSync(logPath, 'utf8')).toContain('line 1\n')
     })
 
+    it('prints the tail of a log too large to read whole', async () => {
+        const noisy: Step = {
+            name: 'tests',
+            command: 'sh',
+            args: [
+                '-c',
+                'i=1; while [ $i -le 5000 ]; do echo "noise $i padding padding padding"; i=$((i + 1)); done; echo last; exit 1',
+            ],
+        }
+        await verify([noisy])
+        const failure = lines.findIndex((line) => line.startsWith('✗ tests'))
+        expect(lines.slice(failure + 1, failure + 31).at(-1)).toBe('    last')
+        expect(lines[failure + 1]).toBe('    noise 4972 padding padding padding')
+    })
+
     it('runs a dependent step only after its dependency passed', async () => {
         await verify([fail('build'), pass('schemas', { after: 'build' })])
         expect(lines).toContain('- schemas skipped: build failed')

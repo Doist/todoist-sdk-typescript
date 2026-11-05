@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { createWriteStream, mkdirSync, readFileSync } from 'node:fs'
+import { closeSync, createWriteStream, fstatSync, mkdirSync, openSync, readSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { cleanGitEnv, git } from './git.ts'
 import { clearVerified, safeName, stateDir, writeVerified } from './state.ts'
@@ -33,6 +33,25 @@ export type VerifyResult = { ok: boolean; recorded: boolean }
 type RunContext = { root: string; logDir: string; out: (line: string) => void }
 
 const LOG_TAIL_LINES = 30
+// Thirty lines fit in this many bytes, so a large failing log is never read whole.
+const LOG_TAIL_BYTES = 64 * 1024
+
+/** The last `count` lines of a file, from its last LOG_TAIL_BYTES. */
+export function tailLines(path: string, count: number): string[] {
+    const fd = openSync(path, 'r')
+    try {
+        const size = fstatSync(fd).size
+        const length = Math.min(size, LOG_TAIL_BYTES)
+        const buffer = Buffer.alloc(length)
+        readSync(fd, buffer, 0, length, size - length)
+        const lines = buffer.toString('utf8').trimEnd().split('\n')
+        // A cut in the middle of the file leaves a partial first line; drop it.
+        if (length < size) lines.shift()
+        return lines.slice(-count)
+    } finally {
+        closeSync(fd)
+    }
+}
 
 export function print(line: string): void {
     process.stdout.write(`${line}\n`)
@@ -170,9 +189,9 @@ function runStep(step: Step, { root, logDir, out }: RunContext): Promise<boolean
                     resolve(true)
                     return
                 }
-                const lines = readFileSync(logPath, 'utf8').trimEnd().split('\n')
+                const lines = tailLines(logPath, LOG_TAIL_LINES)
                 out(`✗ ${step.name} (${error ? error.message : `exit ${code}`}, ${seconds}s)`)
-                for (const line of lines.slice(-LOG_TAIL_LINES)) out(`    ${line}`)
+                for (const line of lines) out(`    ${line}`)
                 out(`    full log: ${relative(process.cwd(), logPath) || logPath}`)
                 resolve(false)
             })
