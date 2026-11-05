@@ -30,7 +30,7 @@ For each behaviour: write its test against the public interface (the `TodoistApi
 | Added a string union                 | The `as const` array and derived type ("String Union Types" in `AGENTS.md`)                                                               |
 | Added an export outside `src/types/` | `src/index.ts`, directly or through `src/utils/index.ts`                                                                                  |
 | Changed behaviour users read about   | `README.md` and the guides in `website/docs/`                                                                                             |
-| Made a breaking change               | A `feat!:` or `fix!:` title, and the "Migration Guide" in `README.md`                                                                     |
+| Made a breaking change               | A `!` after the PR title's type (`feat!:`, `fix!:`, `refactor!:`), and the "Migration Guide" in `README.md`                               |
 
 Done when each row that applies is handled.
 

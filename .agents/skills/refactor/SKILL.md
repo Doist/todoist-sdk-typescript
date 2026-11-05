@@ -17,7 +17,7 @@ Remove code nothing reaches, if you can prove it: no caller (`rg` for every name
 
 ## 3. Move one concept at a time
 
-Make one structural change, run the pinned tests, repeat. Migrate every caller and delete the old API; no shims left behind. Everything reachable from `src/index.ts` is used by other packages: keep its name, signature, type and behaviour, or stop and ask (changing it is a breaking `feat!:` release). Done when the tests pass after each step and no caller uses the old shape.
+Make one structural change, run the pinned tests, repeat. Migrate every caller and delete the old API; no shims left behind. Everything reachable from `src/index.ts` is used by other packages: keep its name, signature, type and behaviour, or stop and ask (changing it is a breaking release: a `!` after the PR title's type, such as `refactor!:`). Done when the tests pass after each step and no caller uses the old shape.
 
 ## 4. Leave the tests alone
 
