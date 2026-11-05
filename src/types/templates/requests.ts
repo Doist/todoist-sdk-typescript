@@ -5,7 +5,7 @@ import type { Section } from '../sections/types'
 import type { TemplateType } from '../sync/resources/suggestions'
 import type { Task } from '../tasks/types'
 import type { UploadFileArgs } from '../uploads/requests'
-import type { Template } from './types'
+import type { Template, TemplateContent } from './types'
 
 /** The template file to upload, for routes that accept a template CSV. */
 type TemplateFileUpload = Pick<UploadFileArgs, 'file' | 'fileName'>
@@ -236,6 +236,11 @@ export type UpdateTemplateArgs = {
     workspaceId?: string
     /** Share the template with workspace members, or stop sharing it. Only the author can change this. */
     sharedWithWorkspaceMembers?: boolean
+    /**
+     * Replace the template's content, e.g. as returned by `getTemplateContent` with edits.
+     * Anything left out is removed. Can't be combined with `projectId`.
+     */
+    content?: TemplateContent
 }
 
 /**
@@ -261,4 +266,13 @@ export type CreateTemplateFromCSVArgs = Partial<TemplateFileUpload> & {
     color: ColorKey | number
     /** A staged file from `previewTemplateFromCSV`. Used when `file` is omitted. */
     uploadedFileName?: string
+}
+
+/**
+ * Arguments for reading a template's content.
+ * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/preview_template_api_v1_templates__template_id__preview_get
+ */
+export type GetTemplateContentArgs = {
+    /** Language of gallery template content (default: `'en'`). Saved templates are not translated. */
+    locale?: string
 }

@@ -38,6 +38,7 @@ import { TaskSchema } from '../types/tasks/types'
 import {
     TemplateCategorySchema,
     TemplateSchema,
+    TemplateContentResponseSchema,
     TemplateFromCSVPreviewSchema,
 } from '../types/templates/types'
 import { UiExtensionSchema } from '../types/ui-extensions/types'
@@ -120,6 +121,10 @@ export const { validate: validateTemplate, validateArray: validateTemplateArray 
 
 export const { validateArray: validateTemplateCategoryArray } =
     createValidator(TemplateCategorySchema)
+
+export const { validate: validateTemplateContentResponse } = createValidator(
+    TemplateContentResponseSchema,
+)
 
 export const { validate: validateTemplateFromCSVPreview } = createValidator(
     TemplateFromCSVPreviewSchema,
