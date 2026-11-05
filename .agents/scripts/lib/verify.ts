@@ -119,9 +119,8 @@ async function runSteps(steps: Step[], context: RunContext): Promise<boolean> {
         const existing = results.get(step.name)
         if (existing) return existing
         if (starting.includes(step.name)) {
-            throw new Error(
-                `steps wait for each other in a loop: ${[...starting, step.name].join(' → ')}`,
-            )
+            const loop = [...starting.slice(starting.indexOf(step.name)), step.name].join(' → ')
+            throw new Error(`step ${step.name} runs after itself: ${loop}`)
         }
         starting.push(step.name)
         function find(name: string): Step {

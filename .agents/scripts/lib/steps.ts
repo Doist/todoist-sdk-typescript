@@ -158,11 +158,13 @@ export function preflight(root: string, nodeVersion = process.versions.node): st
             stale.push(`${name} ${version} (lockfile: ${entry.version})`)
         }
     }
-    // A package removed from the lockfile but still installed keeps its imports working here, while
-    // a clean install in CI cannot resolve them.
-    for (const path of Object.keys(installed)) {
+    // A package installed with --no-save, or still installed after the lockfile dropped it, keeps
+    // its imports working here, while a clean install in CI cannot resolve them.
+    for (const [path, entry] of Object.entries(installed)) {
         if (path.startsWith('node_modules/') && !lock.packages[path]) {
-            stale.push(`${path.slice('node_modules/'.length)} installed but not in the lockfile`)
+            stale.push(
+                `${path.slice('node_modules/'.length)} ${entry.version} (not in the lockfile)`,
+            )
         }
     }
     if (stale.length > 0) {

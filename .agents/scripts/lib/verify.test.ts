@@ -102,7 +102,7 @@ describe('a code change', () => {
     it('names the steps when after and waitFor make a loop', async () => {
         const looping = [pass('lint', { after: 'build' }), pass('build', { waitFor: ['lint'] })]
         await expect(verify(looping)).rejects.toThrow(
-            'steps wait for each other in a loop: lint → build → lint',
+            'step lint runs after itself: lint → build → lint',
         )
     })
 

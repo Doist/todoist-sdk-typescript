@@ -6,9 +6,7 @@ import { clearVerified } from './lib/state.ts'
 import { BLIND_SPOTS, preflight, removeLocalOnlyEnv, VERIFY_STEPS } from './lib/steps.ts'
 import { print, runVerify } from './lib/verify.ts'
 
-const root = CHECKOUT_ROOT
-
-async function main(): Promise<number> {
+async function main(root: string): Promise<number> {
     const problems = preflight(root)
     if (problems.length > 0) {
         clearVerified(root)
@@ -32,4 +30,4 @@ async function main(): Promise<number> {
 }
 
 // exitCode rather than process.exit(), so output still buffered for a pipe is written first.
-process.exitCode = await main()
+process.exitCode = await main(CHECKOUT_ROOT)

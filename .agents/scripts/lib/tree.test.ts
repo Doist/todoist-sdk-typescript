@@ -58,6 +58,12 @@ describe('snapshot', () => {
         expect(snapshot(repo.dir)).toEqual(unstaged)
     })
 
+    it('is the same before and after a file is untracked with git rm --cached', () => {
+        const before = snapshot(repo.dir)
+        repo.git(['rm', '--quiet', '--cached', 'src/a.ts'])
+        expect(snapshot(repo.dir)).toEqual(before)
+    })
+
     it('sees an executable bit change', () => {
         const before = codeFingerprint(snapshot(repo.dir))
         repo.run('chmod', ['+x', 'src/a.ts'])

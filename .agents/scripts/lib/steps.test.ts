@@ -316,14 +316,14 @@ describe('preflight', () => {
         ])
     })
 
-    it('names a package still installed after the lockfile dropped it', () => {
+    it('names a package installed with --no-save, or kept after the lockfile dropped it', () => {
         writeInstalled({
             'node_modules/zod': { version: '1.0.0' },
             'node_modules/vitest': { version: '2.0.0' },
             'node_modules/camelcase': { version: '6.3.0' },
         })
         expect(preflight(root, '24.0.0')).toEqual([
-            'node_modules does not match package-lock.json: camelcase installed but not in the lockfile. Run `npm ci`.',
+            'node_modules does not match package-lock.json: camelcase 6.3.0 (not in the lockfile). Run `npm ci`.',
         ])
     })
 
