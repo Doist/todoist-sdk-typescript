@@ -179,6 +179,7 @@ import {
     UpdateTemplateArgs,
     TemplateFromCSVPreview,
     GetTemplateArgs,
+    GetTemplateContentArgs,
     GetTemplateCategoriesArgs,
     GetTemplatesArgs,
     GetTemplatesByIdsArgs,
@@ -1827,9 +1828,29 @@ export class TodoistApi {
     }
 
     /**
+     * Gets a template's full content: its layout, sections, tasks and comments.
+     *
+     * Dates are returned as the text they were written in, e.g. "every monday", which is the
+     * form `updateTemplate` accepts back. To edit a saved template's content, read it with this
+     * method, change it, and pass it to `updateTemplate` as `content`.
+     *
+     * @param templateId - A curated slug or a `UT_` template ID.
+     * @param args - Optional locale.
+     * @returns A promise that resolves to the template's type, workspace and content.
+     */
+    async getTemplateContent(
+        templateId: string,
+        args?: GetTemplateContentArgs,
+    ): Promise<TemplateContentResponse> {
+        return this.templateClient.getTemplateContent(templateId, args)
+    }
+
+    /**
      * Updates a saved template. Omitted fields stay unchanged.
      *
-     * Pass `projectId` to replace the template's content with that project's current content.
+     * Pass `projectId` to replace the template's content with that project's current content, or
+     * `content` to replace it with content you provide, e.g. from `getTemplateContent` with edits.
+     * Anything left out of `content` is removed.
      * A shared workspace template can be edited by its author or a workspace admin; only the
      * author can change sharing.
      *

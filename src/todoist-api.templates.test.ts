@@ -694,6 +694,164 @@ describe('TodoistApi template endpoints', () => {
         })
     })
 
+    describe('getTemplateContent', () => {
+        const RAW_CONTENT = {
+            template_type: 'project',
+            workspace_id: '486413',
+            projects: [
+                {
+                    id: 'p1',
+                    name: 'Plan',
+                    view_style: 'board',
+                    description: '',
+                    icon: null,
+                    color: 'blue',
+                },
+            ],
+            sections: [{ id: 's1', name: 'Week 1', description: null, project_id: 'p1' }],
+            items: [
+                {
+                    id: 't1',
+                    content: 'Plan',
+                    section_id: 's1',
+                    parent_id: null,
+                    priority: 4,
+                    labels: ['work'],
+                    due: { string: 'every monday', lang: 'en' },
+                    deadline: null,
+                    duration: null,
+                    responsible_uid: '42',
+                    assigned_by_uid: '1',
+                    checked: false,
+                    child_order: 1,
+                },
+            ],
+            notes: [
+                {
+                    id: 'n1',
+                    item_id: 't1',
+                    content: 'Check this',
+                    posted_uid: '1',
+                    posted_at: '2026-11-05T10:00:00Z',
+                    file_attachment: null,
+                },
+            ],
+            project_notes: [],
+            project_view_options_defaults: [],
+            reminders: [],
+        }
+
+        test('reads raw dates and returns content in the shape updateTemplate takes', async () => {
+            let resolveDates: string | null | undefined
+            server.use(
+                http.get(`${getSyncBaseUri()}templates/UT_1/preview`, ({ request }) => {
+                    resolveDates = new URL(request.url).searchParams.get('resolve_dates')
+                    return HttpResponse.json(RAW_CONTENT)
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.getTemplateContent('UT_1')
+
+            expect(resolveDates).toBe('false')
+            expect(result.templateType).toBe('project')
+            expect(result.workspaceId).toBe('486413')
+            expect(result.content.projects).toEqual([
+                { viewStyle: 'board', description: '', icon: null },
+            ])
+            expect(result.content.tasks).toEqual([
+                {
+                    id: 't1',
+                    content: 'Plan',
+                    sectionId: 's1',
+                    parentId: null,
+                    priority: 4,
+                    labels: ['work'],
+                    due: { string: 'every monday', lang: 'en' },
+                    deadline: null,
+                    duration: null,
+                    responsibleUid: '42',
+                    assignedByUid: '1',
+                },
+            ])
+            expect(result.content.comments).toEqual([
+                {
+                    taskId: 't1',
+                    content: 'Check this',
+                    postedUid: '1',
+                    postedAt: '2026-11-05T10:00:00Z',
+                    fileAttachment: null,
+                },
+            ])
+        })
+
+        test('sends content read with getTemplateContent back to the API unchanged', async () => {
+            let body: unknown
+            server.use(
+                http.get(`${getSyncBaseUri()}templates/UT_1/preview`, () =>
+                    HttpResponse.json(RAW_CONTENT),
+                ),
+                http.put(`${getTemplatesBaseUri()}templates/user/UT_1`, async ({ request }) => {
+                    body = await request.json()
+                    return HttpResponse.json({ status: 'ok', ...RAW_TEMPLATE })
+                }),
+            )
+            const api = getTarget()
+
+            const { content } = await api.getTemplateContent('UT_1')
+            await api.updateTemplate('UT_1', { content })
+
+            expect(body).toEqual({
+                content: {
+                    projects: [{ view_style: 'board', description: '', icon: null }],
+                    sections: [{ id: 's1', name: 'Week 1', description: null }],
+                    items: [
+                        {
+                            id: 't1',
+                            content: 'Plan',
+                            section_id: 's1',
+                            parent_id: null,
+                            priority: 4,
+                            labels: ['work'],
+                            due: { string: 'every monday', lang: 'en' },
+                            deadline: null,
+                            duration: null,
+                            responsible_uid: '42',
+                            assigned_by_uid: '1',
+                        },
+                    ],
+                    notes: [
+                        {
+                            item_id: 't1',
+                            content: 'Check this',
+                            posted_uid: '1',
+                            posted_at: '2026-11-05T10:00:00Z',
+                            file_attachment: null,
+                        },
+                    ],
+                    project_notes: [],
+                    project_view_options_defaults: [],
+                },
+            })
+        })
+
+        test('rejects content and projectId together before making a request', async () => {
+            const api = getTarget()
+            const content = {
+                projects: [],
+                sections: [],
+                tasks: [],
+                comments: [],
+                projectComments: [],
+                projectViewOptionsDefaults: [],
+            }
+
+            await expect(api.updateTemplate('UT_1', { content, projectId: '123' })).rejects.toThrow(
+                'either `content` or `projectId`',
+            )
+        })
+    })
+
     describe('previewProjectAsTemplate', () => {
         test('reads a project as a template draft on API v1.6, without saving', async () => {
             let projectId: string | null = null

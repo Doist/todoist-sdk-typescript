@@ -25,6 +25,7 @@ import type {
     TemplateContentResponse,
     CreateTemplateArgs,
     GetTemplateArgs,
+    GetTemplateContentArgs,
     GetTemplateCategoriesArgs,
     GetTemplatesArgs,
     GetTemplatesByIdsArgs,
@@ -232,12 +233,37 @@ export class TemplateClient extends BaseClient {
         return validateTemplate(data)
     }
 
+    async getTemplateContent(
+        templateId: string,
+        args: GetTemplateContentArgs = {},
+    ): Promise<TemplateContentResponse> {
+        IdSchema.parse(templateId)
+        const { data } = await request<unknown>({
+            httpMethod: 'GET',
+            baseUri: this.syncApiBase,
+            relativePath: generatePath(ENDPOINT_REST_TEMPLATES, templateId, 'preview'),
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            customHeaders: this.customHeaders,
+            // Raw dates ("every monday") are what the update route accepts back.
+            payload: { ...args, resolveDates: false },
+        })
+        return validateTemplateContentResponse(data)
+    }
+
     async updateTemplate(
         templateId: string,
         args: UpdateTemplateArgs,
         requestId?: string,
     ): Promise<Template> {
         IdSchema.parse(templateId)
+        const { content, ...rest } = args
+        if (content && rest.projectId) {
+            throw new TodoistArgumentError(
+                'updateTemplate takes either `content` or `projectId`, not both.',
+            )
+        }
+        const payload = content ? { ...rest, content: toApiTemplateContent(content) } : rest
         const { data } = await request<unknown>({
             httpMethod: 'PUT',
             baseUri: this.templatesApiBase,
@@ -245,7 +271,7 @@ export class TemplateClient extends BaseClient {
             apiToken: this.authToken,
             customFetch: this.customFetch,
             customHeaders: this.customHeaders,
-            payload: args,
+            payload,
             requestId: requestId,
         })
         return validateTemplate(data)
