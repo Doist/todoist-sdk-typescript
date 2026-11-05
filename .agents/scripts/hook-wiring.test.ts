@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, rmSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createTempRepo, REPO_ROOT, type TempRepo } from './lib/test-repo.ts'
@@ -51,11 +52,14 @@ beforeEach(() => {
 
 afterEach(() => repo.cleanup())
 
+// The shell by its full path, so a test can give the hook a PATH without it.
+const SHELL = spawnSync('sh', ['-c', 'command -v sh'], { encoding: 'utf8' }).stdout.trim()
+
 describe.each(AGENTS)('$name', ({ config, env }) => {
-    function run(event: string) {
-        return repo.run('sh', ['-c', command(config, event)], {
+    function run(event: string, extra: Record<string, string | undefined> = {}) {
+        return repo.run(SHELL, ['-c', command(config, event)], {
             cwd: join(repo.dir, 'src'),
-            env: env(repo.dir),
+            env: { ...env(repo.dir), ...extra },
             input: JSON.stringify({ session_id: 'wiring' }),
         })
     }
@@ -66,6 +70,24 @@ describe.each(AGENTS)('$name', ({ config, env }) => {
         const stop = run('Stop')
         expect(stop.status).toBe(0)
         expect(JSON.parse(stop.stdout)).toMatchObject({ decision: 'block' })
+    })
+
+    it('says so, and lets work continue, without node on PATH', () => {
+        // git only, as a GUI client or an agent's sandbox might have.
+        const bin = join(repo.dir, '.tmp/bin-no-node')
+        mkdirSync(bin, { recursive: true })
+        const git = spawnSync('sh', ['-c', 'command -v git'], { encoding: 'utf8' }).stdout.trim()
+        symlinkSync(git, join(bin, 'git'))
+        for (const [event, step] of [
+            ['UserPromptSubmit', 'turn-start'],
+            ['Stop', 'turn-end'],
+        ]) {
+            const result = run(event ?? '', { PATH: bin })
+            expect(result.status, result.stderr).toBe(0)
+            expect(JSON.parse(result.stdout).systemMessage).toBe(
+                `agent-guard: node is not on PATH, so ${step} was skipped`,
+            )
+        }
     })
 
     it('says so, and lets work continue, in a checkout without the guard', () => {

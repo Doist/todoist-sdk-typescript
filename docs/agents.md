@@ -83,7 +83,7 @@ Every agent's hooks call one script, `.agents/scripts/guard.ts`, so the agents c
 - Two sessions in one checkout share its files, so each may be told about the other's edits. Use a worktree per session.
 - If the branch's code is back to what `main` has (an undo, a stash, a switch), the turn passes: CI already checked that code.
 
-**Fails open, visibly:** a broken guard, bad input or a checkout without the script lets the turn end and says why in a message. `DISABLE_AGENT_GUARD=1` in the agent's environment turns the gate off for you.
+**Fails open, visibly:** a broken guard, bad input, a checkout without the script or no node on `PATH` lets the turn end and says why in a message. `DISABLE_AGENT_GUARD=1` in the agent's environment turns the gate off for you.
 
 **Speed:** turn start takes about 0.1 seconds on this repository.
 
