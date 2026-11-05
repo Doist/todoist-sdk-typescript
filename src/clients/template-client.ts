@@ -10,7 +10,7 @@ import { request } from '../transport/http-client'
 import type {
     CreateProjectFromCSVArgs,
     CreateProjectFromCSVResponse,
-    ExportTemplateFileArgs,
+    ExportProjectAsCSVArgs,
     ExportTemplateUrlArgs,
     ExportTemplateUrlResponse,
     ImportTemplateFromIdArgs,
@@ -36,7 +36,7 @@ import { BaseClient } from './base-client'
  * JSDoc.
  */
 export class TemplateClient extends BaseClient {
-    async exportTemplateAsFile(args: ExportTemplateFileArgs): Promise<string> {
+    async exportProjectAsCSV(args: ExportProjectAsCSVArgs): Promise<string> {
         const response = await request<string>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,

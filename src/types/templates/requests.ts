@@ -4,10 +4,10 @@ import type { Section } from '../sections/types'
 import type { Task } from '../tasks/types'
 
 /**
- * Arguments for exporting a project as a template file.
+ * Arguments for exporting a project as a CSV template file.
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/export_as_file_api_v1_templates_file_get
  */
-export type ExportTemplateFileArgs = {
+export type ExportProjectAsCSVArgs = {
     /** The project ID to export. */
     projectId: string
     /** Whether to use relative dates in the export. */
