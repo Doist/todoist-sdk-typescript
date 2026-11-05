@@ -34,6 +34,7 @@
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
         "verify": "node .agents/scripts/verify.mjs",
+        "review:worktree": "node .agents/scripts/review-worktree.ts",
         "api:request": "node ./scripts/todoist-api-request.cjs",
         "build:esm": "npx tsc -p tsconfig.esm.json",
         "build:fix-esm": "node scripts/fix-esm-imports.cjs",

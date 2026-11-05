@@ -1,0 +1,180 @@
+import {
+    chmodSync,
+    existsSync,
+    readFileSync,
+    readlinkSync,
+    rmSync,
+    symlinkSync,
+    writeFileSync,
+} from 'node:fs'
+import { basename, join } from 'node:path'
+import { afterEach, beforeEach, expect, it } from 'vitest'
+import { createReviewWorktree } from './review-worktree.ts'
+import { createTempRepo, type TempRepo } from './test-repo.ts'
+import { codeFingerprint, snapshot } from './tree.ts'
+
+let repo: TempRepo
+let target: string
+
+beforeEach(() => {
+    repo = createTempRepo()
+    repo.write('.gitignore', 'ignored/\n')
+    repo.write('src/a.ts', 'a\n')
+    repo.write('src/gone.ts', 'gone\n')
+    repo.write('src/staged.ts', 'old\n')
+    writeFileSync(join(repo.dir, 'src/image.bin'), Buffer.from([0, 1, 2, 3]))
+    repo.git(['add', '.'])
+    repo.git(['commit', '--quiet', '-m', 'initial'])
+    target = join(repo.dir, '..', `${basename(repo.dir)} review`)
+})
+
+afterEach(() => {
+    rmSync(target, { recursive: true, force: true })
+    repo.cleanup()
+})
+
+it('reproduces staged, unstaged, deleted, binary and untracked changes', () => {
+    repo.write('src/a.ts', 'unstaged edit\n')
+    repo.write('src/staged.ts', 'staged edit\n')
+    repo.git(['add', 'src/staged.ts'])
+    rmSync(join(repo.dir, 'src/gone.ts'))
+    repo.write('src/new/untracked.ts', 'untracked\n')
+    writeFileSync(join(repo.dir, 'src/image.bin'), Buffer.from([0, 1, 2, 255]))
+    repo.write('ignored/cache.txt', 'ignored\n')
+    const before = codeFingerprint(snapshot(repo.dir))
+
+    createReviewWorktree(repo.dir, target)
+
+    expect(codeFingerprint(snapshot(target))).toBe(before)
+    expect(readFileSync(join(target, 'src/a.ts'), 'utf8')).toBe('unstaged edit\n')
+    expect(existsSync(join(target, 'src/gone.ts'))).toBe(false)
+    expect([...readFileSync(join(target, 'src/image.bin'))]).toEqual([0, 1, 2, 255])
+    expect(existsSync(join(target, 'ignored/cache.txt'))).toBe(false)
+})
+
+it('works when the user has diff.noprefix set', () => {
+    repo.git(['config', 'diff.noprefix', 'true'])
+    repo.write('src/a.ts', 'unstaged edit\n')
+    createReviewWorktree(repo.dir, target)
+    expect(readFileSync(join(target, 'src/a.ts'), 'utf8')).toBe('unstaged edit\n')
+})
+
+it('works with a target inside the checkout, without copying it into itself', () => {
+    repo.write('src/new.ts', 'untracked\n')
+    const inside = join(repo.dir, 'review-copy')
+    createReviewWorktree(repo.dir, inside)
+    expect(readFileSync(join(inside, 'src/new.ts'), 'utf8')).toBe('untracked\n')
+    expect(existsSync(join(inside, 'review-copy'))).toBe(false)
+})
+
+it('leaves out a nested repository, and the ignored files inside it', () => {
+    repo.write('src/new.ts', 'untracked\n')
+    repo.run('git', ['init', '--quiet', 'nested'])
+    repo.write('nested/.gitignore', '.env\n')
+    repo.write('nested/.env', 'TOKEN=secret\n')
+    repo.write('nested/code.ts', 'nested\n')
+    createReviewWorktree(repo.dir, target)
+    expect(readFileSync(join(target, 'src/new.ts'), 'utf8')).toBe('untracked\n')
+    expect(existsSync(join(target, 'nested'))).toBe(false)
+})
+
+it('applies a mid-file edit when the user has diff.context set to 0', () => {
+    const lines = Array.from({ length: 10 }, (_, i) => `line ${i + 1}`)
+    repo.write('src/a.ts', `${lines.join('\n')}\n`)
+    repo.git(['commit', '--quiet', '-am', 'ten lines'])
+    repo.git(['config', 'diff.context', '0'])
+    const edited = [...lines.slice(0, 4), 'line 5 edited', ...lines.slice(5)]
+    repo.write('src/a.ts', `${edited.join('\n')}\n`)
+    createReviewWorktree(repo.dir, target)
+    expect(readFileSync(join(target, 'src/a.ts'), 'utf8')).toBe(`${edited.join('\n')}\n`)
+})
+
+it('leaves out an earlier review worktree inside the checkout', () => {
+    const earlier = join(repo.dir, 'review-1')
+    createReviewWorktree(repo.dir, earlier)
+    repo.write('src/new.ts', 'untracked\n')
+    createReviewWorktree(repo.dir, target)
+    expect(readFileSync(join(target, 'src/new.ts'), 'utf8')).toBe('untracked\n')
+    expect(existsSync(join(target, 'review-1'))).toBe(false)
+    repo.git(['worktree', 'remove', '--force', earlier])
+})
+
+it('keeps the bytes of a file that is not UTF-8', () => {
+    // "café" and "naïve" in Latin-1: bytes that are not valid UTF-8.
+    const before = Buffer.from([0x63, 0x61, 0x66, 0xe9, 0x0a])
+    const after = Buffer.from([0x63, 0x61, 0x66, 0xe9, 0x0a, 0x6e, 0x61, 0xef, 0x76, 0x65, 0x0a])
+    writeFileSync(join(repo.dir, 'src/latin1.txt'), before)
+    repo.git(['add', '.'])
+    repo.git(['commit', '--quiet', '-m', 'latin-1'])
+    writeFileSync(join(repo.dir, 'src/latin1.txt'), after)
+    createReviewWorktree(repo.dir, target)
+    expect([...readFileSync(join(target, 'src/latin1.txt'))]).toEqual([...after])
+})
+
+it('applies the real change when a textconv driver is configured', () => {
+    repo.write('.gitattributes', '*.txt diff=upper\n')
+    repo.write('notes.txt', 'hello\n')
+    repo.git(['add', '.'])
+    repo.git(['commit', '--quiet', '-m', 'notes'])
+    repo.git(['config', 'diff.upper.textconv', 'tr a-z A-Z <'])
+    repo.write('notes.txt', 'hello world\n')
+    createReviewWorktree(repo.dir, target)
+    expect(readFileSync(join(target, 'notes.txt'), 'utf8')).toBe('hello world\n')
+})
+
+it('copies an untracked relative symlink as a relative symlink', () => {
+    symlinkSync('../src/a.ts', join(repo.dir, 'src/link.ts'))
+    createReviewWorktree(repo.dir, target)
+    expect(readlinkSync(join(target, 'src/link.ts'))).toBe('../src/a.ts')
+})
+
+it('leaves the original checkout as it was', () => {
+    repo.write('src/a.ts', 'unstaged edit\n')
+    repo.write('src/new.ts', 'untracked\n')
+    const status = repo.git(['status', '--porcelain']).stdout
+    const before = codeFingerprint(snapshot(repo.dir))
+
+    createReviewWorktree(repo.dir, target)
+    writeFileSync(join(target, 'src/a.ts'), 'reviewer broke it\n')
+
+    expect(repo.git(['status', '--porcelain']).stdout).toBe(status)
+    expect(codeFingerprint(snapshot(repo.dir))).toBe(before)
+})
+
+it('refuses a target that already exists', () => {
+    expect(() => createReviewWorktree(repo.dir, repo.dir)).toThrow('already exists')
+})
+
+// An unreadable file makes the copy fail, after the worktree exists. Root can read it anyway, and
+// chmod cannot make a file unreadable on Windows.
+it.skipIf(process.getuid?.() === 0 || process.platform === 'win32')(
+    'cleans up when a step after creating the worktree fails',
+    () => {
+        repo.write('src/a.ts', 'unstaged edit\n')
+        repo.write('src/unreadable.ts', 'secret\n')
+        chmodSync(join(repo.dir, 'src/unreadable.ts'), 0o000)
+        expect(() => createReviewWorktree(repo.dir, target)).toThrow(/EACCES/)
+        expect(existsSync(target)).toBe(false)
+        expect(repo.git(['worktree', 'list']).stdout.trim().split('\n')).toHaveLength(1)
+    },
+)
+
+it('works from the command line, in a checkout whose path has a space', () => {
+    repo.copyFromCheckout('.agents/scripts/review-worktree.ts', '.agents/scripts/lib')
+    repo.git(['add', '.agents'])
+    repo.git(['commit', '--quiet', '-m', 'tools'])
+    repo.write('src/a.ts', 'unstaged edit\n')
+    const result = repo.run(process.execPath, ['.agents/scripts/review-worktree.ts', target])
+    expect(result.status, result.stderr).toBe(0)
+    expect(result.stderr).not.toContain('review-worktree:')
+    expect(result.stdout).toContain('Review worktree ready')
+    expect(result.stdout).toContain(`cd '${target}' && npm ci`)
+    expect(readFileSync(join(target, 'src/a.ts'), 'utf8')).toBe('unstaged edit\n')
+})
+
+it('prints its usage and exits 2 without a target', () => {
+    repo.copyFromCheckout('.agents/scripts/review-worktree.ts', '.agents/scripts/lib')
+    const result = repo.run(process.execPath, ['.agents/scripts/review-worktree.ts'])
+    expect(result.status).toBe(2)
+    expect(result.stderr).toBe('usage: npm run review:worktree -- <dir>\n')
+})
