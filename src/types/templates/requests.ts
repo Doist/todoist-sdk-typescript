@@ -99,7 +99,7 @@ export type ImportTemplateResponse = {
 }
 
 /**
- * Arguments for saving a project as a user template.
+ * Arguments for saving a project as a template.
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/create_user_template_api_v1_templates_user_post
  */
 export type SaveProjectAsTemplateArgs = {
@@ -220,10 +220,10 @@ export type GetTemplateCategoriesArgs = {
 }
 
 /**
- * Arguments for updating a user template. Omitted fields stay unchanged.
+ * Arguments for updating a saved template. Omitted fields stay unchanged.
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/update_user_template_api_v1_templates_user__template_id__put
  */
-export type UpdateUserTemplateArgs = {
+export type UpdateTemplateArgs = {
     /** New name, up to 255 characters. */
     name?: string
     /** New description, up to 1,000 characters. */

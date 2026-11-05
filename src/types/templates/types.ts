@@ -87,7 +87,7 @@ export const TemplateCategorySchema = z.object({
 /** A curated category used to group templates in the Todoist gallery. */
 export type TemplateCategory = z.infer<typeof TemplateCategorySchema>
 
-export const UserTemplatePreviewSchema = z
+export const TemplateFromCSVPreviewSchema = z
     .object({
         uploadedFileName: z.string(),
         templateType: z.enum(TEMPLATE_TYPES),
@@ -108,4 +108,4 @@ export const UserTemplatePreviewSchema = z
  * A staged CSV file and the template content it would create.
  * Pass `uploadedFileName` to `createTemplateFromCSV` to save it without uploading again.
  */
-export type UserTemplatePreview = z.infer<typeof UserTemplatePreviewSchema>
+export type TemplateFromCSVPreview = z.infer<typeof TemplateFromCSVPreviewSchema>
