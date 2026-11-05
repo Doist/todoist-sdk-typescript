@@ -1,0 +1,42 @@
+# Git hooks for everyone, people and agents alike. `npm install` installs them (the
+# `prepare` script).
+#
+# GUI git clients often run hooks without node on PATH: the node checks are skipped with a
+# message, and CI runs them.
+
+pre-commit:
+    piped: true
+    jobs:
+        - name: no-node
+          skip:
+              - run: command -v node >/dev/null 2>&1 && command -v npx >/dev/null 2>&1
+          run: echo "pre-commit - node or npx not found, so lint, format and the type check were skipped. CI still runs them."
+        - name: lint
+          # The files `npm run check` lints; website/ and release.config.js follow their own
+          # tools' conventions. Lefthook's `*` also matches `/`, so this takes every depth.
+          glob: 'src/*.{ts,tsx}'
+          skip: &no-node
+              - run: '! command -v node >/dev/null 2>&1 || ! command -v npx >/dev/null 2>&1'
+          run: npx oxlint --fix {staged_files}
+          stage_fixed: true
+        - name: format
+          # No glob: oxfmt picks the files it formats and skips what .oxfmtrc.json ignores, so
+          # this formats exactly what `oxfmt --check` checks in CI.
+          skip: *no-node
+          run: npx oxfmt --no-error-on-unmatched-pattern {staged_files}
+          stage_fixed: true
+        - name: types
+          skip: *no-node
+          run: npm run type-check
+
+pre-push:
+    piped: true
+    jobs:
+        - name: no-node
+          skip:
+              - run: command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1
+          run: echo "pre-push - node or npm not found, so the tests were skipped. CI still runs them."
+        - name: tests
+          skip:
+              - run: '! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1'
+          run: npm test
