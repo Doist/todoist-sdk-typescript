@@ -13,7 +13,7 @@ import type {
     CreateProjectFromTemplateIdArgs,
     CreateProjectFromTemplateIdResponse,
     CreateProjectFromTemplateResponse,
-    CreateUserTemplateArgs,
+    SaveProjectAsTemplateArgs,
     ExportTemplateFileArgs,
     ExportTemplateUrlArgs,
     ExportTemplateUrlResponse,
@@ -130,7 +130,10 @@ export class TemplateClient extends BaseClient {
         return this.validateTemplateResponse(data) as ImportTemplateResponse
     }
 
-    async createUserTemplate(args: CreateUserTemplateArgs, requestId?: string): Promise<Template> {
+    async saveProjectAsTemplate(
+        args: SaveProjectAsTemplateArgs,
+        requestId?: string,
+    ): Promise<Template> {
         const { templateType = 'project', ...rest } = args
         const { data } = await request<unknown>({
             httpMethod: 'POST',

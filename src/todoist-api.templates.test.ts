@@ -204,7 +204,7 @@ describe('TodoistApi template endpoints', () => {
         })
     })
 
-    describe('createUserTemplate', () => {
+    describe('saveProjectAsTemplate', () => {
         const mockTemplate = {
             id: 'UT_28Rc62VC22j439VcPJMw9xgWx2',
             name: 'Launch plan',
@@ -244,7 +244,7 @@ describe('TodoistApi template endpoints', () => {
             )
             const api = getTarget()
 
-            const result = await api.createUserTemplate({
+            const result = await api.saveProjectAsTemplate({
                 projectId: '123',
                 name: 'Launch plan',
                 description: 'Everything for a launch',
@@ -279,7 +279,7 @@ describe('TodoistApi template endpoints', () => {
             )
             const api = getTarget()
 
-            await api.createUserTemplate({
+            await api.saveProjectAsTemplate({
                 projectId: '123',
                 name: 'Launch plan',
                 description: '',
@@ -297,7 +297,7 @@ describe('TodoistApi template endpoints', () => {
             )
             const api = getTarget()
 
-            const result = await api.createUserTemplate({
+            const result = await api.saveProjectAsTemplate({
                 projectId: '123',
                 name: 'Launch plan',
                 description: '',
@@ -316,7 +316,7 @@ describe('TodoistApi template endpoints', () => {
             const api = getTarget()
 
             await expect(
-                api.createUserTemplate({
+                api.saveProjectAsTemplate({
                     projectId: '123',
                     name: 'Launch plan',
                     description: '',
