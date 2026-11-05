@@ -21,7 +21,7 @@ This repository is set up so coding agents prove their work before they call it 
 
 ## Git hooks
 
-[Lefthook](https://github.com/evilmartians/lefthook) runs the hooks, configured in `lefthook.yml`. `npm install` installs them into `.git/hooks` on every install, through the `prepare` script, which runs `lefthook install --reset-hooks-path` before the build it always ran. A hook added to `lefthook.yml` therefore reaches existing clones. Lefthook refuses to install or sync hooks while `core.hooksPath` is set locally; the reset removes that setting.
+[Lefthook](https://github.com/evilmartians/lefthook) runs the hooks, configured in `lefthook.yml`. `npm install` installs them into `.git/hooks` on every install, through the `prepare` script, which runs `lefthook install --reset-hooks-path` before the build it always ran. Outside a git checkout, as when npm installs this package from a GitHub tarball, it skips the install and only builds. A hook added to `lefthook.yml` therefore reaches existing clones. Lefthook refuses to install or sync hooks while `core.hooksPath` is set locally; the reset removes that setting.
 
 - **`pre-commit`** refuses a commit on `main`, then lints the staged files `npm run check` lints (`src/` and `.agents/scripts/`), formats every staged file `oxfmt` handles (re-staging what the tools fix), and runs the type check. Unstaged changes in a partly staged file are left alone.
 - **`commit-msg`** refuses a commit on `main` again. Lefthook runs no pre-commit job when nothing is staged, so without it an empty commit would get past.
