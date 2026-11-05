@@ -28,6 +28,7 @@
         "check": "oxlint src && oxfmt --check",
         "check:fix": "oxlint src --fix && oxfmt",
         "ts-compile-check": "npx tsc -p tsconfig.typecheck.json",
+        "type-check": "npx tsc --noEmit -p tsconfig.esm.json",
         "audit": "npm audit --audit-level=moderate",
         "test": "vitest run",
         "test:watch": "vitest",
@@ -40,7 +41,7 @@
         "attw": "attw --pack --ignore-rules cjs-resolves-to-esm",
         "integrity-checks": "npm-run-all clean check test build attw",
         "prepublishOnly": "npm run integrity-checks",
-        "prepare": "npm run build"
+        "prepare": "node -e \"require('fs').existsSync('.git') && require('child_process').execSync('lefthook install --reset-hooks-path', { stdio: 'inherit' })\" && npm run build"
     },
     "overrides": {
         "fflate": "0.8.2"
@@ -60,8 +61,7 @@
         "@semantic-release/git": "10.0.1",
         "conventional-changelog-conventionalcommits": "9.3.1",
         "dotenv": "17.4.1",
-        "husky": "9.1.7",
-        "lint-staged": "16.4.0",
+        "lefthook": "2.2.2",
         "msw": "2.13.2",
         "npm-run-all2": "8.0.4",
         "obsidian": "^1.10.2-1",
@@ -76,15 +76,6 @@
     },
     "peerDependencies": {
         "type-fest": "^4.12.0 || ^5.5.0"
-    },
-    "husky": {
-        "hooks": {
-            "pre-commit": "npx lint-staged && npm run build"
-        }
-    },
-    "lint-staged": {
-        "*.{ts,tsx}": "oxlint --fix",
-        "*.{ts,tsx,json,md,yml,yaml}": "oxfmt --no-error-on-unmatched-pattern"
     },
     "files": [
         "dist/esm/**/*",
