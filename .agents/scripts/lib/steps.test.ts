@@ -3,7 +3,13 @@ import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { writeJson } from './state.ts'
-import { CI_EQUIVALENTS, preflight, removeLocalOnlyEnv, VERIFY_STEPS } from './steps.ts'
+import {
+    BLIND_SPOTS,
+    CI_EQUIVALENTS,
+    preflight,
+    removeLocalOnlyEnv,
+    VERIFY_STEPS,
+} from './steps.ts'
 import { REPO_ROOT } from './test-repo.ts'
 import { CHECKED_WORKFLOWS } from './tree.ts'
 
@@ -209,6 +215,15 @@ describe('verify covers CI', () => {
         }
     })
 
+    it('names the Node versions CI tests on, as CI.yml lists them', () => {
+        const matrix = readWorkflow('CI.yml').match(/node-version:\s*\[([^\]]*)\]/)?.[1] ?? ''
+        const versions = matrix.split(',').map((version) => version.trim())
+        expect(versions.length).toBeGreaterThan(1)
+        const spot = BLIND_SPOTS.find((candidate) => candidate.includes('Node version')) ?? ''
+        const named = [...spot.matchAll(/\b\d+\b/g)].map((match) => match[0])
+        expect(named).toEqual(versions)
+    })
+
     it('runs the build and the tests with CI=true, as GitHub Actions does', () => {
         for (const name of ['build', 'tests']) {
             const step = VERIFY_STEPS.find((candidate) => candidate.name === name)
@@ -298,6 +313,17 @@ describe('preflight', () => {
         })
         expect(preflight(root, '24.0.0')).toEqual([
             'node_modules does not match package-lock.json: undici 7.0.0 (lockfile: 7.1.0). Run `npm ci`.',
+        ])
+    })
+
+    it('names a package still installed after the lockfile dropped it', () => {
+        writeInstalled({
+            'node_modules/zod': { version: '1.0.0' },
+            'node_modules/vitest': { version: '2.0.0' },
+            'node_modules/camelcase': { version: '6.3.0' },
+        })
+        expect(preflight(root, '24.0.0')).toEqual([
+            'node_modules does not match package-lock.json: camelcase installed but not in the lockfile. Run `npm ci`.',
         ])
     })
 

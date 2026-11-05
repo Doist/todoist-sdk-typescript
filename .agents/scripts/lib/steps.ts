@@ -158,6 +158,13 @@ export function preflight(root: string, nodeVersion = process.versions.node): st
             stale.push(`${name} ${version} (lockfile: ${entry.version})`)
         }
     }
+    // A package removed from the lockfile but still installed keeps its imports working here, while
+    // a clean install in CI cannot resolve them.
+    for (const path of Object.keys(installed)) {
+        if (path.startsWith('node_modules/') && !lock.packages[path]) {
+            stale.push(`${path.slice('node_modules/'.length)} installed but not in the lockfile`)
+        }
+    }
     if (stale.length > 0) {
         problems.push(
             `node_modules does not match package-lock.json: ${listSome(stale, MAX_LISTED)}. Run \`npm ci\`.`,
@@ -166,7 +173,7 @@ export function preflight(root: string, nodeVersion = process.versions.node): st
     return problems
 }
 
-/** What verification cannot see, printed after every pass. */
+/** What verification cannot see, printed after every run that passes. */
 export const BLIND_SPOTS = [
     'the docs site build in website/ (validate-docs.yml), which TSDoc comments and website/ changes reach: run `npm ci && npm run build` in website/ to check it',
     'calls against the real Todoist API: use `npm run api:request`, with a test account token in .env',
