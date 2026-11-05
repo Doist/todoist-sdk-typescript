@@ -500,7 +500,7 @@ describe('TodoistApi template endpoints', () => {
         })
     })
 
-    describe('updateUserTemplate', () => {
+    describe('updateTemplate', () => {
         test('puts only the given fields and returns the validated template', async () => {
             let body: unknown
             server.use(
@@ -514,7 +514,7 @@ describe('TodoistApi template endpoints', () => {
             )
             const api = getTarget()
 
-            const result = await api.updateUserTemplate('UT_28Rc62VC22j439VcPJMw9xgWx2', {
+            const result = await api.updateTemplate('UT_28Rc62VC22j439VcPJMw9xgWx2', {
                 name: 'Renamed',
                 projectId: '123',
                 sharedWithWorkspaceMembers: true,
@@ -531,7 +531,7 @@ describe('TodoistApi template endpoints', () => {
         test('rejects an empty template ID before making a request', async () => {
             const api = getTarget()
 
-            await expect(api.updateUserTemplate('', { name: 'x' })).rejects.toThrow()
+            await expect(api.updateTemplate('', { name: 'x' })).rejects.toThrow()
         })
     })
 
