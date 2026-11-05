@@ -95,6 +95,29 @@ function calls(): string {
     return existsSync(log) ? readFileSync(log, 'utf8') : ''
 }
 
+const COMMANDS = [
+    'npx oxlint --fix',
+    'npx oxfmt --no-error-on-unmatched-pattern',
+    'npm run type-check',
+    'npm test',
+]
+
+/**
+ * The commands the hooks ran, in order, each with the files it was given as a sorted list: the
+ * order of files within one call is lefthook's business, not the hooks'.
+ */
+function commandCalls(): { command: string; files: string[] }[] {
+    return calls()
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => {
+            const command = COMMANDS.find((known) => line === known || line.startsWith(`${known} `))
+            if (!command) throw new Error(`unexpected call: ${line}`)
+            const files = line.slice(command.length).split(' ').filter(Boolean)
+            return { command, files: files.toSorted() }
+        })
+}
+
 // Lefthook prints its own banner and each job's output; read both streams.
 function output(result: RunResult): string {
     return `${result.stdout}${result.stderr}`
@@ -178,12 +201,50 @@ describe('pre-commit', () => {
         repo.git(['add', ...files])
         const result = repo.git(['commit', '--quiet', '-m', 'mixed'], { env: { PATH: path } })
         expect(result.status).toBe(0)
-        expect(calls()).toBe(
-            // In the order of lefthook.yml's globs.
-            'npx oxlint --fix src/a.ts src/types/tasks/b.ts .agents/scripts/lib/tool.ts\n' +
-                `npx oxfmt --no-error-on-unmatched-pattern ${files.join(' ')}\n` +
-                'npm run type-check\n',
-        )
+        expect(commandCalls()).toEqual([
+            {
+                command: 'npx oxlint --fix',
+                files: ['.agents/scripts/lib/tool.ts', 'src/a.ts', 'src/types/tasks/b.ts'],
+            },
+            { command: 'npx oxfmt --no-error-on-unmatched-pattern', files },
+            { command: 'npm run type-check', files: [] },
+        ])
+    })
+
+    it('runs no linter or formatter when the commit stages no file to check', () => {
+        repo.git(['switch', '--quiet', '-c', 'feature'])
+        const empty = repo.git(['commit', '--allow-empty', '--quiet', '-m', 'empty'], {
+            env: { PATH: path },
+        })
+        expect(empty.status).toBe(0)
+        expect(calls()).toBe('')
+        repo.git(['rm', '--quiet', 'README.md'])
+        const deletion = repo.git(['commit', '--quiet', '-m', 'delete'], { env: { PATH: path } })
+        expect(deletion.status).toBe(0)
+        expect(calls()).toBe('npm run type-check\n')
+    })
+
+    it('keeps the unstaged part of a partly staged file out of the commit, and in the tree', () => {
+        repo.git(['switch', '--quiet', '-c', 'feature'])
+        const lines = Array.from({ length: 10 }, (_, i) => `line ${i + 1}`)
+        repo.write('docs/partial.md', `${lines.join('\n')}\n`)
+        repo.git(['add', 'docs/partial.md'])
+        repo.git(['commit', '--quiet', '-m', 'partial'], { env: { PATH: path } })
+        repo.write('docs/partial.md', `${['staged', ...lines.slice(1)].join('\n')}\n`)
+        repo.git(['add', 'docs/partial.md'])
+        const withUnstaged = ['staged', ...lines.slice(1, 3), 'unstaged', ...lines.slice(4)]
+        repo.write('docs/partial.md', `${withUnstaged.join('\n')}\n`)
+        const result = repo.git(['commit', '--quiet', '-m', 'part'], {
+            env: { PATH: path, STUB_FIX: 'npx oxfmt' },
+        })
+        expect(result.status).toBe(0)
+        const committed = repo.git(['show', 'HEAD:docs/partial.md']).stdout
+        expect(committed).toContain('staged\n')
+        expect(committed).toContain('// fixed')
+        expect(committed).not.toContain('unstaged')
+        const unstaged = repo.git(['diff', '--', 'docs/partial.md']).stdout
+        expect(unstaged).toContain('-line 4\n+unstaged\n')
+        expect(unstaged).not.toContain('fixed')
     })
 
     // A file only the formatter touches: lefthook restages every stage_fixed job's files at the
