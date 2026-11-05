@@ -99,6 +99,18 @@ it('leaves out an earlier review worktree inside the checkout', () => {
     repo.git(['worktree', 'remove', '--force', earlier])
 })
 
+it('keeps the bytes of a file that is not UTF-8', () => {
+    // "café" and "naïve" in Latin-1: bytes that are not valid UTF-8.
+    const before = Buffer.from([0x63, 0x61, 0x66, 0xe9, 0x0a])
+    const after = Buffer.from([0x63, 0x61, 0x66, 0xe9, 0x0a, 0x6e, 0x61, 0xef, 0x76, 0x65, 0x0a])
+    writeFileSync(join(repo.dir, 'src/latin1.txt'), before)
+    repo.git(['add', '.'])
+    repo.git(['commit', '--quiet', '-m', 'latin-1'])
+    writeFileSync(join(repo.dir, 'src/latin1.txt'), after)
+    createReviewWorktree(repo.dir, target)
+    expect([...readFileSync(join(target, 'src/latin1.txt'))]).toEqual([...after])
+})
+
 it('applies the real change when a textconv driver is configured', () => {
     repo.write('.gitattributes', '*.txt diff=upper\n')
     repo.write('notes.txt', 'hello\n')
@@ -158,4 +170,11 @@ it('works from the command line, in a checkout whose path has a space', () => {
     expect(result.stdout).toContain('Review worktree ready')
     expect(result.stdout).toContain(`cd '${target}' && npm ci`)
     expect(readFileSync(join(target, 'src/a.ts'), 'utf8')).toBe('unstaged edit\n')
+})
+
+it('prints its usage and exits 2 without a target', () => {
+    repo.copyFromCheckout('.agents/scripts/review-worktree.ts', '.agents/scripts/lib')
+    const result = repo.run(process.execPath, ['.agents/scripts/review-worktree.ts'])
+    expect(result.status).toBe(2)
+    expect(result.stderr).toBe('usage: npm run review:worktree -- <dir>\n')
 })

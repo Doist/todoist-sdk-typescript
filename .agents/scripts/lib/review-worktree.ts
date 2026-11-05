@@ -3,9 +3,29 @@
 // are not ignored. It does not link node_modules: reinstalling through a symlinked node_modules
 // would empty the original checkout's install.
 
+import { spawnSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { git, untrackedPaths } from './git.ts'
+import { cleanGitEnv, git, untrackedPaths } from './git.ts'
+
+/** Git with its output and input as bytes: a patch of a file that isn't UTF-8 must survive. */
+function gitBytes(
+    cwd: string,
+    args: string[],
+    input?: Buffer,
+): { ok: boolean; stdout: Buffer; stderr: string } {
+    const result = spawnSync('git', args, {
+        cwd,
+        env: cleanGitEnv(),
+        input,
+        maxBuffer: 256 * 1024 * 1024,
+    })
+    return {
+        ok: result.status === 0,
+        stdout: result.stdout ?? Buffer.alloc(0),
+        stderr: result.stderr?.toString() ?? '',
+    }
+}
 
 export function createReviewWorktree(root: string, target: string): void {
     if (existsSync(target)) throw new Error(`${target} already exists`)
@@ -14,7 +34,7 @@ export function createReviewWorktree(root: string, target: string): void {
     // listed as an untracked folder and copied into itself. Fixed prefixes and context, and no
     // external diff, textconv or colour, whatever the user's git config says, so `git apply` can
     // read the patch: it rejects zero-context hunks, which diff.context=0 would produce.
-    const diff = git(root, [
+    const diff = gitBytes(root, [
         'diff',
         'HEAD',
         '--binary',
@@ -34,8 +54,8 @@ export function createReviewWorktree(root: string, target: string): void {
     if (!added.ok) throw new Error(`git worktree add failed: ${added.stderr.trim()}`)
 
     try {
-        if (diff.stdout) {
-            const applied = git(target, ['apply', '--whitespace=nowarn'], { input: diff.stdout })
+        if (diff.stdout.length > 0) {
+            const applied = gitBytes(target, ['apply', '--whitespace=nowarn'], diff.stdout)
             if (!applied.ok) throw new Error(`git apply failed: ${applied.stderr.trim()}`)
         }
         for (const path of untracked) {
@@ -48,8 +68,12 @@ export function createReviewWorktree(root: string, target: string): void {
             })
         }
     } catch (error) {
-        // Leave nothing behind, so a retry is not refused with "already exists".
-        git(root, ['worktree', 'remove', '--force', target])
+        // Leave nothing behind, so a retry is not refused with "already exists". If the remove
+        // fails, the folder goes anyway and prune drops git's record of the worktree.
+        if (!git(root, ['worktree', 'remove', '--force', target]).ok) {
+            rmSync(target, { recursive: true, force: true })
+            git(root, ['worktree', 'prune'])
+        }
         rmSync(target, { recursive: true, force: true })
         throw error
     }
