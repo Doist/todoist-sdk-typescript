@@ -1,6 +1,9 @@
 import { z } from 'zod'
-import { PROJECT_VIEW_STYLES } from '../projects/types'
+import { CommentSchema } from '../comments/types'
+import { PROJECT_VIEW_STYLES, ProjectSchema } from '../projects/types'
+import { SectionSchema } from '../sections/types'
 import { TEMPLATE_TYPES } from '../sync/resources/suggestions'
+import { TaskSchema } from '../tasks/types'
 
 /** Template source values returned on template objects. */
 export const TEMPLATE_SOURCES = ['todoist', 'user'] as const
@@ -83,3 +86,26 @@ export const TemplateCategorySchema = z.object({
 })
 /** A curated category used to group templates in the Todoist gallery. */
 export type TemplateCategory = z.infer<typeof TemplateCategorySchema>
+
+export const TemplateFromCSVPreviewSchema = z
+    .object({
+        uploadedFileName: z.string(),
+        templateType: z.enum(TEMPLATE_TYPES),
+        projects: z.array(ProjectSchema),
+        sections: z.array(SectionSchema),
+        items: z.array(TaskSchema),
+        notes: z.array(CommentSchema),
+        projectNotes: z.array(CommentSchema),
+    })
+    // The API uses sync names for tasks and comments; rename them to match the rest of the SDK.
+    .transform(({ items, notes, projectNotes, ...rest }) => ({
+        ...rest,
+        tasks: items,
+        comments: notes,
+        projectComments: projectNotes,
+    }))
+/**
+ * A staged CSV file and the template content it would create.
+ * Pass `uploadedFileName` to `createTemplateFromCSV` to save it without uploading again.
+ */
+export type TemplateFromCSVPreview = z.infer<typeof TemplateFromCSVPreviewSchema>

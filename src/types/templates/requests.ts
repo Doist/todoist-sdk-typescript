@@ -99,7 +99,7 @@ export type ImportTemplateResponse = {
 }
 
 /**
- * Arguments for saving a project as a user template.
+ * Arguments for saving a project as a template.
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/create_user_template_api_v1_templates_user_post
  */
 export type SaveProjectAsTemplateArgs = {
@@ -217,4 +217,48 @@ export type GetTemplateCategoriesArgs = {
     templateType?: TemplateTypeFilter
     /** Locale for category names and descriptions (default: `'en'`). */
     locale?: string
+}
+
+/**
+ * Arguments for updating a saved template. Omitted fields stay unchanged.
+ * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/update_user_template_api_v1_templates_user__template_id__put
+ */
+export type UpdateTemplateArgs = {
+    /** New name, up to 255 characters. */
+    name?: string
+    /** New description, up to 1,000 characters. */
+    description?: string
+    /** Replace the template's content with this project's current content. */
+    projectId?: string
+    /** New color: a color key (e.g. `'lime_green'`) or its numeric ID (30-49). */
+    color?: ColorKey | number
+    /** Move a personal template into this workspace, keeping its ID. Workspace templates cannot move again. */
+    workspaceId?: string
+    /** Share the template with workspace members, or stop sharing it. Only the author can change this. */
+    sharedWithWorkspaceMembers?: boolean
+}
+
+/**
+ * Arguments for staging a CSV file to preview the template it would create.
+ * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/preview_user_template_api_v1_templates_user_preview_post
+ */
+export type PreviewTemplateFromCSVArgs = TemplateFileUpload
+
+/**
+ * Arguments for creating a personal template from a CSV file.
+ *
+ * Provide either `file`, or the `uploadedFileName` returned by `previewTemplateFromCSV`
+ * to save a staged file without uploading it again.
+ *
+ * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/import_user_template_from_file_api_v1_templates_user_import_post
+ */
+export type CreateTemplateFromCSVArgs = Partial<TemplateFileUpload> & {
+    /** Name of the template, up to 255 characters. */
+    name: string
+    /** Description shown with the template, up to 1,000 characters. */
+    description: string
+    /** Color of the template: a color key (e.g. `'lime_green'`) or its numeric ID (30-49). */
+    color: ColorKey | number
+    /** A staged file from `previewTemplateFromCSV`. Used when `file` is omitted. */
+    uploadedFileName?: string
 }

@@ -173,6 +173,10 @@ import {
     CreateProjectFromTemplateIdArgs,
     CreateProjectFromTemplateIdResponse,
     SaveProjectAsTemplateArgs,
+    CreateTemplateFromCSVArgs,
+    PreviewTemplateFromCSVArgs,
+    UpdateTemplateArgs,
+    TemplateFromCSVPreview,
     GetTemplateArgs,
     GetTemplateCategoriesArgs,
     GetTemplatesArgs,
@@ -1790,7 +1794,7 @@ export class TodoistApi {
     }
 
     /**
-     * Saves a project as a user template.
+     * Saves a project as a template.
      *
      * Task assignments are kept only when the template is saved to a workspace.
      *
@@ -1803,6 +1807,57 @@ export class TodoistApi {
         requestId?: string,
     ): Promise<Template> {
         return this.templateClient.saveProjectAsTemplate(args, requestId)
+    }
+
+    /**
+     * Updates a saved template. Omitted fields stay unchanged.
+     *
+     * Pass `projectId` to replace the template's content with that project's current content.
+     * A shared workspace template can be edited by its author or a workspace admin; only the
+     * author can change sharing.
+     *
+     * @param templateId - The `UT_` template ID.
+     * @param args - The fields to change.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the updated template.
+     */
+    async updateTemplate(
+        templateId: string,
+        args: UpdateTemplateArgs,
+        requestId?: string,
+    ): Promise<Template> {
+        return this.templateClient.updateTemplate(templateId, args, requestId)
+    }
+
+    /**
+     * Stages a CSV file and returns the template content it would create, without saving it.
+     *
+     * @param args - The CSV file to stage.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the staged content and its `uploadedFileName`.
+     */
+    async previewTemplateFromCSV(
+        args: PreviewTemplateFromCSVArgs,
+        requestId?: string,
+    ): Promise<TemplateFromCSVPreview> {
+        return this.templateClient.previewTemplateFromCSV(args, requestId)
+    }
+
+    /**
+     * Creates a personal template from a CSV file.
+     *
+     * Task assignees are discarded. Use `updateTemplate` with `workspaceId` to move the
+     * template into a workspace afterwards.
+     *
+     * @param args - The CSV `file`, or a staged `uploadedFileName`, plus the template's name, description and color.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the saved template.
+     */
+    async createTemplateFromCSV(
+        args: CreateTemplateFromCSVArgs,
+        requestId?: string,
+    ): Promise<Template> {
+        return this.templateClient.createTemplateFromCSV(args, requestId)
     }
 
     /**
