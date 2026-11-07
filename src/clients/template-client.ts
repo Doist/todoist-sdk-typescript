@@ -1,9 +1,10 @@
 import {
-    ENDPOINT_REST_TEMPLATES_CREATE_FROM_FILE,
+    ENDPOINT_REST_PROJECTS,
+    ENDPOINT_REST_PROJECTS_IMPORT,
     ENDPOINT_REST_TEMPLATES_FILE,
-    ENDPOINT_REST_TEMPLATES_IMPORT_FROM_FILE,
-    ENDPOINT_REST_TEMPLATES_IMPORT_FROM_ID,
     ENDPOINT_REST_TEMPLATES_URL,
+    PROJECT_IMPORT,
+    PROJECT_IMPORT_TEMPLATE,
 } from '../consts/endpoints'
 import { request } from '../transport/http-client'
 import type {
@@ -17,7 +18,9 @@ import type {
     ImportTemplateResponse,
 } from '../types/templates'
 import { uploadMultipartFile } from '../utils/multipart-upload'
+import { generatePath } from '../utils/request-helpers'
 import {
+    IdSchema,
     validateCommentArray,
     validateProjectArray,
     validateSectionArray,
@@ -72,7 +75,7 @@ export class TemplateClient extends BaseClient {
         const data = await uploadMultipartFile({
             baseUrl: this.syncApiBase,
             authToken: this.authToken,
-            endpoint: ENDPOINT_REST_TEMPLATES_CREATE_FROM_FILE,
+            endpoint: ENDPOINT_REST_PROJECTS_IMPORT,
             file,
             fileName,
             additionalFields,
@@ -90,13 +93,14 @@ export class TemplateClient extends BaseClient {
         requestId?: string,
     ): Promise<ImportTemplateResponse> {
         const { file, fileName, projectId } = args
+        IdSchema.parse(projectId)
         const data = await uploadMultipartFile({
             baseUrl: this.syncApiBase,
             authToken: this.authToken,
-            endpoint: ENDPOINT_REST_TEMPLATES_IMPORT_FROM_FILE,
+            endpoint: generatePath(ENDPOINT_REST_PROJECTS, projectId, PROJECT_IMPORT),
             file,
             fileName,
-            additionalFields: { project_id: projectId },
+            additionalFields: {},
             customFetch: this.customFetch,
             customHeaders: this.customHeaders,
             requestId,
@@ -110,14 +114,16 @@ export class TemplateClient extends BaseClient {
         args: ImportTemplateFromIdArgs,
         requestId?: string,
     ): Promise<ImportTemplateResponse> {
+        const { projectId, ...payload } = args
+        IdSchema.parse(projectId)
         const { data } = await request<Record<string, unknown>>({
             httpMethod: 'POST',
             baseUri: this.syncApiBase,
-            relativePath: ENDPOINT_REST_TEMPLATES_IMPORT_FROM_ID,
+            relativePath: generatePath(ENDPOINT_REST_PROJECTS, projectId, PROJECT_IMPORT_TEMPLATE),
             apiToken: this.authToken,
             customFetch: this.customFetch,
             customHeaders: this.customHeaders,
-            payload: args,
+            payload,
             requestId: requestId,
         })
         return this.validateTemplateResponse(data) as ImportTemplateResponse

@@ -66,10 +66,9 @@ export const ENDPOINT_REST_PROJECTS_MOVE_TO_PERSONAL = ENDPOINT_REST_PROJECTS + 
 export const ENDPOINT_REST_TASKS_COMPLETED = ENDPOINT_REST_TASKS + '/completed'
 export const ENDPOINT_REST_TEMPLATES_FILE = 'templates/file'
 export const ENDPOINT_REST_TEMPLATES_URL = 'templates/url'
-export const ENDPOINT_REST_TEMPLATES_CREATE_FROM_FILE = 'templates/create_project_from_file'
-export const ENDPOINT_REST_TEMPLATES_IMPORT_FROM_FILE = 'templates/import_into_project_from_file'
-export const ENDPOINT_REST_TEMPLATES_IMPORT_FROM_ID =
-    'templates/import_into_project_from_template_id'
+export const ENDPOINT_REST_PROJECTS_IMPORT = ENDPOINT_REST_PROJECTS + '/import'
+export const PROJECT_IMPORT = 'import'
+export const PROJECT_IMPORT_TEMPLATE = 'import_template'
 
 export const ENDPOINT_REST_ACCESS_TOKENS_MIGRATE = 'access_tokens/migrate_personal_token'
 export const ENDPOINT_REST_BACKUPS = 'backups'

@@ -78,7 +78,7 @@ describe('TodoistApi template endpoints', () => {
 
             expect(mockedUploadMultipartFile).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    endpoint: 'templates/create_project_from_file',
+                    endpoint: 'projects/import',
                     additionalFields: { name: 'New Project' },
                 }),
             )
@@ -134,17 +134,26 @@ describe('TodoistApi template endpoints', () => {
 
             expect(mockedUploadMultipartFile).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    endpoint: 'templates/import_into_project_from_file',
-                    additionalFields: { project_id: 'proj_123' },
+                    endpoint: 'projects/proj_123/import',
+                    additionalFields: {},
                 }),
             )
             expect(result.status).toBe('ok')
             expect(result.tasks).toHaveLength(1)
         })
+
+        test('rejects an empty project ID before uploading', async () => {
+            const api = getTarget()
+
+            await expect(
+                api.importTemplateIntoProject({ projectId: '', file: Buffer.from('content') }),
+            ).rejects.toThrow()
+            expect(mockedUploadMultipartFile).not.toHaveBeenCalled()
+        })
     })
 
     describe('importTemplateFromId', () => {
-        test('returns import result from rest client', async () => {
+        test('posts to the project and keeps the project ID out of the body', async () => {
             const mockResponse = {
                 status: 'ok',
                 template_type: 'project',
@@ -154,10 +163,12 @@ describe('TodoistApi template endpoints', () => {
                 comments: [],
                 project_notes: [],
             }
+            let body: unknown
             server.use(
                 http.post(
-                    `${getSyncBaseUri()}templates/import_into_project_from_template_id`,
-                    () => {
+                    `${getSyncBaseUri()}projects/123/import_template`,
+                    async ({ request }) => {
+                        body = await request.json()
                         return HttpResponse.json(mockResponse, { status: 200 })
                     },
                 ),
@@ -167,8 +178,10 @@ describe('TodoistApi template endpoints', () => {
             const result = await api.importTemplateFromId({
                 projectId: '123',
                 templateId: 'product-launch',
+                locale: 'de',
             })
 
+            expect(body).toEqual({ template_id: 'product-launch', locale: 'de' })
             expect(result.status).toBe('ok')
             expect(result.templateType).toBe('project')
             expect(result.tasks).toEqual([])
