@@ -22,6 +22,7 @@ import type {
     SaveProjectAsTemplateArgs,
     CreateTemplateFromCSVArgs,
     GetTemplateArgs,
+    GetTemplateContentArgs,
     GetTemplateCategoriesArgs,
     GetTemplatesArgs,
     GetTemplatesByIdsArgs,
@@ -37,6 +38,8 @@ import type {
     TemplateFromCSVPreview,
     Template,
     TemplateCategory,
+    TemplateContent,
+    TemplateContentResponse,
 } from '../types/templates'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import { generatePath } from '../utils/request-helpers'
@@ -49,6 +52,7 @@ import {
     validateTemplate,
     validateTemplateArray,
     validateTemplateCategoryArray,
+    validateTemplateContentResponse,
     validateTemplateFromCSVPreview,
 } from '../utils/validators'
 import { BaseClient } from './base-client'
@@ -210,12 +214,38 @@ export class TemplateClient extends BaseClient {
         return validateTemplate(data)
     }
 
+    async getTemplateContent(
+        templateId: string,
+        args: GetTemplateContentArgs = {},
+    ): Promise<TemplateContentResponse> {
+        IdSchema.parse(templateId)
+        const { data } = await request<unknown>({
+            httpMethod: 'GET',
+            baseUri: this.templatesApiBase,
+            relativePath: generatePath(ENDPOINT_REST_TEMPLATES, templateId, 'preview'),
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            customHeaders: this.customHeaders,
+            // Read on the same API version as the update, so dates come back as complete
+            // objects that the update accepts back unchanged.
+            payload: args,
+        })
+        return validateTemplateContentResponse(data)
+    }
+
     async updateTemplate(
         templateId: string,
         args: UpdateTemplateArgs,
         requestId?: string,
     ): Promise<Template> {
         IdSchema.parse(templateId)
+        const { content, ...rest } = args
+        if (content && rest.projectId) {
+            throw new TodoistArgumentError(
+                'updateTemplate takes either `content` or `projectId`, not both.',
+            )
+        }
+        const payload = content ? { ...rest, content: toApiTemplateContent(content) } : rest
         const { data } = await request<unknown>({
             httpMethod: 'PUT',
             baseUri: this.templatesApiBase,
@@ -223,7 +253,7 @@ export class TemplateClient extends BaseClient {
             apiToken: this.authToken,
             customFetch: this.customFetch,
             customHeaders: this.customHeaders,
-            payload: args,
+            payload,
             requestId: requestId,
         })
         return validateTemplate(data)
@@ -335,5 +365,15 @@ export class TemplateClient extends BaseClient {
             tasks: validateTaskArray((data.tasks as unknown[]) ?? []),
             comments: validateCommentArray((data.comments as unknown[]) ?? []),
         }
+    }
+}
+
+/** Turns template content back into the sync names the API expects. */
+function toApiTemplateContent({ tasks, comments, projectComments, ...rest }: TemplateContent) {
+    return {
+        ...rest,
+        items: tasks,
+        notes: comments.map(({ taskId, ...comment }) => ({ itemId: taskId, ...comment })),
+        projectNotes: projectComments,
     }
 }
