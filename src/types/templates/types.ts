@@ -74,3 +74,12 @@ export const TemplateSchema = z.object({
  * @see https://developer.todoist.com/api/v1/#tag/Templates
  */
 export type Template = z.infer<typeof TemplateSchema>
+
+export const TemplateCategorySchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().nullable(),
+    seo: TemplateSeoSchema,
+})
+/** A curated category used to group templates in the Todoist gallery. */
+export type TemplateCategory = z.infer<typeof TemplateCategorySchema>
