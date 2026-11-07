@@ -9,6 +9,10 @@ export const TODOIST_WEB_URI = 'https://app.todoist.com/app'
 export const API_VERSION = 'v1'
 
 export const API_BASE_URI = `/api/${API_VERSION}/`
+
+// Saved-template routes use API v1.6, as the Todoist web app does. It is the first version that
+// keeps due dates' type, time and timezone when saving template content and project exports.
+export const TEMPLATES_API_VERSION = 'v1.6'
 const API_AUTHORIZATION_BASE_URI = '/oauth/'
 
 export function getSyncBaseUri(domainBase: string = BASE_URI): string {
@@ -70,6 +74,8 @@ export const ENDPOINT_REST_TEMPLATES_CREATE_FROM_FILE = 'templates/create_projec
 export const ENDPOINT_REST_TEMPLATES_IMPORT_FROM_FILE = 'templates/import_into_project_from_file'
 export const ENDPOINT_REST_TEMPLATES_IMPORT_FROM_ID =
     'templates/import_into_project_from_template_id'
+export const ENDPOINT_REST_TEMPLATES_USER = 'templates/user'
+export const ENDPOINT_REST_PROJECTS_FROM_TEMPLATE = ENDPOINT_REST_PROJECTS + '/from_template'
 
 export const ENDPOINT_REST_ACCESS_TOKENS_MIGRATE = 'access_tokens/migrate_personal_token'
 export const ENDPOINT_REST_BACKUPS = 'backups'

@@ -1,7 +1,13 @@
+import type { ColorKey } from '../../utils/colors'
 import type { Comment } from '../comments/types'
 import type { PersonalProject, WorkspaceProject } from '../projects/types'
 import type { Section } from '../sections/types'
+import type { TemplateType } from '../sync/resources/suggestions'
 import type { Task } from '../tasks/types'
+import type { UploadFileArgs } from '../uploads/requests'
+
+/** The template file to upload, for routes that accept a template CSV. */
+type TemplateFileUpload = Pick<UploadFileArgs, 'file' | 'fileName'>
 
 /**
  * Arguments for exporting a project as a template file.
@@ -37,13 +43,9 @@ export type ExportTemplateUrlResponse = {
  * Arguments for creating a project from a template file.
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/create_project_from_file_api_v1_templates_create_project_from_file_post
  */
-export type CreateProjectFromTemplateArgs = {
+export type CreateProjectFromTemplateArgs = TemplateFileUpload & {
     /** Name for the new project. */
     name: string
-    /** The template file content. */
-    file: Buffer | NodeJS.ReadableStream | string | Blob
-    /** Optional file name (required for Buffer/Stream). */
-    fileName?: string
     /** Optional workspace ID. */
     workspaceId?: string | null
 }
@@ -65,13 +67,9 @@ export type CreateProjectFromTemplateResponse = {
  * Arguments for importing a template file into an existing project.
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/import_into_project_from_file_api_v1_templates_import_into_project_from_file_post
  */
-export type ImportTemplateIntoProjectArgs = {
+export type ImportTemplateIntoProjectArgs = TemplateFileUpload & {
     /** The project ID to import into. */
     projectId: string
-    /** The template file content. */
-    file: Buffer | NodeJS.ReadableStream | string | Blob
-    /** Optional file name (required for Buffer/Stream). */
-    fileName?: string
 }
 
 /**
@@ -97,4 +95,48 @@ export type ImportTemplateResponse = {
     sections: Section[]
     tasks: Task[]
     comments: Comment[]
+}
+
+/**
+ * Arguments for saving a project as a user template.
+ * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/create_user_template_api_v1_templates_user_post
+ */
+export type SaveProjectAsTemplateArgs = {
+    /** The project to save as a template. */
+    projectId: string
+    /** Name of the template. */
+    name: string
+    /** Description shown with the template. */
+    description: string
+    /** Color of the template: a color key (e.g. `'lime_green'`) or its numeric ID (30-49). */
+    color: ColorKey | number
+    /** Template type (default: `'project'`). */
+    templateType?: TemplateType
+    /** Save the template to the project's workspace instead of the user's personal templates. */
+    forWorkspace?: boolean
+}
+
+/**
+ * Arguments for creating a new project from a template ID.
+ * @see https://developer.todoist.com/api/v1/#tag/Projects/operation/create_project_from_template_api_v1_projects_from_template_post
+ */
+export type CreateProjectFromTemplateIdArgs = {
+    /** The template to create the project from. Setup templates are not supported. */
+    templateId: string
+    /** Name for the new project. Defaults to the template's localized name. */
+    name?: string
+    /** Locale for the template content (default: `'en'`). */
+    locale?: string
+    /** Workspace to create the project in. Workspace templates can only be used in their own workspace. */
+    workspaceId?: string | null
+    /** Folder to create the project in. */
+    folderId?: string | null
+}
+
+/**
+ * Response from creating a new project from a template ID.
+ */
+export type CreateProjectFromTemplateIdResponse = {
+    status: string
+    projectId: string
 }
