@@ -2,7 +2,7 @@
 // every path, link and `npm run` script named in the agent-facing docs, and the skills' shape.
 
 import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync } from 'node:fs'
-import { basename, dirname, join, relative, resolve } from 'node:path'
+import { basename, dirname, join, normalize, relative, resolve, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { git } from './lib/git.ts'
 import { readJson } from './lib/state.ts'
@@ -61,6 +61,24 @@ function namedPaths(text: string): Reference[] {
  * through the files git lists, but only to one still on disk: git keeps listing a deleted file
  * until the deletion is staged.
  */
+/**
+ * Whether a repo-relative path exists with exactly this spelling. macOS file systems ignore
+ * case by default, so `existsSync` alone finds `AGENTS.md` when asked for `agents.md`.
+ */
+function existsExactly(path: string): boolean {
+    let dir = REPO_ROOT
+    for (const part of normalize(path).split(sep)) {
+        if (part === '' || part === '.') continue
+        if (part === '..') {
+            dir = dirname(dir)
+            continue
+        }
+        if (!existsSync(dir) || !readdirSync(dir).includes(part)) return false
+        dir = join(dir, part)
+    }
+    return true
+}
+
 function resolveReference(
     path: string,
     doc: string,
@@ -68,13 +86,13 @@ function resolveReference(
 ): string | { problem: string } {
     if (!ROOTED.test(path) && path.includes('/')) {
         const local = relative(REPO_ROOT, resolve(dirname(doc), path))
-        if (existsSync(join(REPO_ROOT, local))) return local
+        if (existsExactly(local)) return local
     }
-    if (ROOTED.test(path) || path.includes('/') || existsSync(join(REPO_ROOT, path))) {
-        return existsSync(join(REPO_ROOT, path)) ? path : { problem: 'does not exist' }
+    if (ROOTED.test(path) || path.includes('/') || existsExactly(path)) {
+        return existsExactly(path) ? path : { problem: 'does not exist' }
     }
     const matches = files.filter(
-        (candidate) => basename(candidate) === path && existsSync(join(REPO_ROOT, candidate)),
+        (candidate) => basename(candidate) === path && existsExactly(candidate),
     )
     if (matches.length === 1) return matches[0] ?? path
     return {
