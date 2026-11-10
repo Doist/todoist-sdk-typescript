@@ -252,8 +252,9 @@ export type PreviewTemplateFromCSVArgs = TemplateFileUpload
 /**
  * Arguments for creating a personal template from a CSV file.
  *
- * Provide either `file`, or the `uploadedFileName` returned by `previewTemplateFromCSV`
- * to save a staged file without uploading it again.
+ * Provide exactly one of: `file`; the `uploadedFileName` returned by `previewTemplateFromCSV`, to
+ * save a staged file without uploading it again; or `content`, to save a draft from
+ * `previewTemplateFromCSV` with edits, as the Todoist web app does.
  *
  * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/import_user_template_from_file_api_v1_templates_user_import_post
  */
@@ -264,6 +265,8 @@ export type CreateTemplateFromCSVArgs = Partial<TemplateFileUpload> & {
     description: string
     /** Color of the template: a color key (e.g. `'lime_green'`) or its numeric ID (30-49). */
     color: ColorKey | number
-    /** A staged file from `previewTemplateFromCSV`. Used when `file` is omitted. */
+    /** A staged file from `previewTemplateFromCSV`. */
     uploadedFileName?: string
+    /** The `content` of a draft from `previewTemplateFromCSV`, with edits. */
+    content?: TemplateContent
 }

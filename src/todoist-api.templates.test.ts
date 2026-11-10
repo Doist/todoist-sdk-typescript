@@ -5,7 +5,6 @@ import { server, http, HttpResponse } from './test-utils/msw-setup'
 import {
     DEFAULT_AUTH_TOKEN,
     DEFAULT_PROJECT,
-    DEFAULT_RAW_COMMENT,
     DEFAULT_SECTION,
     DEFAULT_TASK,
 } from './test-utils/test-defaults'
@@ -543,7 +542,14 @@ describe('TodoistApi template endpoints', () => {
                 projects: [DEFAULT_PROJECT],
                 sections: [DEFAULT_SECTION],
                 items: [DEFAULT_TASK],
-                notes: [DEFAULT_RAW_COMMENT],
+                notes: [
+                    {
+                        id: 'n1',
+                        itemId: DEFAULT_TASK.id,
+                        content: 'Check this',
+                        postedAt: '2026-11-05T10:00:00Z',
+                    },
+                ],
                 projectNotes: [],
                 projectViewOptionsDefaults: [],
                 reminders: [],
@@ -562,10 +568,10 @@ describe('TodoistApi template endpoints', () => {
                 }),
             )
             expect(result.uploadedFileName).toBe('1234567_abcdef_weekly.csv')
-            expect(result.tasks).toHaveLength(1)
-            expect(result.comments).toHaveLength(1)
-            expect(result.projectComments).toEqual([])
-            expect(result).not.toHaveProperty('items')
+            expect(result.content.tasks).toHaveLength(1)
+            expect(result.content.comments).toHaveLength(1)
+            expect(result.content.projectComments).toEqual([])
+            expect(result.content).not.toHaveProperty('items')
         })
     })
 
@@ -638,12 +644,53 @@ describe('TodoistApi template endpoints', () => {
             })
         })
 
-        test('needs either a file or a staged file name', async () => {
+        test('saves an edited draft as content, without uploading', async () => {
+            let body: Record<string, unknown> = {}
+            server.use(
+                http.post(`${getTemplatesBaseUri()}templates/user/import`, async ({ request }) => {
+                    body = (await request.json()) as Record<string, unknown>
+                    return HttpResponse.json(RAW_TEMPLATE)
+                }),
+            )
+            const api = getTarget()
+
+            await api.createTemplateFromCSV({
+                name: 'Weekly',
+                description: 'Plan the week',
+                color: 'blue',
+                content: {
+                    projects: [{ viewStyle: 'list' }],
+                    sections: [],
+                    tasks: [{ id: 't1', content: 'Plan' }],
+                    comments: [{ taskId: 't1', content: 'Note' }],
+                    projectComments: [],
+                    projectViewOptionsDefaults: [],
+                },
+            })
+
+            expect(mockedUploadMultipartFile).not.toHaveBeenCalled()
+            expect(body).toEqual({
+                template_type: 'project',
+                name: 'Weekly',
+                description: 'Plan the week',
+                color: 'blue',
+                content: {
+                    projects: [{ view_style: 'list' }],
+                    sections: [],
+                    items: [{ id: 't1', content: 'Plan' }],
+                    notes: [{ item_id: 't1', content: 'Note' }],
+                    project_notes: [],
+                    project_view_options_defaults: [],
+                },
+            })
+        })
+
+        test('needs exactly one source: a file, a staged file name or content', async () => {
             const api = getTarget()
 
             await expect(
                 api.createTemplateFromCSV({ name: 'Weekly', description: '', color: 'blue' }),
-            ).rejects.toThrow('needs either `file` or `uploadedFileName`')
+            ).rejects.toThrow('needs exactly one of `file`, `uploadedFileName` or `content`')
         })
     })
 

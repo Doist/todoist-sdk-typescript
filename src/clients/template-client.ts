@@ -53,7 +53,7 @@ import {
     validateTemplateContentResponse,
     validateTemplateArray,
     validateTemplateCategoryArray,
-    validateTemplateFromCSVPreview,
+    validateStagedCSVFile,
 } from '../utils/validators'
 import { BaseClient } from './base-client'
 
@@ -266,23 +266,25 @@ export class TemplateClient extends BaseClient {
             customHeaders: this.customHeaders,
             requestId,
         })
-        return validateTemplateFromCSVPreview(data)
+        return { ...validateTemplateContentResponse(data), ...validateStagedCSVFile(data) }
     }
 
     async createTemplateFromCSV(
         args: CreateTemplateFromCSVArgs,
         requestId?: string,
     ): Promise<Template> {
-        const { file, fileName, uploadedFileName, name, description, color } = args
+        const { file, fileName, uploadedFileName, content, name, description, color } = args
         const fields = { templateType: 'project', name, description, color }
 
+        const sources = [file !== undefined, Boolean(uploadedFileName), content !== undefined]
+        if (sources.filter(Boolean).length !== 1) {
+            throw new TodoistArgumentError(
+                'createTemplateFromCSV needs exactly one of `file`, `uploadedFileName` or `content`.',
+            )
+        }
+
         if (file === undefined) {
-            if (!uploadedFileName) {
-                throw new TodoistArgumentError(
-                    'createTemplateFromCSV needs either `file` or `uploadedFileName`.',
-                )
-            }
-            // The server reuses the staged file, so there is nothing to upload.
+            // A staged file or an edited draft: nothing to upload.
             const { data } = await request<unknown>({
                 httpMethod: 'POST',
                 baseUri: this.templatesApiBase,
@@ -290,7 +292,9 @@ export class TemplateClient extends BaseClient {
                 apiToken: this.authToken,
                 customFetch: this.customFetch,
                 customHeaders: this.customHeaders,
-                payload: { ...fields, uploadedFileName },
+                payload: content
+                    ? { ...fields, content: toApiTemplateContent(content) }
+                    : { ...fields, uploadedFileName },
                 requestId: requestId,
             })
             return validateTemplate(data)
