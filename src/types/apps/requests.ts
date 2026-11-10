@@ -1,6 +1,6 @@
 import type { Permission } from '../../authentication'
 import type { AppIconSize } from '../../consts/endpoints'
-import type { InstallationType, WebhookEvent, WebhookVersion } from './types'
+import type { AppClientType, InstallationType, WebhookEvent, WebhookVersion } from './types'
 
 /**
  * Arguments for creating a new developer application.
@@ -37,6 +37,16 @@ export type UpdateAppArgs = {
      * to `updateApp()` without casts.
      */
     appTokenScopes?: readonly (Permission | (string & {}))[] | null
+    /**
+     * Updated OAuth client type. Set to `'public'` for apps that cannot keep a
+     * secret (native apps, browser extensions, CLIs), so they exchange
+     * authorization codes with PKCE alone. The client secret is kept, so
+     * switching back to `'confidential'` needs no new one.
+     *
+     * Dynamically registered clients cannot change it: the API rejects the
+     * update with `BAD_REQUEST`.
+     */
+    clientType?: AppClientType
 }
 
 /**

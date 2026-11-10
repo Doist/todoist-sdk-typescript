@@ -136,6 +136,39 @@ describe('TodoistApi app management endpoints', () => {
             await getTarget().updateApp(DEFAULT_APP_ID, { appTokenScopes: null })
             expect(receivedBody).toEqual({ app_token_scopes: null })
         })
+
+        test('sends clientType as client_type and returns the new client type', async () => {
+            let receivedBody: unknown
+            server.use(
+                http.post(
+                    `${getApiRootBaseUri()}${getAppEndpoint(DEFAULT_APP_ID)}`,
+                    async ({ request }) => {
+                        receivedBody = await request.json()
+                        return HttpResponse.json(
+                            { ...appWithUserCountWire, clientType: 'public' },
+                            { status: 200 },
+                        )
+                    },
+                ),
+            )
+            const app = await getTarget().updateApp(DEFAULT_APP_ID, { clientType: 'public' })
+            expect(receivedBody).toEqual({ client_type: 'public' })
+            expect(app.clientType).toBe('public')
+        })
+
+        test('rejects an unknown client type in the response', async () => {
+            server.use(
+                http.post(`${getApiRootBaseUri()}${getAppEndpoint(DEFAULT_APP_ID)}`, () => {
+                    return HttpResponse.json(
+                        { ...appWithUserCountWire, clientType: 'secret' },
+                        { status: 200 },
+                    )
+                }),
+            )
+            await expect(
+                getTarget().updateApp(DEFAULT_APP_ID, { clientType: 'public' }),
+            ).rejects.toThrow()
+        })
     })
 
     describe('deleteApp', () => {

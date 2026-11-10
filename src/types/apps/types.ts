@@ -169,6 +169,21 @@ export const AppTokenScopesSchema = z
     })
 
 /**
+ * Available OAuth client types for a developer application (RFC 6749 §2.1).
+ */
+export const APP_CLIENT_TYPES = ['confidential', 'public'] as const
+/**
+ * OAuth client type of a developer application: whether it can keep a client secret.
+ *
+ * - `confidential` apps authenticate with their client secret at the token endpoint.
+ * - `public` apps (native apps, browser extensions, CLIs) cannot keep a secret: they
+ *   must use PKCE, and exchange authorization codes with the `code_verifier` alone.
+ */
+export type AppClientType = (typeof APP_CLIENT_TYPES)[number]
+
+export const AppClientTypeSchema = z.enum(APP_CLIENT_TYPES)
+
+/**
  * Schema for a developer application.
  * @see https://developer.todoist.com/api/v1/#tag/Apps
  */
@@ -186,6 +201,7 @@ export const AppSchema = z.object({
     iconMd: z.string().nullable(),
     iconLg: z.string().nullable(),
     appTokenScopes: AppTokenScopesSchema,
+    clientType: AppClientTypeSchema,
 })
 
 /**
