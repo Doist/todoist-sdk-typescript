@@ -5,6 +5,7 @@ import type { Section } from '../sections/types'
 import type { TemplateType } from '../sync/resources/suggestions'
 import type { Task } from '../tasks/types'
 import type { UploadFileArgs } from '../uploads/requests'
+import type { TemplateContent } from './types'
 
 /** The template file to upload, for routes that accept a template CSV. */
 type TemplateFileUpload = Pick<UploadFileArgs, 'file' | 'fileName'>
@@ -114,6 +115,11 @@ export type SaveProjectAsTemplateArgs = {
     templateType?: TemplateType
     /** Save the template to the project's workspace instead of the user's personal templates. */
     forWorkspace?: boolean
+    /**
+     * Save this content instead of the project's current content, e.g. a draft from
+     * `previewProjectAsTemplate` with edits. `projectId` is still required.
+     */
+    content?: TemplateContent
 }
 
 /**

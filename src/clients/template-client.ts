@@ -4,6 +4,7 @@ import {
     ENDPOINT_REST_TEMPLATES_IMPORT_FROM_FILE,
     ENDPOINT_REST_TEMPLATES_IMPORT_FROM_ID,
     ENDPOINT_REST_TEMPLATES_URL,
+    ENDPOINT_REST_TEMPLATES_PREVIEW,
     ENDPOINT_REST_TEMPLATES_USER,
     TEMPLATES_API_VERSION,
     ENDPOINT_REST_PROJECTS_FROM_TEMPLATE,
@@ -15,6 +16,8 @@ import type {
     CreateProjectFromTemplateIdResponse,
     CreateProjectFromTemplateResponse,
     SaveProjectAsTemplateArgs,
+    TemplateContent,
+    TemplateContentResponse,
     ExportTemplateFileArgs,
     ExportTemplateUrlArgs,
     ExportTemplateUrlResponse,
@@ -25,11 +28,13 @@ import type {
 } from '../types/templates'
 import { uploadMultipartFile } from '../utils/multipart-upload'
 import {
+    IdSchema,
     validateCommentArray,
     validateProjectArray,
     validateSectionArray,
     validateTaskArray,
     validateTemplate,
+    validateTemplateContentResponse,
 } from '../utils/validators'
 import { BaseClient } from './base-client'
 
@@ -136,11 +141,25 @@ export class TemplateClient extends BaseClient {
         return this.validateTemplateResponse(data) as ImportTemplateResponse
     }
 
+    async previewProjectAsTemplate(projectId: string): Promise<TemplateContentResponse> {
+        IdSchema.parse(projectId)
+        const { data } = await request<unknown>({
+            httpMethod: 'GET',
+            baseUri: this.templatesApiBase,
+            relativePath: ENDPOINT_REST_TEMPLATES_PREVIEW,
+            apiToken: this.authToken,
+            customFetch: this.customFetch,
+            customHeaders: this.customHeaders,
+            payload: { projectId },
+        })
+        return validateTemplateContentResponse(data)
+    }
+
     async saveProjectAsTemplate(
         args: SaveProjectAsTemplateArgs,
         requestId?: string,
     ): Promise<Template> {
-        const { templateType = 'project', ...rest } = args
+        const { templateType = 'project', content, ...rest } = args
         const { data } = await request<unknown>({
             httpMethod: 'POST',
             baseUri: this.templatesApiBase,
@@ -148,7 +167,11 @@ export class TemplateClient extends BaseClient {
             apiToken: this.authToken,
             customFetch: this.customFetch,
             customHeaders: this.customHeaders,
-            payload: { ...rest, templateType },
+            payload: {
+                ...rest,
+                templateType,
+                ...(content ? { content: toApiTemplateContent(content) } : {}),
+            },
             requestId: requestId,
         })
         return validateTemplate(data)
@@ -179,5 +202,15 @@ export class TemplateClient extends BaseClient {
             tasks: validateTaskArray((data.tasks as unknown[]) ?? []),
             comments: validateCommentArray((data.comments as unknown[]) ?? []),
         }
+    }
+}
+
+/** Turns template content back into the sync names the API expects. */
+function toApiTemplateContent({ tasks, comments, projectComments, ...rest }: TemplateContent) {
+    return {
+        ...rest,
+        items: tasks,
+        notes: comments.map(({ taskId, ...comment }) => ({ itemId: taskId, ...comment })),
+        projectNotes: projectComments,
     }
 }

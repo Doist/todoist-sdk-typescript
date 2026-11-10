@@ -311,6 +311,42 @@ describe('TodoistApi template endpoints', () => {
             expect(result.templateSource).toBe('todoist')
         })
 
+        test('saves an edited draft as content, in the API names', async () => {
+            let body: Record<string, unknown> = {}
+            server.use(
+                http.post(`${getTemplatesBaseUri()}templates/user`, async ({ request }) => {
+                    body = (await request.json()) as Record<string, unknown>
+                    return HttpResponse.json(mockTemplate)
+                }),
+            )
+            const api = getTarget()
+
+            await api.saveProjectAsTemplate({
+                projectId: '123',
+                name: 'Launch plan',
+                description: 'A launch',
+                color: 'blue',
+                content: {
+                    projects: [{ viewStyle: 'board' }],
+                    sections: [],
+                    tasks: [{ id: 't1', content: 'Plan', responsibleUid: '42' }],
+                    comments: [{ taskId: 't1', content: 'Check this' }],
+                    projectComments: [],
+                    projectViewOptionsDefaults: [],
+                },
+            })
+
+            expect(body.project_id).toBe('123')
+            expect(body.content).toEqual({
+                projects: [{ view_style: 'board' }],
+                sections: [],
+                items: [{ id: 't1', content: 'Plan', responsible_uid: '42' }],
+                notes: [{ item_id: 't1', content: 'Check this' }],
+                project_notes: [],
+                project_view_options_defaults: [],
+            })
+        })
+
         test('rejects a response that is not a template', async () => {
             server.use(
                 http.post(`${getTemplatesBaseUri()}templates/user`, () =>
@@ -327,6 +363,59 @@ describe('TodoistApi template endpoints', () => {
                     color: 'blue',
                 }),
             ).rejects.toThrow()
+        })
+    })
+
+    describe('previewProjectAsTemplate', () => {
+        test('reads a project as a template draft on API v1.6, without saving', async () => {
+            let projectId: string | null = null
+            server.use(
+                http.get(`${getTemplatesBaseUri()}templates/preview`, ({ request }) => {
+                    projectId = new URL(request.url).searchParams.get('project_id')
+                    return HttpResponse.json({
+                        template_type: 'project',
+                        workspace_id: null,
+                        projects: [{ id: 'p1', name: 'Plan', view_style: 'list', description: '' }],
+                        sections: [],
+                        items: [
+                            {
+                                id: 't1',
+                                content: 'Plan',
+                                due: {
+                                    date: '2026-11-13',
+                                    string: 'every friday',
+                                    lang: 'en',
+                                    is_recurring: true,
+                                },
+                                checked: false,
+                            },
+                        ],
+                        notes: [],
+                        project_notes: [],
+                        project_view_options_defaults: [],
+                        reminders: [],
+                    })
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.previewProjectAsTemplate('123')
+
+            expect(projectId).toBe('123')
+            expect(result.workspaceId).toBeNull()
+            expect(result.content.projects).toEqual([{ viewStyle: 'list', description: '' }])
+            expect(result.content.tasks).toEqual([
+                {
+                    id: 't1',
+                    content: 'Plan',
+                    due: {
+                        date: '2026-11-13',
+                        string: 'every friday',
+                        lang: 'en',
+                        isRecurring: true,
+                    },
+                },
+            ])
         })
     })
 })
