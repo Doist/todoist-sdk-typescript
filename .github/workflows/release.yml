@@ -1,81 +1,79 @@
-name: Release
+name: Prepare release artifact
 
 on:
     push:
-        branches:
-            - main
-            - next
+        branches: [main, next]
+    workflow_dispatch:
+        inputs:
+            source_sha:
+                description: Reviewed current branch SHA; must equal this workflow run's head
+                required: true
+                type: string
+            expected_version:
+                description: Expected semantic-release version (first migration release 17.0.1)
+                required: true
+                type: string
 
 permissions:
-    # Enable `semantic-release` to publish a GitHub release and push commits
-    contents: write
-    # Enable `semantic-release` to post comments on issues
-    issues: write
-    # Enable `semantic-release` to post comments on pull requests
-    pull-requests: write
-    # Enable the use of OIDC for trusted publishing and npm provenance
-    id-token: write
+    contents: read
+    packages: read
 
-# Release involves crucial steps that shouldn't be cancelled mid-run,
-# so new workflow runs are queued until the previous one finishes.
 concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
+    group: todoist-sdk-release
     cancel-in-progress: false
 
 jobs:
-    release:
-        name: Release
+    pack:
+        if: github.repository == 'todoist/todoist-sdk-typescript' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/next')
         runs-on: ubuntu-latest
-        timeout-minutes: 30
-
+        timeout-minutes: 15
         steps:
-            - name: Generate bot token
-              id: generate_token
-              uses: actions/create-github-app-token@v1
+            - uses: actions/checkout@v6
               with:
-                  app-id: ${{ secrets.DOIST_RELEASE_BOT_ID }}
-                  private-key: ${{ secrets.DOIST_RELEASE_BOT_PRIVATE_KEY }}
-                  permission-contents: write
-                  permission-issues: write
-                  permission-pull-requests: write
-
-            - name: Get bot user ID
-              id: bot_user
-              run: |
-                  user_id=$(gh api "/users/${{ steps.generate_token.outputs.app-slug }}[bot]" --jq .id)
-                  if [ -z "$user_id" ]; then
-                      echo "Failed to get bot user ID" >&2
-                      exit 1
-                  fi
-                  echo "id=$user_id" >> "$GITHUB_OUTPUT"
-              env:
-                  GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-
-            - name: Checkout repository
-              uses: actions/checkout@v6
-              with:
-                  token: ${{ steps.generate_token.outputs.token }}
                   fetch-depth: 0
-
-            - name: Setup Node.js
-              uses: actions/setup-node@v6
+                  persist-credentials: false
+            - uses: actions/setup-node@v6
               with:
                   node-version-file: .nvmrc
-                  cache: npm
-                  scope: '@doist'
-                  registry-url: 'https://registry.npmjs.org/'
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Release
-              run: npx semantic-release
+                  package-manager-cache: false
+            - name: Validate selected source
               env:
-                  GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-                  GIT_AUTHOR_NAME: ${{ steps.generate_token.outputs.app-slug }}[bot]
-                  GIT_AUTHOR_EMAIL: ${{ steps.bot_user.outputs.id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com
-                  GIT_COMMITTER_NAME: ${{ steps.generate_token.outputs.app-slug }}[bot]
-                  GIT_COMMITTER_EMAIL: ${{ steps.bot_user.outputs.id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com
-                  # `npm ci` installs the git hooks (the `prepare` script). The pull request
-                  # already ran every check, so the release commit and push skip them.
-                  LEFTHOOK: '0'
+                  SELECTED_SHA: ${{ inputs.source_sha || github.sha }}
+              run: |
+                  test "$SELECTED_SHA" = "$GITHUB_SHA"
+                  test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+                  test "$(git rev-parse "origin/$GITHUB_REF_NAME")" = "$GITHUB_SHA"
+                  git merge-base --is-ancestor origin/main HEAD
+            - name: Install locked dependencies without installing shared hooks
+              run: npm ci --ignore-scripts --no-audit --no-fund
+            - name: Calculate version without publication or remote push probes
+              id: plan
+              env:
+                  EXPECTED_VERSION: ${{ inputs.expected_version }}
+                  GH_TOKEN: ${{ github.token }}
+                  GH_PACKAGES_TOKEN: ${{ github.token }}
+              run: |
+                  git clone --bare . .tmp/release-history.git
+                  node_modules/.bin/semantic-release --dry-run --repository-url "file://$PWD/.tmp/release-history.git"
+                  if test -f .tmp/release/plan.json; then
+                      VERSION=$(node -p 'JSON.parse(require("fs").readFileSync(".tmp/release/plan.json")).version')
+                      test -z "$EXPECTED_VERSION" || test "$VERSION" = "$EXPECTED_VERSION"
+                      echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+                  else
+                      test -z "$EXPECTED_VERSION"
+                  fi
+            - name: Verify and pack once
+              if: steps.plan.outputs.version != ''
+              run: |
+                  npm run verify
+                  node scripts/release.mjs pack
+            - uses: actions/upload-artifact@v4
+              if: steps.plan.outputs.version != ''
+              with:
+                  name: todoist-sdk-release
+                  path: |
+                      .tmp/release/*.tgz
+                      .tmp/release/release.json
+                  include-hidden-files: true
+                  if-no-files-found: error
+                  retention-days: 90

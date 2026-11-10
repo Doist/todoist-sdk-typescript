@@ -149,7 +149,7 @@ Your part: answer the decision questions, and read the evidence report, especial
 
 ## Releases
 
-semantic-release publishes from `main` on every merge, and a pre-release from `next`. The squash-merged PR title decides whether anything ships: `feat:`, `fix:`, `perf:` and any breaking change (`!`) release; `chore:`, `ci:`, `docs:`, `test:` and `refactor:` do not. Changes to the agent tooling use `chore:` or `ci:`, so they never publish a new version. No path filter is needed.
+semantic-release analyzes `main` and `next` on merge and retains a release artifact when a version is due. Publication and release recording are separate, protected, explicit operations; see [the release runbook](releases.md). The squash-merged PR title decides whether anything ships: `feat:`, `fix:`, `perf:` and any breaking change (`!`) select a release; `chore:`, `ci:`, `docs:`, `test:` and `refactor:` do not. Changes to the agent tooling use `chore:` or `ci:`, so they never publish a new version. No path filter is needed.
 
 ## What fails open
 

@@ -1,0 +1,76 @@
+name: Publish retained release
+
+on:
+    workflow_dispatch:
+        inputs:
+            run_id:
+                description: Successful release.yml run holding the original todoist-sdk-release artifact
+                required: true
+                type: string
+            destination:
+                description: Publish missing copies or complete the release record
+                type: choice
+                options: [both, npm, github, record]
+                default: both
+            dist_tag:
+                description: latest, next, or recovery-VERSION; existing copies are never retagged
+                type: string
+                default: latest
+            github_visibility:
+                description: Independently approved GitHub mirror visibility (new packages start private)
+                type: choice
+                options: [private, internal, public]
+                default: private
+            record_release:
+                description: Verify both copies and complete the normal vVERSION release record
+                type: boolean
+                default: false
+
+concurrency:
+    group: todoist-sdk-release
+    cancel-in-progress: false
+
+jobs:
+    publish:
+        if: github.repository == 'todoist/todoist-sdk-typescript' && github.ref == 'refs/heads/main'
+        environment: npm-release
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        permissions:
+            contents: write
+            actions: read
+            packages: write
+            id-token: write
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+            - uses: actions/setup-node@v6
+              with:
+                  node-version-file: .nvmrc
+                  package-manager-cache: false
+            - name: Install publishing CLI locally
+              run: npm install --prefix .tmp/publish-tools --ignore-scripts --no-audit --no-fund --package-lock=false npm@11.21.0
+            - name: Validate and publish original bytes
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  GH_PACKAGES_TOKEN: ${{ github.token }}
+                  NODE_AUTH_TOKEN: ${{ github.token }}
+                  GITHUB_PACKAGE_VISIBILITY: ${{ inputs.github_visibility }}
+                  BUILD_RUN: ${{ inputs.run_id }}
+                  DESTINATION: ${{ inputs.destination }}
+                  DIST_TAG: ${{ inputs.dist_tag }}
+                  RECORD_RELEASE: ${{ inputs.record_release }}
+              run: |
+                  export PATH="$PWD/.tmp/publish-tools/node_modules/.bin:$PATH"
+                  node scripts/release.mjs download "$BUILD_RUN"
+                  if test "$DESTINATION" = both || test "$DESTINATION" = npm; then
+                      node scripts/release.mjs publish npm "$DIST_TAG"
+                  fi
+                  if test "$DESTINATION" = both || test "$DESTINATION" = github; then
+                      node scripts/release.mjs publish github "$DIST_TAG"
+                  fi
+                  if test "$DESTINATION" = record || test "$RECORD_RELEASE" = true; then
+                      node scripts/release.mjs record
+                  fi

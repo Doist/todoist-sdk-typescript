@@ -4,17 +4,17 @@ The following is a set of guidelines for contributing to the Todoist SDK. Please
 
 ## Open Development
 
-All work on Todoist SDK happens directly on [GitHub](https://github.com/Doist/todoist-sdk-typescript). Both core team members and external contributors send pull requests that go through the same review process.
+All work on Todoist SDK happens directly on [GitHub](https://github.com/todoist/todoist-sdk-typescript). Both core team members and external contributors send pull requests that go through the same review process.
 
 ## Semantic Versioning
 
 Todoist SDK follows [semantic versioning](https://semver.org/). We release patch versions for bugfixes, minor versions for new features or non-essential changes, and major versions for any breaking changes.
 
-Every significant change is documented in the [CHANGELOG.md](CHANGELOG.md) file.
+Historical changes are documented in [CHANGELOG.md](CHANGELOG.md); current release notes are retained in the GitHub release record.
 
 ## Branch Organization
 
-Submit all changes to the [main](https://github.com/Doist/todoist-sdk-typescript/tree/main) branch (via PR) by default. For pre-release work, target the `next` branch instead — see [Release Process](#release-process-core-team-only) for details.
+Submit all changes to the [main](https://github.com/todoist/todoist-sdk-typescript/tree/main) branch (via PR) by default. For pre-release work, target the `next` branch instead — see [Release Process](#release-process-core-team-only) for details.
 
 We do our best to keep `main` in good shape, with all tests passing.
 
@@ -69,34 +69,20 @@ PR titles are validated against the Conventional Commits format by CI. When squa
 
 ## Release Process (core team only)
 
-The release process is fully automated with [semantic-release](https://github.com/semantic-release/semantic-release). Pushing to `main` (after CI passes) triggers a stable release automatically.
+[semantic-release](https://github.com/semantic-release/semantic-release) analyzes Conventional Commits on `main` (stable) and `next` (prerelease), keeping the existing `v${version}` tag lineage. A merge runs `.github/workflows/release.yml` to verify, build and retain one artifact. It does not publish packages or create a release.
+
+An authorized maintainer uses `.github/workflows/publish-release.yml` to publish those original bytes to npm and GitHub Packages, then complete the matching release record. Publication and retries require the protected `npm-release` environment. See [the release runbook](docs/releases.md) for first publication, registry routing, recovery and exact setup.
 
 ### Pre-releases
 
-To test features before publishing a stable release:
+Merge current `main` into `next` before new prerelease work, preserving Git history. The pack workflow requires the selected source to descend from current `main`. Open feature PRs against `next`; their normal Conventional Commits determine versions such as `17.1.0-next.1`. Publish the retained artifact with the `next` dist-tag; prereleases cannot use `latest`. Promote changes through a reviewed forward merge to `main`, which computes a stable version. Do not rebuild or publish the historical old-scope `next` line for this migration.
 
-1. **Sync `next` with `main`** before starting new work, and after each stable release (required for semantic-release to correctly initiate the next pre-release versioning cycle):
-
-    ```sh
-    git checkout next
-    git merge main -m "chore: sync next with main [skip ci]"
-    git push origin next
-    ```
-
-    > **Important:** Always use `git merge` to sync — never rebase `next` onto `main`. Rebasing rewrites commit hashes, which breaks the git tags that semantic-release uses to track published versions. Since npm does not allow republishing the same version number, a rebase can leave the release pipeline in an unrecoverable state.
-
-2. **Develop on a feature branch** based off `next` and open a PR targeting `next`.
-
-3. **Automatic pre-release:** Each PR merge into `next` triggers CI and publishes a pre-release version (e.g., `8.3.0-next.1`) to the `next` dist-tag on npm.
-
-4. **Promote to stable:** When ready, open a PR to merge `next` into `main`. Use a regular merge commit (not squash), as this preserves the individual commit history and allows semantic-release to correctly generate a comprehensive changelog and determine the version bump automatically.
-
-> **Note:** The `CHANGELOG.md` is only updated for stable releases on `main`. Pre-releases still get GitHub release notes and npm publication.
+The GitHub release retains generated notes, the tarball and `release.json`; a published, complete record establishes the next semantic-release baseline. `CHANGELOG.md` keeps its historical contents. The pack step sets the published version in a disposable package directory; `package.json` in source is no longer rewritten by a release bot. Neither retries nor recording create release commits or bump versions again.
 
 ### Installing a pre-release
 
 ```sh
-npm install @doist/todoist-sdk@next
+npm install @todoist/todoist-sdk@next
 ```
 
 ## License
