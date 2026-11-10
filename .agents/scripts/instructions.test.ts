@@ -71,7 +71,7 @@ function resolveReference(
         if (existsSync(join(REPO_ROOT, local))) return local
     }
     // Not `existsSync`: macOS ignores case, so `agents.md` would find `AGENTS.md`.
-    if (ROOTED.test(path) || path.includes('/') || readdirSync(REPO_ROOT).includes(path)) {
+    if (ROOTED.test(path) || path.includes('/') || files.includes(path)) {
         return existsSync(join(REPO_ROOT, path)) ? path : { problem: 'does not exist' }
     }
     const matches = files.filter(
