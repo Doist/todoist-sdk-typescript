@@ -4,7 +4,11 @@ on:
     workflow_dispatch:
         inputs:
             run_id:
-                description: Successful release.yml run holding the original todoist-sdk-release artifact
+                description: release.yml run holding the original retained artifact
+                required: true
+                type: string
+            run_attempt:
+                description: Original successful attempt (a later failed rerun does not replace it)
                 required: true
                 type: string
             destination:
@@ -42,6 +46,15 @@ jobs:
             packages: write
             id-token: write
         steps:
+            - name: Generate existing release bot token for release and source records
+              if: inputs.destination == 'record' || inputs.record_release
+              id: release_bot
+              uses: actions/create-github-app-token@v1
+              with:
+                  app-id: ${{ secrets.DOIST_RELEASE_BOT_ID }}
+                  private-key: ${{ secrets.DOIST_RELEASE_BOT_PRIVATE_KEY }}
+                  permission-contents: write
+                  permission-actions: read
             - uses: actions/checkout@v6
               with:
                   fetch-depth: 0
@@ -54,17 +67,18 @@ jobs:
               run: npm install --prefix .tmp/publish-tools --ignore-scripts --no-audit --no-fund --package-lock=false npm@11.21.0
             - name: Validate and publish original bytes
               env:
-                  GH_TOKEN: ${{ github.token }}
+                  GH_TOKEN: ${{ steps.release_bot.outputs.token || github.token }}
                   GH_PACKAGES_TOKEN: ${{ github.token }}
                   NODE_AUTH_TOKEN: ${{ github.token }}
                   GITHUB_PACKAGE_VISIBILITY: ${{ inputs.github_visibility }}
                   BUILD_RUN: ${{ inputs.run_id }}
+                  BUILD_ATTEMPT: ${{ inputs.run_attempt }}
                   DESTINATION: ${{ inputs.destination }}
                   DIST_TAG: ${{ inputs.dist_tag }}
                   RECORD_RELEASE: ${{ inputs.record_release }}
               run: |
                   export PATH="$PWD/.tmp/publish-tools/node_modules/.bin:$PATH"
-                  node scripts/release.mjs download "$BUILD_RUN"
+                  node scripts/release.mjs download "$BUILD_RUN" "$BUILD_ATTEMPT"
                   if test "$DESTINATION" = both || test "$DESTINATION" = npm; then
                       node scripts/release.mjs publish npm "$DIST_TAG"
                   fi

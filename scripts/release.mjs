@@ -1,7 +1,17 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import {
+    cpSync,
+    existsSync,
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    readdirSync,
+    rmSync,
+    writeFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -230,39 +240,116 @@ function verifyArtifact() {
     return manifest
 }
 
-function validateOrigin(manifest) {
-    assert.match(manifest.runId, /^[1-9]\d*$/)
-    assert.match(manifest.runAttempt, /^[1-9]\d*$/)
-    const build = gh(`actions/runs/${manifest.runId}/attempts/${manifest.runAttempt}`)
-    validateRun(build, manifest, (base, head) => gh(`compare/${base}...${head}`))
+function originalArtifact(runId, runAttempt) {
+    assert.match(runId, /^[1-9]\d*$/)
+    assert.match(runAttempt, /^[1-9]\d*$/, 'Select the original successful run attempt')
+    // The run's mutable latest attempt can fail without invalidating an earlier artifact.
+    const build = gh(`actions/runs/${runId}/attempts/${runAttempt}`)
+    assert.equal(build.status, 'completed')
+    assert.equal(build.conclusion, 'success', 'Original attempt must have succeeded')
+    const name = `todoist-sdk-release-${runId}-${runAttempt}`
+    const matches = []
+    for (let page = 1; ; page++) {
+        assert(page <= 100, 'Artifact inventory incomplete; preserve original bytes')
+        const response = gh(`actions/runs/${runId}/artifacts?per_page=100&page=${page}`)
+        assert(Array.isArray(response.artifacts))
+        matches.push(...response.artifacts.filter((artifact) => artifact.name === name))
+        if (response.artifacts.length < 100) break
+    }
+    assert.equal(matches.length, 1, 'Expected one unique original attempt artifact; never repack')
+    const id = matches[0].id
+    assert(Number.isSafeInteger(id) && id > 0)
+    const artifact = gh(`actions/artifacts/${id}`)
+    assert.equal(artifact.id, id)
+    assert.equal(artifact.name, name)
+    assert.equal(
+        artifact.expired,
+        false,
+        'Original archive expired; stop for original-byte recovery',
+    )
+    assert.deepEqual(artifact.workflow_run, {
+        id: build.id,
+        repository_id: 428678731,
+        head_repository_id: 428678731,
+        head_branch: build.head_branch,
+        head_sha: build.head_sha,
+    })
+    assert.match(
+        artifact.digest ?? '',
+        /^sha256:[a-f0-9]{64}$/,
+        'Authenticated archive digest unavailable; preserve original bytes',
+    )
+    const archive = execFileSync('gh', ['api', `repos/${repository}/actions/artifacts/${id}/zip`], {
+        maxBuffer: 64 * 1024 * 1024,
+    })
+    assert.equal(
+        `sha256:${hash(archive)}`,
+        artifact.digest,
+        'Original archive differs from authenticated GitHub digest',
+    )
+    const scratch = mkdtempSync(resolve(tmpdir(), 'todoist-original-'))
+    try {
+        const path = resolve(scratch, 'source.zip')
+        writeFileSync(path, archive, { mode: 0o600 })
+        const entries = run('unzip', ['-Z1', path]).split('\n')
+        const manifestBytes = execFileSync('unzip', ['-p', path, 'release.json'], {
+            maxBuffer: 1024 * 1024,
+        })
+        const manifest = JSON.parse(manifestBytes)
+        assert.match(manifest.version, versionPattern)
+        assert.equal(manifest.filename, `todoist-todoist-sdk-${manifest.version}.tgz`)
+        assert.deepEqual(
+            entries.sort(),
+            ['release.json', manifest.filename].sort(),
+            'Unsupported original archive layout; preserve original bytes',
+        )
+        assert.equal(manifest.runId, runId)
+        assert.equal(manifest.runAttempt, runAttempt)
+        validateRun(build, manifest, (base, head) => gh(`compare/${base}...${head}`))
+        const tarball = execFileSync('unzip', ['-p', path, manifest.filename], {
+            maxBuffer: 64 * 1024 * 1024,
+        })
+        assert.equal(hash(tarball), manifest.sha256)
+        assert.equal(`sha512-${hash(tarball, 'sha512', 'base64')}`, manifest.integrity)
+        return { manifest, manifestBytes, tarball }
+    } finally {
+        rmSync(scratch, { recursive: true, force: true })
+    }
 }
 
-function download(runId) {
-    assert.match(runId, /^[1-9]\d*$/)
-    const build = gh(`actions/runs/${runId}`)
-    assert.equal(build.workflow_id, 252936157)
-    assert.equal(build.path, workflow)
-    assert(['main', 'next'].includes(build.head_branch))
-    assert.equal(build.conclusion, 'success')
+function validateOrigin(
+    manifest,
+    manifestBytes = readFileSync(`${directory}/release.json`),
+    tarball = readFileSync(`${directory}/${manifest.filename}`),
+) {
+    assert.deepEqual(
+        manifest,
+        JSON.parse(manifestBytes),
+        'Release metadata changed during verification; preserve original bytes',
+    )
+    const original = originalArtifact(manifest.runId, manifest.runAttempt)
+    assert.deepEqual(
+        manifestBytes,
+        original.manifestBytes,
+        'Local release metadata differs from the authenticated build artifact',
+    )
+    assert.deepEqual(
+        tarball,
+        original.tarball,
+        'Local tarball differs from the authenticated build artifact',
+    )
+}
+
+function download(runId, runAttempt) {
     assert(
         !existsSync(directory) || readdirSync(directory).length === 0,
         'Use a fresh release directory; preserve original bytes',
     )
+    const original = originalArtifact(runId, runAttempt)
     mkdirSync(directory, { recursive: true })
-    run('gh', [
-        'run',
-        'download',
-        runId,
-        '--repo',
-        repository,
-        '--name',
-        'todoist-sdk-release',
-        '--dir',
-        directory,
-    ])
-    const manifest = verifyArtifact()
-    assert.equal(manifest.runId, runId)
-    validateOrigin(manifest)
+    writeFileSync(`${directory}/release.json`, original.manifestBytes)
+    writeFileSync(`${directory}/${original.manifest.filename}`, original.tarball)
+    verifyArtifact()
 }
 
 function compareVersions(left, right) {
@@ -446,11 +533,15 @@ async function publish(destination, tag) {
     const token = destination === 'github' ? process.env.NODE_AUTH_TOKEN : process.env.NPM_TOKEN
     if (destination === 'github') assert(token, 'NODE_AUTH_TOKEN GitHub write access required')
     const auth = token ? `//${new URL(registry).host}/:_authToken=\${RELEASE_TOKEN}\n` : ''
-    writeFileSync(
-        `${directory}/.npmrc`,
-        `registry=${registry}\n@todoist:registry=${registry}\nprovenance=false\n${auth}`,
-        { mode: 0o600 },
-    )
+    const environment = publishEnvironment(destination, token)
+    // npm ignores a project .npmrc when publishing this standalone retained tarball.
+    // Preserve interactive npm login when no token is supplied; OIDC needs no token file.
+    if (token)
+        writeFileSync(
+            environment.NPM_CONFIG_USERCONFIG,
+            `registry=${registry}\n@todoist:registry=${registry}\nprovenance=false\n${auth}`,
+            { mode: 0o600 },
+        )
     run(
         'npm',
         [
@@ -466,7 +557,7 @@ async function publish(destination, tag) {
         {
             cwd: directory,
             stdio: 'inherit',
-            env: publishEnvironment(destination, token),
+            env: environment,
         },
     )
     const after = await metadata(destination)
@@ -476,7 +567,27 @@ async function publish(destination, tag) {
         assert(await githubPackageState(process.env.GITHUB_PACKAGE_VISIBILITY))
 }
 
-// A release name alone is not a semantic baseline. Interrupted drafts/uploads are recoverable.
+function requirePublishedRecord(release, manifest) {
+    assert.equal(release.draft, false, 'Published record is still a draft')
+    const timestamp = release.published_at
+    assert(
+        typeof timestamp === 'string' &&
+            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(timestamp) &&
+            Number.isFinite(Date.parse(timestamp)) &&
+            new Date(timestamp).toISOString() === timestamp.replace('Z', '.000Z'),
+        'Published record has no valid publication timestamp; stop for original-byte recovery',
+    )
+    assert.equal(release.prerelease, manifest.channel === 'next')
+    for (const name of [manifest.filename, 'release.json']) {
+        const assets = release.assets.filter((asset) => asset.name === name)
+        assert(
+            assets.length === 1 && assets[0].state === 'uploaded',
+            'Published record is incomplete; stop for original-byte recovery, never silently repair',
+        )
+    }
+}
+
+// Only interrupted drafts can be repaired automatically; published records must be complete.
 export async function reconcileRecord(manifest, boundary) {
     const tag = `v${manifest.version}`
     let release = await boundary.getRelease(tag)
@@ -495,6 +606,13 @@ export async function reconcileRecord(manifest, boundary) {
     assert.equal(release.tag_name, tag)
     assert.equal(release.prerelease, manifest.channel === 'next')
     assert.equal(typeof release.draft, 'boolean')
+    if (release.draft)
+        assert.equal(
+            release.published_at,
+            null,
+            'Draft has a publication timestamp; stop for original-byte recovery',
+        )
+    else requirePublishedRecord(release, manifest)
     if (!tagSha) {
         assert(release.draft, 'Published release missing its tag; recover original record manually')
         assert.equal(
@@ -504,9 +622,16 @@ export async function reconcileRecord(manifest, boundary) {
         )
     }
     for (const filename of [manifest.filename, 'release.json']) {
+        assert(
+            release.assets.filter((entry) => entry.name === filename).length <= 1,
+            'Duplicate release assets; preserve original bytes',
+        )
         const asset = release.assets.find((entry) => entry.name === filename)
         if (asset) await boundary.verifyAsset(asset, filename)
-        else {
+    }
+    for (const filename of [manifest.filename, 'release.json']) {
+        if (!release.assets.some((entry) => entry.name === filename)) {
+            assert.equal(release.draft, true, 'Only matching drafts permit missing-asset recovery')
             await boundary.upload(filename)
             release = await boundary.getRelease(tag)
             const uploaded = release.assets.find((entry) => entry.name === filename)
@@ -520,7 +645,7 @@ export async function reconcileRecord(manifest, boundary) {
     assert.equal(tagSha, manifest.sourceSha)
     assert.equal(release.tag_name, tag)
     assert.equal(release.draft, false, 'Release is still a draft; retry with original artifact')
-    assert.equal(release.prerelease, manifest.channel === 'next')
+    requirePublishedRecord(release, manifest)
     for (const filename of [manifest.filename, 'release.json']) {
         const asset = release.assets.find((entry) => entry.name === filename)
         assert(asset, 'Published record is incomplete; recover with original artifact')
@@ -572,7 +697,7 @@ export function validateBaselineRecord(release, manifest, tagSha, tarball) {
         'Previous release is missing or still draft; recover the original artifact before planning another version',
     )
     assert.equal(release.tag_name, `v${manifest.version}`)
-    assert.equal(release.prerelease, manifest.channel === 'next')
+    requirePublishedRecord(release, manifest)
     assert.equal(tagSha, manifest.sourceSha)
     assert.equal(hash(tarball), manifest.sha256)
     assert.equal(`sha512-${hash(tarball, 'sha512', 'base64')}`, manifest.integrity)
@@ -586,14 +711,16 @@ async function verifyBaseline(lastRelease) {
     )
     const metadataAsset = release.assets.find((asset) => asset.name === 'release.json')
     assert(metadataAsset, 'Previous release metadata missing; recover original artifact')
-    const manifest = JSON.parse(releaseAssetBytes(metadataAsset).toString('utf8'))
+    const metadataBytes = releaseAssetBytes(metadataAsset)
+    const manifest = JSON.parse(metadataBytes.toString('utf8'))
     assert.equal(manifest.name, packageName)
     assert.equal(manifest.version, lastRelease.version)
     assert.equal(manifest.sourceSha, lastRelease.gitHead)
-    validateOrigin(manifest)
     const artifact = release.assets.find((asset) => asset.name === manifest.filename)
     assert(artifact, 'Previous retained tarball missing; recover original artifact')
-    validateBaselineRecord(release, manifest, lastRelease.gitHead, releaseAssetBytes(artifact))
+    const tarball = releaseAssetBytes(artifact)
+    validateOrigin(manifest, metadataBytes, tarball)
+    validateBaselineRecord(release, manifest, lastRelease.gitHead, tarball)
     const copies = await preflight(manifest, metadata)
     for (const copy of Object.values(copies))
         assert.equal(
@@ -601,6 +728,86 @@ async function verifyBaseline(lastRelease) {
             manifest.integrity,
             'Previous release requires both registry copies',
         )
+}
+
+// This is a later generated source commit, never the immutable release tag/build commit.
+export async function recordStableSource(manifest, boundary) {
+    if (manifest.channel === 'next') return { status: 'prerelease-excluded' }
+    assert.equal(manifest.branch, 'main')
+    assert.equal(manifest.channel, 'latest')
+    assert.match(manifest.version, versionPattern)
+    assert.match(manifest.previousVersion, versionPattern)
+    assert.equal(manifest.version.includes('-'), false)
+    assert(
+        typeof manifest.notes === 'string' && manifest.notes.trim(),
+        'Original stable release notes are required',
+    )
+    const ref = await boundary.read('git/ref/heads/main')
+    assert.equal(ref.object.type, 'commit')
+    const head = ref.object.sha
+    assert.match(head, /^[a-f0-9]{40}$/)
+    assert(
+        ['ahead', 'identical'].includes(
+            (await boundary.read(`compare/${manifest.sourceSha}...${head}`)).status,
+        ),
+        'Source record must descend from the original build',
+    )
+    const files = {}
+    for (const path of ['CHANGELOG.md', 'package.json', 'package-lock.json']) {
+        const file = await boundary.read(`contents/${path}?ref=${head}`)
+        assert.equal(file.encoding, 'base64')
+        files[path] = Buffer.from(file.content, 'base64').toString('utf8')
+    }
+    const pkg = JSON.parse(files['package.json'])
+    const lock = JSON.parse(files['package-lock.json'])
+    for (const item of [pkg, lock, lock.packages['']]) assert.equal(item.name, packageName)
+    const versions = [pkg.version, lock.version, lock.packages[''].version]
+    assert(
+        versions.every((version) => version === pkg.version),
+        'Source versions disagree; stop for reviewed source recovery',
+    )
+    const notes = manifest.notes.trim()
+    if (
+        compareVersions(pkg.version, manifest.version) >= 0 &&
+        files['CHANGELOG.md'].includes(notes)
+    ) {
+        return { status: 'already-recorded', sourceCommit: head, buildCommit: manifest.sourceSha }
+    }
+    assert(
+        versions.every((version) => version === manifest.previousVersion),
+        'Source versions changed or recording is partial; preserve user history for reviewed recovery',
+    )
+    assert(
+        !files['CHANGELOG.md'].includes(notes),
+        'Source recording is partial; do not duplicate release notes',
+    )
+    pkg.version = lock.version = lock.packages[''].version = manifest.version
+    const format = (path, value) =>
+        `${JSON.stringify(value, null, files[path].match(/\n([ \t]+)"/)?.[1] ?? 2)}\n`
+    const changes = {
+        'CHANGELOG.md': `${notes}\n\n${files['CHANGELOG.md']}`,
+        'package.json': format('package.json', pkg),
+        'package-lock.json': format('package-lock.json', lock),
+    }
+    const parent = await boundary.read(`git/commits/${head}`)
+    const tree = await boundary.write('git/trees', {
+        base_tree: parent.tree.sha,
+        tree: Object.entries(changes).map(([path, content]) => ({
+            path,
+            mode: '100644',
+            type: 'blob',
+            content,
+        })),
+    })
+    const commit = await boundary.write('git/commits', {
+        tree: tree.sha,
+        parents: [head],
+        message: `chore(release): ${manifest.version} [skip ci]\n\n[Posted by Jarvis]\n\n${notes}\n\nRelease-Build: ${manifest.sourceSha}\nRelease-Run: ${manifest.runId}/${manifest.runAttempt}\n`,
+    })
+    assert.match(commit.sha, /^[a-f0-9]{40}$/)
+    // A concurrent main update is rejected as non-fast-forward; never force or move tags.
+    await boundary.write('git/refs/heads/main', { sha: commit.sha, force: false }, 'PATCH')
+    return { status: 'recorded', sourceCommit: commit.sha, buildCommit: manifest.sourceSha }
 }
 
 async function record() {
@@ -674,17 +881,42 @@ async function record() {
                 '--latest=false',
             ]),
     })
+    // Both registry copies and the final published assets were verified above.
+    console.log(
+        JSON.stringify(
+            await recordStableSource(manifest, {
+                read: gh,
+                write: (path, data, method = 'POST') =>
+                    JSON.parse(
+                        run(
+                            'gh',
+                            [
+                                'api',
+                                `repos/${repository}/${path}`,
+                                '--method',
+                                method,
+                                '--input',
+                                '-',
+                            ],
+                            { input: JSON.stringify(data) },
+                        ),
+                    ),
+            }),
+        ),
+    )
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
     const [command, ...args] = process.argv.slice(2)
     if (command === 'pack') pack()
-    else if (command === 'download') download(args[0])
+    else if (command === 'download') download(args[0], args[1])
     else if (command === 'verify') {
         const manifest = verifyArtifact()
         validateOrigin(manifest)
     } else if (command === 'publish') await publish(args[0], args[1])
     else if (command === 'record') await record()
     else
-        throw new Error('Expected pack, download RUN_ID, verify, publish npm|github TAG, or record')
+        throw new Error(
+            'Expected pack, download RUN_ID RUN_ATTEMPT, verify, publish npm|github TAG, or record',
+        )
 }

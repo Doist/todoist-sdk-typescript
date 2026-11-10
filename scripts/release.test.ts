@@ -9,6 +9,7 @@ import {
     publicationDecision,
     publishEnvironment,
     reconcileRecord,
+    recordStableSource,
     run,
     validatePackage,
     validateBaselineRecord,
@@ -46,6 +47,119 @@ const build = {
     run_attempt: 1,
 }
 const matching = { versions: { '17.0.1': { dist: { integrity: 'sha512-retained-bytes' } } } }
+
+describe('stable source recording after publication', () => {
+    function sourceBoundary() {
+        const files: Record<string, string> = {
+            'package.json':
+                '{"name":"@todoist/todoist-sdk","version":"17.0.0","description":"keep"}\n',
+            'package-lock.json':
+                '{"name":"@todoist/todoist-sdk","version":"17.0.0","packages":{"":{"name":"@todoist/todoist-sdk","version":"17.0.0"},"node_modules/example":{"version":"1.0.0","integrity":"retained"}}}\n',
+            'CHANGELOG.md': '# Existing history\n\nKeep exactly.\n',
+        }
+        const writes: { path: string; data: any }[] = []
+        let head = 'b'.repeat(40)
+        return {
+            files,
+            writes,
+            read: async (path: string) => {
+                if (path === 'git/ref/heads/main') return { object: { type: 'commit', sha: head } }
+                if (path.startsWith('compare/')) return { status: 'ahead' }
+                if (path.startsWith('git/commits/')) return { tree: { sha: 'c'.repeat(40) } }
+                if (path.startsWith('contents/'))
+                    return {
+                        encoding: 'base64',
+                        content: Buffer.from(files[path.slice(9).split('?')[0]]).toString('base64'),
+                    }
+                throw new Error(`Unexpected read ${path}`)
+            },
+            write: async (path: string, data: any) => {
+                writes.push({ path, data })
+                if (path === 'git/trees') {
+                    for (const file of data.tree) files[file.path] = file.content
+                    return { sha: 'd'.repeat(40) }
+                }
+                if (path === 'git/commits') return { sha: 'e'.repeat(40) }
+                if (path === 'git/refs/heads/main') {
+                    head = data.sha
+                    return {}
+                }
+                throw new Error(`Unexpected write ${path}`)
+            },
+        }
+    }
+    const stable = { ...manifest, previousVersion: '17.0.0', notes: '## 17.0.1\n\nOriginal notes.' }
+
+    it('records only three stable source files after the build, preserving history and retrying without another commit', async () => {
+        const boundary = sourceBoundary()
+        const first = await recordStableSource(stable, boundary)
+        expect(first).toEqual({
+            status: 'recorded',
+            sourceCommit: 'e'.repeat(40),
+            buildCommit: sourceSha,
+        })
+        expect(boundary.writes.map((entry) => entry.path)).toEqual([
+            'git/trees',
+            'git/commits',
+            'git/refs/heads/main',
+        ])
+        expect(boundary.files['CHANGELOG.md']).toBe(
+            '## 17.0.1\n\nOriginal notes.\n\n# Existing history\n\nKeep exactly.\n',
+        )
+        expect(JSON.parse(boundary.files['package.json'])).toEqual({
+            name: '@todoist/todoist-sdk',
+            version: '17.0.1',
+            description: 'keep',
+        })
+        expect(
+            JSON.parse(boundary.files['package-lock.json']).packages['node_modules/example'],
+        ).toEqual({ version: '1.0.0', integrity: 'retained' })
+        expect(boundary.writes[1].data.parents).toEqual(['b'.repeat(40)])
+        expect(boundary.writes[1].data.message).toContain(`Release-Build: ${sourceSha}`)
+        expect(boundary.writes[2].data).toEqual({ sha: 'e'.repeat(40), force: false })
+        expect(await recordStableSource(stable, boundary)).toEqual({
+            status: 'already-recorded',
+            sourceCommit: 'e'.repeat(40),
+            buildCommit: sourceSha,
+        })
+        expect(boundary.writes).toHaveLength(3)
+    })
+
+    it('keeps prereleases out of source recording', async () => {
+        const boundary = sourceBoundary()
+        boundary.read = async () => {
+            throw new Error('Prerelease must not read source')
+        }
+        expect(
+            await recordStableSource(
+                { ...stable, channel: 'next', branch: 'next', version: '17.1.0-next.1' },
+                boundary,
+            ),
+        ).toEqual({ status: 'prerelease-excluded' })
+        expect(boundary.writes).toEqual([])
+    })
+
+    it('stops on partial or newer source versions without overwriting user work', async () => {
+        const boundary = sourceBoundary()
+        boundary.files['package.json'] = boundary.files['package.json'].replace('17.0.0', '17.0.2')
+        await expect(recordStableSource(stable, boundary)).rejects.toThrow('Source versions')
+        expect(boundary.writes).toEqual([])
+    })
+
+    it('stops on a concurrent main update without force or retrying a stale tree', async () => {
+        const boundary = sourceBoundary()
+        const original = boundary.write
+        boundary.write = async (path, data) => {
+            if (path === 'git/refs/heads/main') {
+                expect(data.force).toBe(false)
+                throw new Error('HTTP 422 non-fast-forward')
+            }
+            return original(path, data)
+        }
+        await expect(recordStableSource(stable, boundary)).rejects.toThrow('non-fast-forward')
+        expect(boundary.writes.map((entry) => entry.path)).toEqual(['git/trees', 'git/commits'])
+    })
+})
 
 describe('retained release publication', () => {
     it('rejects filtered absence from an ordinary token, requiring owner authority for bootstrap', async () => {
@@ -278,6 +392,7 @@ describe('retained release publication', () => {
             tag_name: 'v17.0.1',
             target_commitish: sourceSha,
             draft: true,
+            published_at: null as string | null,
             prerelease: false,
             assets: [{ name: 'todoist-todoist-sdk-17.0.1.tgz', state: 'uploaded' }],
         }
@@ -301,6 +416,7 @@ describe('retained release publication', () => {
             publishDraft: async () => {
                 writes.push('publish draft')
                 release.draft = false
+                release.published_at = '2026-11-10T12:00:00Z'
                 tagSha = sourceSha
             },
         })
@@ -313,11 +429,44 @@ describe('retained release publication', () => {
         ])
     })
 
+    it('verifies all existing draft assets before uploading anything into a matching draft', async () => {
+        const release = {
+            tag_name: 'v17.0.1',
+            target_commitish: sourceSha,
+            draft: true,
+            published_at: null,
+            prerelease: false,
+            assets: [{ name: 'release.json', state: 'uploaded' }],
+        }
+        const writes: string[] = []
+        await expect(
+            reconcileRecord(manifest, {
+                getRelease: async () => release,
+                getTag: async () => null,
+                createDraft: async () => {
+                    writes.push('create')
+                },
+                upload: async (name: string) => {
+                    writes.push(name)
+                    release.assets.push({ name, state: 'uploaded' })
+                },
+                verifyAsset: async (asset: { name: string }) => {
+                    if (asset.name === 'release.json') throw new Error('metadata bytes differ')
+                },
+                publishDraft: async () => {
+                    writes.push('publish')
+                },
+            }),
+        ).rejects.toThrow('metadata bytes differ')
+        expect(writes).toEqual([])
+    })
+
     it('does not accept a draft/tag-name match, wrong commit, wrong prerelease state or conflicting asset as a complete record', async () => {
         const release = {
             tag_name: 'v17.0.1',
             target_commitish: sourceSha,
             draft: true,
+            published_at: null,
             prerelease: false,
             assets: [{ name: manifest.filename }, { name: 'release.json' }],
         }
@@ -356,7 +505,65 @@ describe('retained release publication', () => {
                 ...boundary,
                 getRelease: async () => ({ ...release, draft: false, assets: [] }),
             }),
-        ).rejects.toThrow('unexpected upload')
+        ).rejects.toThrow('Published record')
+    })
+
+    it.each([null, 'invalid', '2026-02-30T12:00:00Z'])(
+        'rejects published records without a valid timestamp (%s) before any upload',
+        async (publishedAt) => {
+            const release = {
+                tag_name: 'v17.0.1',
+                draft: false,
+                prerelease: false,
+                published_at: publishedAt,
+                assets: [],
+            }
+            const writes: string[] = []
+            await expect(
+                reconcileRecord(manifest, {
+                    getRelease: async () => release,
+                    getTag: async () => sourceSha,
+                    createDraft: async () => {
+                        writes.push('create')
+                    },
+                    upload: async () => {
+                        writes.push('upload')
+                    },
+                    publishDraft: async () => {
+                        writes.push('publish')
+                    },
+                    verifyAsset: async () => {},
+                }),
+            ).rejects.toThrow('Published record')
+            expect(writes).toEqual([])
+        },
+    )
+
+    it('stops on published missing assets instead of silently repairing the record', async () => {
+        const writes: string[] = []
+        await expect(
+            reconcileRecord(manifest, {
+                getRelease: async () => ({
+                    tag_name: 'v17.0.1',
+                    draft: false,
+                    prerelease: false,
+                    published_at: '2026-11-10T12:00:00Z',
+                    assets: [],
+                }),
+                getTag: async () => sourceSha,
+                createDraft: async () => {
+                    writes.push('create')
+                },
+                upload: async () => {
+                    writes.push('upload')
+                },
+                publishDraft: async () => {
+                    writes.push('publish')
+                },
+                verifyAsset: async () => {},
+            }),
+        ).rejects.toThrow('Published record is incomplete')
+        expect(writes).toEqual([])
     })
 
     it('rejects incomplete draft baselines and verifies published source and original bytes', () => {
@@ -366,7 +573,16 @@ describe('retained release publication', () => {
             sha256: createHash('sha256').update(bytes).digest('hex'),
             integrity: `sha512-${createHash('sha512').update(bytes).digest('base64')}`,
         }
-        const release = { tag_name: 'v17.0.1', draft: false, prerelease: false }
+        const release = {
+            tag_name: 'v17.0.1',
+            draft: false,
+            prerelease: false,
+            published_at: '2026-11-10T12:00:00Z',
+            assets: [
+                { name: manifest.filename, state: 'uploaded' },
+                { name: 'release.json', state: 'uploaded' },
+            ],
+        }
         expect(() => validateBaselineRecord(release, baseline, sourceSha, bytes)).not.toThrow()
         expect(() =>
             validateBaselineRecord({ ...release, draft: true }, baseline, sourceSha, bytes),
@@ -374,5 +590,11 @@ describe('retained release publication', () => {
         expect(() =>
             validateBaselineRecord(release, baseline, sourceSha, Buffer.from('different bytes')),
         ).toThrow()
+        expect(() =>
+            validateBaselineRecord({ ...release, published_at: null }, baseline, sourceSha, bytes),
+        ).toThrow('Published record')
+        expect(() =>
+            validateBaselineRecord({ ...release, assets: [] }, baseline, sourceSha, bytes),
+        ).toThrow('Published record is incomplete')
     })
 })

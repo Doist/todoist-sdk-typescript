@@ -16,6 +16,7 @@ on:
 
 permissions:
     contents: read
+    actions: read
     packages: read
 
 concurrency:
@@ -53,6 +54,7 @@ jobs:
                   GH_TOKEN: ${{ github.token }}
                   GH_PACKAGES_TOKEN: ${{ github.token }}
               run: |
+                  git update-ref refs/heads/main refs/remotes/origin/main
                   git clone --bare . .tmp/release-history.git
                   node_modules/.bin/semantic-release --dry-run --repository-url "file://$PWD/.tmp/release-history.git"
                   if test -f .tmp/release/plan.json; then
@@ -70,7 +72,7 @@ jobs:
             - uses: actions/upload-artifact@v4
               if: steps.plan.outputs.version != ''
               with:
-                  name: todoist-sdk-release
+                  name: todoist-sdk-release-${{ github.run_id }}-${{ github.run_attempt }}
                   path: |
                       .tmp/release/*.tgz
                       .tmp/release/release.json
