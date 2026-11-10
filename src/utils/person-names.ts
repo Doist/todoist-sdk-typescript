@@ -2,7 +2,7 @@ import {
     getFirstName as sharedGetFirstName,
     getLastName as sharedGetLastName,
     getShortName as sharedGetShortName,
-} from '@doist/sdk-kmp/shared-universe-all'
+} from '@todoist/sdk-kmp/shared-universe-all'
 
 /**
  * Returns the first word of a person's name, or an empty string if the name is blank.

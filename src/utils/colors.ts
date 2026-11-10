@@ -1,4 +1,4 @@
-import { colorForDisplay } from '@doist/sdk-kmp/shared-todoist-all'
+import { colorForDisplay } from '@todoist/sdk-kmp/shared-todoist-all'
 import type { Color } from '../types/productivity/types'
 
 export const berryRed = {
@@ -104,7 +104,7 @@ export const taupe = {
 
 /**
  * Every color, in the order the apps show them. The keys mirror `TodoistColor` from
- * `@doist/sdk-kmp/shared-todoist-all`; the display names and hex values are the SDK's own.
+ * `@todoist/sdk-kmp/shared-todoist-all`; the display names and hex values are the SDK's own.
  */
 export const colors = [
     berryRed,

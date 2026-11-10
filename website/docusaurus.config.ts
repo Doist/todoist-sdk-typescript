@@ -9,12 +9,12 @@ const config: Config = {
     tagline: 'The official TypeScript API client for the Todoist Sync API.',
     favicon: 'img/favicon.ico',
 
-    url: 'https://doist.github.io/',
+    url: 'https://todoist.github.io/',
     // Set the /<baseUrl>/ pathname under which your site is served
     // For GitHub pages deployment, it is often '/<projectName>/'
     baseUrl: '/todoist-sdk-typescript/',
 
-    organizationName: 'Doist',
+    organizationName: 'todoist',
     projectName: 'todoist-sdk-typescript',
 
     onBrokenLinks: 'throw',
@@ -56,7 +56,7 @@ const config: Config = {
                     to: '/',
                 },
                 {
-                    href: 'https://github.com/Doist/todoist-sdk-typescript',
+                    href: 'https://github.com/todoist/todoist-sdk-typescript',
                     label: 'GitHub',
                     position: 'right',
                 },
@@ -87,7 +87,7 @@ const config: Config = {
                         },
                         {
                             label: 'GitHub',
-                            href: 'https://github.com/Doist/todoist-sdk-typescript',
+                            href: 'https://github.com/todoist/todoist-sdk-typescript',
                         },
                     ],
                 },

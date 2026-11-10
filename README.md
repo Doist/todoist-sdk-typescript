@@ -7,7 +7,7 @@ The official TypeScript SDK for the Todoist REST API.
 Requires Node 20.18.1+.
 
 ```
-npm install @doist/todoist-sdk
+npm install @todoist/todoist-sdk
 ```
 
 ### Usage
@@ -15,7 +15,7 @@ npm install @doist/todoist-sdk
 An example of initializing the API client and fetching a user's tasks:
 
 ```typescript
-import { TodoistApi } from '@doist/todoist-sdk'
+import { TodoistApi } from '@todoist/todoist-sdk'
 
 const api = new TodoistApi('YOURTOKEN')
 
@@ -75,7 +75,7 @@ The Todoist API client supports custom HTTP implementations to enable usage in e
 ### Basic Usage
 
 ```typescript
-import { TodoistApi } from '@doist/todoist-sdk'
+import { TodoistApi } from '@todoist/todoist-sdk'
 
 // Using the new options-based constructor
 const api = new TodoistApi('YOURTOKEN', {
@@ -152,7 +152,7 @@ const refreshed = await refreshAuthToken({
 On Node, the SDK's default transport reads the proxy environment variables (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`) and decodes compressed response bodies. Supplying a `customFetch` replaces that transport, so a custom implementation that still wants both can borrow it with `getDefaultTransport`:
 
 ```typescript
-import { type CustomFetch, getDefaultTransport, TodoistApi } from '@doist/todoist-sdk'
+import { type CustomFetch, getDefaultTransport, TodoistApi } from '@todoist/todoist-sdk'
 
 const customFetch: CustomFetch = async (url, options) => {
     const transport = await getDefaultTransport()

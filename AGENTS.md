@@ -1,6 +1,6 @@
 # Agent Guidelines
 
-The official TypeScript SDK for the Todoist API, published to npm as `@doist/todoist-sdk`. ESM-only, Node ≥ 24, `zod` v4 for response validation.
+The official TypeScript SDK for the Todoist API, published to npm as `@todoist/todoist-sdk`. ESM-only, Node ≥ 24, `zod` v4 for response validation.
 
 ## Definition of done
 

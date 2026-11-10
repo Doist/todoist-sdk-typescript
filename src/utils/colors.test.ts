@@ -1,4 +1,4 @@
-import { TodoistColor } from '@doist/sdk-kmp/shared-todoist-all'
+import { TodoistColor } from '@todoist/sdk-kmp/shared-todoist-all'
 import { berryRed, taupe, getColorByKey, defaultColor, colors } from './colors'
 
 describe('colors', () => {

@@ -1,4 +1,4 @@
-import { LinkEnvironment } from '@doist/sdk-kmp/common'
+import { LinkEnvironment } from '@todoist/sdk-kmp/common'
 import {
     parseTodoistLink,
     todoistFilterUrl,
@@ -12,7 +12,7 @@ import {
     todoistTaskUrl,
     todoistWorkspaceFilterUrl,
     todoistWorkspaceUrl,
-} from '@doist/sdk-kmp/todoist'
+} from '@todoist/sdk-kmp/todoist'
 
 import { TODOIST_WEB_URI } from '../consts/endpoints'
 

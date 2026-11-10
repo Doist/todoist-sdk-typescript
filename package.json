@@ -1,10 +1,10 @@
 {
-    "name": "@doist/todoist-sdk",
+    "name": "@todoist/todoist-sdk",
     "version": "17.0.0",
     "description": "The official TypeScript SDK for the Todoist REST API.",
     "author": "Doist developers",
-    "repository": "https://github.com/Doist/todoist-sdk-typescript",
-    "homepage": "https://doist.github.io/todoist-sdk-typescript/",
+    "repository": "https://github.com/todoist/todoist-sdk-typescript",
+    "homepage": "https://todoist.github.io/todoist-sdk-typescript/",
     "license": "MIT",
     "type": "module",
     "types": "dist/types/index.d.ts",
@@ -15,8 +15,7 @@
         }
     },
     "publishConfig": {
-        "access": "public",
-        "provenance": true
+        "provenance": false
     },
     "sideEffects": false,
     "engines": {
@@ -49,7 +48,7 @@
         "fflate": "0.8.2"
     },
     "dependencies": {
-        "@doist/sdk-kmp": "0.6.0",
+        "@todoist/sdk-kmp": "0.6.2",
         "camelcase": "6.3.0",
         "emoji-regex": "10.6.0",
         "ts-custom-error": "^3.2.0",
