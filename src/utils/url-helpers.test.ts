@@ -15,31 +15,29 @@ import {
     TODOIST_LINK_TYPES,
 } from './url-helpers'
 
-// formatDateToYYYYMMDD formats in the local timezone, so these dates are local times: a UTC
-// instant can fall on another day wherever the tests run.
 describe('formatDateToYYYYMMDD', () => {
     test('formats Date object to YYYY-MM-DD string', () => {
-        const date = new Date(2025, 0, 15, 10, 30)
+        const date = new Date('2025-01-15T10:30:00Z')
         expect(formatDateToYYYYMMDD(date)).toBe('2025-01-15')
     })
 
     test('pads month with leading zero', () => {
-        const date = new Date(2025, 2, 5)
+        const date = new Date('2025-03-05T00:00:00Z')
         expect(formatDateToYYYYMMDD(date)).toBe('2025-03-05')
     })
 
     test('pads day with leading zero', () => {
-        const date = new Date(2025, 11, 7)
+        const date = new Date('2025-12-07T00:00:00Z')
         expect(formatDateToYYYYMMDD(date)).toBe('2025-12-07')
     })
 
     test('handles end of month correctly', () => {
-        const date = new Date(2025, 1, 28, 23, 59, 59)
+        const date = new Date('2025-02-28T23:59:59Z')
         expect(formatDateToYYYYMMDD(date)).toBe('2025-02-28')
     })
 
     test('handles leap year correctly', () => {
-        const date = new Date(2024, 1, 29, 12)
+        const date = new Date('2024-02-29T12:00:00Z')
         expect(formatDateToYYYYMMDD(date)).toBe('2024-02-29')
     })
 
