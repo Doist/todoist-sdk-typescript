@@ -1,3 +1,13 @@
+## [18.0.0](https://github.com/todoist/todoist-sdk-typescript/compare/v17.0.1...v18.0.0) (2026-11-11)
+
+### ⚠ BREAKING CHANGES
+
+* publish as @todoist/sdk (#768)
+
+### Features
+
+* publish as @todoist/sdk ([#768](https://github.com/todoist/todoist-sdk-typescript/issues/768)) ([19773b1](https://github.com/todoist/todoist-sdk-typescript/commit/19773b171770d2e8992a4642cd848bce0a948b2e))
+
 ## [17.0.1](https://github.com/todoist/todoist-sdk-typescript/compare/v17.0.0...v17.0.1) (2026-11-11)
 
 ### Bug Fixes
