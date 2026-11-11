@@ -1,3 +1,9 @@
+## [17.0.1](https://github.com/todoist/todoist-sdk-typescript/compare/v17.0.0...v17.0.1) (2026-11-11)
+
+### Bug Fixes
+
+* **ci:** use the todoist GitHub org after the rename ([#767](https://github.com/todoist/todoist-sdk-typescript/issues/767)) ([548f81a](https://github.com/todoist/todoist-sdk-typescript/commit/548f81a128a893ff7c275259f21918bb5a056dd4))
+
 ## [17.0.0](https://github.com/Doist/todoist-sdk-typescript/compare/v16.0.0...v17.0.0) (2026-11-05)
 
 ### ⚠ BREAKING CHANGES
