@@ -5,7 +5,7 @@
  * which have restricted networking that requires using Obsidian's requestUrl instead
  * of standard fetch.
  *
- * This addresses issue #381: https://github.com/Doist/todoist-api-typescript/issues/381
+ * This addresses issue #381: https://github.com/todoist/todoist-sdk-typescript/issues/381
  */
 
 import type { RequestUrlParam, RequestUrlResponse } from 'obsidian'

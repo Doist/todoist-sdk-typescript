@@ -55,7 +55,7 @@ describe('TodoistApi moveTasks', () => {
         // Verify return value
         expect(result).toEqual(MOVED_TASKS)
 
-        // Critical: Verify unique UUIDs (see https://github.com/Doist/todoist-api-typescript/issues/310)
+        // Critical: Verify unique UUIDs (see https://github.com/todoist/todoist-sdk-typescript/issues/310)
         expect(capturedPayload).not.toBeNull()
         // oxlint-disable-next-line no-non-null-assertion
         const payload = capturedPayload!
