@@ -96,7 +96,7 @@ To test features before publishing a stable release:
 ### Installing a pre-release
 
 ```sh
-npm install @doist/todoist-sdk@next
+npm install @todoist/sdk@next
 ```
 
 ## License
