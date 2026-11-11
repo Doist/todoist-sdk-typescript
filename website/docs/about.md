@@ -11,7 +11,7 @@ This is the official TypeScript SDK for the Todoist API.
 ## Installation
 
 ```bash
-npm install @doist/todoist-sdk
+npm install @todoist/sdk
 ```
 
 ## Basic Usage
@@ -19,7 +19,7 @@ npm install @doist/todoist-sdk
 Here's how to initialize the API client and fetch tasks:
 
 ```typescript
-import { TodoistApi } from '@doist/todoist-sdk'
+import { TodoistApi } from '@todoist/sdk'
 
 const api = new TodoistApi('YOUR_API_TOKEN')
 

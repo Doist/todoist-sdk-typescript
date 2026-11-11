@@ -352,7 +352,7 @@ export class TodoistApi {
      *
      * @example
      * ```typescript
-     * import { createCommand } from '@doist/todoist-sdk'
+     * import { createCommand } from '@todoist/sdk'
      *
      * const response = await api.sync({
      *     commands: [
