@@ -3,14 +3,14 @@
  * Regenerates the filter-query token table behind `isDateDrivenQuery`.
  *
  * The table is Todoist's own filter vocabulary, taken from
- * Doist/filterist-definitions, the repository every Todoist client generates
+ * todoist/filterist-definitions, the repository every Todoist client generates
  * its lexer from. Nothing here is written by hand: run this after a
  * definitions release and commit whatever it produces.
  *
  *     node scripts/generate-filter-query-definitions.mjs
  *     npm run check:fix
  *
- * Reading the definitions needs `gh` authenticated against the Doist org.
+ * Reading the definitions needs `gh` authenticated against the todoist org.
  */
 
 import { execFile, execFileSync } from 'node:child_process'
@@ -18,7 +18,7 @@ import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 
-const REPO = 'Doist/filterist-definitions'
+const REPO = 'todoist/filterist-definitions'
 const REF = process.env.FILTERIST_DEFINITIONS_REF ?? 'main'
 
 const ROOT = join(import.meta.dirname, '..')

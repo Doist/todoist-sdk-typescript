@@ -1,6 +1,6 @@
 # Check: public API
 
-What consumers see: everything reachable from `src/index.ts` (`TodoistApi` and its methods, the authentication helpers, the types and Zod schemas, the exported utilities), with its names, signatures, argument and response types, defaults, errors and behaviour, plus the Node engine, the peer dependency on `type-fest`, and `package.json#exports`. Consumers include Doist's own projects (todoist-mcp, todoist-cli) and third-party code. semantic-release reads the PR title to pick the version.
+What consumers see: everything reachable from `src/index.ts` (`TodoistApi` and its methods, the authentication helpers, the types and Zod schemas, the exported utilities), with its names, signatures, argument and response types, defaults, errors and behaviour, plus the Node engine, the peer dependency on `type-fest`, and `package.json#exports`. Consumers include Todoist's own projects (todoist-mcp, todoist-cli) and third-party code. semantic-release reads the PR title to pick the version.
 
 ## Report
 

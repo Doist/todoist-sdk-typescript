@@ -137,7 +137,7 @@ async function createDefaultTransport(): Promise<DefaultTransport> {
     // attaching any custom dispatcher to the global `fetch` strips the
     // `content-encoding` header but does not actually decompress the body,
     // so callers receive raw gzipped bytes and `JSON.parse` fails.
-    // See https://github.com/Doist/todoist-cli/issues/318.
+    // See https://github.com/todoist/todoist-cli/issues/318.
     const decompress = suppressExperimentalWarningsSync(() => interceptors.decompress())
 
     // Pair undici's own `fetch` with this dispatcher so the request client and

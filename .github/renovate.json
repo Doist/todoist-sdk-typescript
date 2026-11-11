@@ -1,7 +1,7 @@
 {
     "extends": [
-        "github>doist/renovate-config:integrations-base",
-        "github>doist/renovate-config:integrations-automerge"
+        "github>todoist/renovate-config:integrations-base",
+        "github>todoist/renovate-config:integrations-automerge"
     ],
     "packageRules": [
         {
