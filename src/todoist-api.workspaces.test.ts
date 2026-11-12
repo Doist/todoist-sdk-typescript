@@ -458,13 +458,13 @@ describe('TodoistApi workspaces', () => {
     // shape than a project from `getProjects`: it carries no `workspace_id`, and
     // `role` is null for a project the user can see but hasn't joined.
     const rawJoinedWorkspaceProject = {
-        id: '6XGgm6PHrGgMpCFX',
-        name: 'Marketing',
-        folder_id: '1234',
+        id: 'workspace-project-1',
+        name: 'Project One',
+        folder_id: 'folder-1',
         color: 'charcoal',
         icon: 'lightbulb',
         view_style: 'list',
-        description: 'Marketing launch tasks',
+        description: 'A project description',
         status: 'IN_PROGRESS',
         role: 'ADMIN',
         is_invite_only: false,
@@ -473,15 +473,15 @@ describe('TodoistApi workspaces', () => {
         default_order: 1,
         default_order_key: 'a0',
         public_access: false,
-        public_key: 'ab12cd34ef56',
+        public_key: 'public-key-1',
         access: { visibility: 'team', configuration: {} },
         is_pending_default_collaborator_invites: false,
     }
 
     const rawUnjoinedWorkspaceProject = {
         ...rawJoinedWorkspaceProject,
-        id: '6XGgm6PHrGgMpCFY',
-        name: 'Sales Pipeline',
+        id: 'workspace-project-2',
+        name: 'Project Two',
         folder_id: null,
         icon: null,
         role: null,
@@ -519,13 +519,13 @@ describe('TodoistApi workspaces', () => {
             expect(result).toEqual({
                 results: [
                     {
-                        id: '6XGgm6PHrGgMpCFX',
-                        name: 'Marketing',
-                        folderId: '1234',
+                        id: 'workspace-project-1',
+                        name: 'Project One',
+                        folderId: 'folder-1',
                         color: 'charcoal',
                         icon: 'lightbulb',
                         viewStyle: 'list',
-                        description: 'Marketing launch tasks',
+                        description: 'A project description',
                         status: 'IN_PROGRESS',
                         role: 'ADMIN',
                         isInviteOnly: false,
@@ -534,20 +534,20 @@ describe('TodoistApi workspaces', () => {
                         defaultOrder: 1,
                         defaultOrderKey: 'a0',
                         publicAccess: false,
-                        publicKey: 'ab12cd34ef56',
+                        publicKey: 'public-key-1',
                         access: { visibility: 'team' },
                         isPendingDefaultCollaboratorInvites: false,
                         workspaceId: '123',
-                        url: 'https://app.todoist.com/app/project/marketing-6XGgm6PHrGgMpCFX',
+                        url: 'https://app.todoist.com/app/project/workspace-project-1',
                     },
                     {
-                        id: '6XGgm6PHrGgMpCFY',
-                        name: 'Sales Pipeline',
+                        id: 'workspace-project-2',
+                        name: 'Project Two',
                         folderId: null,
                         color: 'charcoal',
                         icon: null,
                         viewStyle: 'list',
-                        description: 'Marketing launch tasks',
+                        description: 'A project description',
                         status: 'IN_PROGRESS',
                         role: null,
                         isInviteOnly: false,
@@ -556,11 +556,11 @@ describe('TodoistApi workspaces', () => {
                         defaultOrder: 1,
                         defaultOrderKey: null,
                         publicAccess: false,
-                        publicKey: 'ab12cd34ef56',
+                        publicKey: 'public-key-1',
                         access: { visibility: 'team' },
                         isPendingDefaultCollaboratorInvites: false,
                         workspaceId: '123',
-                        url: 'https://app.todoist.com/app/project/sales-pipeline-6XGgm6PHrGgMpCFY',
+                        url: 'https://app.todoist.com/app/project/workspace-project-2',
                     },
                 ],
                 nextCursor: 'next123',
@@ -586,7 +586,7 @@ describe('TodoistApi workspaces', () => {
             })
 
             expect(result.results.map((project) => [project.id, project.workspaceId])).toEqual([
-                ['6XGgm6PHrGgMpCFY', '789'],
+                ['workspace-project-2', '789'],
             ])
             expect(result.nextCursor).toBeNull()
             expect(result.hasMore).toBe(false)

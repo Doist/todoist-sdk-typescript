@@ -47,9 +47,10 @@ export type ProjectVisibility = (typeof PROJECT_VISIBILITIES)[number]
 export const ProjectVisibilitySchema = z.enum(PROJECT_VISIBILITIES)
 
 /**
- * Schema for workspace projects in Todoist.
+ * The fields a workspace project carries, before the SDK adds its URL. Shared by
+ * {@link WorkspaceProjectSchema} and {@link WorkspaceProjectSummarySchema}.
  */
-export const WorkspaceProjectSchema = BaseProjectSchema.extend({
+const WorkspaceProjectFieldsSchema = BaseProjectSchema.extend({
     access: z.object({ visibility: ProjectVisibilitySchema }).optional(),
     collaboratorRoleDefault: z.string(),
     folderId: z.string().nullable(),
@@ -58,7 +59,12 @@ export const WorkspaceProjectSchema = BaseProjectSchema.extend({
     role: z.string().nullable(),
     status: z.string(),
     workspaceId: z.string(),
-}).transform((data) => {
+})
+
+/**
+ * Schema for workspace projects in Todoist.
+ */
+export const WorkspaceProjectSchema = WorkspaceProjectFieldsSchema.transform((data) => {
     return {
         ...data,
         url: getProjectUrl(data.id, data.name),
@@ -72,28 +78,29 @@ export const WorkspaceProjectSchema = BaseProjectSchema.extend({
  * Those endpoints list every workspace project the user can see, including ones
  * they haven't joined, so the payload is lighter than a {@link WorkspaceProject}.
  * The API leaves out the workspace ID; the SDK fills it in from the request.
+ * `role` is `null` when the user hasn't joined the project.
  */
-export const WorkspaceProjectSummarySchema = z
-    .object({
-        id: z.string(),
-        workspaceId: z.string(),
-        name: z.string(),
-        folderId: z.string().nullable(),
-        color: z.string(),
+export const WorkspaceProjectSummarySchema = WorkspaceProjectFieldsSchema.pick({
+    id: true,
+    workspaceId: true,
+    name: true,
+    folderId: true,
+    color: true,
+    viewStyle: true,
+    description: true,
+    status: true,
+    role: true,
+    isInviteOnly: true,
+    isFrozen: true,
+    canAssignTasks: true,
+    defaultOrder: true,
+    defaultOrderKey: true,
+    access: true,
+})
+    .extend({
         icon: z.string().nullable(),
-        viewStyle: z.string(),
-        description: z.string(),
-        status: z.string(),
-        /** The user's role in the project, or `null` when they haven't joined it. */
-        role: z.string().nullable(),
-        isInviteOnly: z.boolean().nullable(),
-        isFrozen: z.boolean(),
-        canAssignTasks: z.boolean(),
-        defaultOrder: z.number().int(),
-        defaultOrderKey: z.string().nullable().optional(),
         publicAccess: z.boolean(),
         publicKey: z.string(),
-        access: z.object({ visibility: ProjectVisibilitySchema }).optional(),
         isPendingDefaultCollaboratorInvites: z.boolean(),
     })
     .transform((data) => {

@@ -64,7 +64,7 @@ import { BaseClient } from './base-client'
 
 type GetAllWorkspaceInvitationsArgs = { workspaceId?: string }
 
-/** A page from a workspace's project endpoints, as the API sends it (camel-cased). */
+/** A page from a workspace's project endpoints, after `request` has camel-cased its keys. */
 type WorkspaceProjectsPage = {
     workspaceProjects?: unknown[]
     nextCursor?: string | null
