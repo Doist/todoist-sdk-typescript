@@ -575,7 +575,7 @@ describe('TodoistApi template endpoints', () => {
         })
     })
 
-    describe('createTemplateFromCSV', () => {
+    describe('createTemplate', () => {
         test('uploads a file with the template fields as form fields', async () => {
             mockedUploadMultipartFile.mockResolvedValue({
                 ...RAW_TEMPLATE,
@@ -595,7 +595,7 @@ describe('TodoistApi template endpoints', () => {
             })
             const api = getTarget()
 
-            const result = await api.createTemplateFromCSV({
+            const result = await api.createTemplate({
                 file: Buffer.from('TYPE,CONTENT\ntask,Plan'),
                 fileName: 'weekly.csv',
                 name: 'Weekly',
@@ -627,7 +627,7 @@ describe('TodoistApi template endpoints', () => {
             )
             const api = getTarget()
 
-            await api.createTemplateFromCSV({
+            await api.createTemplate({
                 uploadedFileName: '1234567_abcdef_weekly.csv',
                 name: 'Weekly',
                 description: 'Plan the week',
@@ -654,7 +654,7 @@ describe('TodoistApi template endpoints', () => {
             )
             const api = getTarget()
 
-            await api.createTemplateFromCSV({
+            await api.createTemplate({
                 name: 'Weekly',
                 description: 'Plan the week',
                 color: 'blue',
@@ -689,8 +689,8 @@ describe('TodoistApi template endpoints', () => {
             const api = getTarget()
 
             await expect(
-                api.createTemplateFromCSV({ name: 'Weekly', description: '', color: 'blue' }),
-            ).rejects.toThrow('needs exactly one of `file`, `uploadedFileName` or `content`')
+                api.createTemplate({ name: 'Weekly', description: '', color: 'blue' }),
+            ).rejects.toThrow('needs exactly one of `content`, `file` or `uploadedFileName`')
         })
     })
 

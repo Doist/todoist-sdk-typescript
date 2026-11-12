@@ -23,7 +23,7 @@ import type {
     SaveProjectAsTemplateArgs,
     TemplateContent,
     TemplateContentResponse,
-    CreateTemplateFromCSVArgs,
+    CreateTemplateArgs,
     GetTemplateArgs,
     GetTemplateCategoriesArgs,
     GetTemplatesArgs,
@@ -269,17 +269,14 @@ export class TemplateClient extends BaseClient {
         return { ...validateTemplateContentResponse(data), ...validateStagedCSVFile(data) }
     }
 
-    async createTemplateFromCSV(
-        args: CreateTemplateFromCSVArgs,
-        requestId?: string,
-    ): Promise<Template> {
+    async createTemplate(args: CreateTemplateArgs, requestId?: string): Promise<Template> {
         const { file, fileName, uploadedFileName, content, name, description, color } = args
         const fields = { templateType: 'project', name, description, color }
 
         const sources = [file !== undefined, Boolean(uploadedFileName), content !== undefined]
         if (sources.filter(Boolean).length !== 1) {
             throw new TodoistArgumentError(
-                'createTemplateFromCSV needs exactly one of `file`, `uploadedFileName` or `content`.',
+                'createTemplate needs exactly one of `content`, `file` or `uploadedFileName`.',
             )
         }
 
