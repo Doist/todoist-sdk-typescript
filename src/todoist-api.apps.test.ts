@@ -12,7 +12,7 @@ import {
     getAppByDistributionTokenEndpoint,
     getAppIconEndpoint,
 } from './consts/endpoints'
-import { server, http, HttpResponse } from './test-utils/msw-setup'
+import { server, http, HttpResponse, getLastRequest, mockApiResponse } from './test-utils/msw-setup'
 import {
     DEFAULT_AUTH_TOKEN,
     DEFAULT_APP,
@@ -135,6 +135,32 @@ describe('TodoistApi app management endpoints', () => {
             )
             await getTarget().updateApp(DEFAULT_APP_ID, { appTokenScopes: null })
             expect(receivedBody).toEqual({ app_token_scopes: null })
+        })
+
+        test('sends clientType as client_type and returns the new client type', async () => {
+            mockApiResponse({
+                endpoint: `${getApiRootBaseUri()}${getAppEndpoint(DEFAULT_APP_ID)}`,
+                data: { ...appWithUserCountWire, clientType: 'public' },
+                options: { method: 'POST' },
+            })
+            const app = await getTarget().updateApp(DEFAULT_APP_ID, { clientType: 'public' })
+            expect(getLastRequest()?.body).toEqual({ client_type: 'public' })
+            expect(app.clientType).toBe('public')
+        })
+
+        // JSON drops `undefined`, so the second case sends an app without `client_type`.
+        test.each([
+            ['an unknown', 'secret'],
+            ['a missing', undefined],
+        ])('rejects a response with %s client type', async (_, clientType) => {
+            mockApiResponse({
+                endpoint: `${getApiRootBaseUri()}${getAppEndpoint(DEFAULT_APP_ID)}`,
+                data: { ...appWithUserCountWire, clientType },
+                options: { method: 'POST' },
+            })
+            await expect(
+                getTarget().updateApp(DEFAULT_APP_ID, { clientType: 'public' }),
+            ).rejects.toThrow()
         })
     })
 

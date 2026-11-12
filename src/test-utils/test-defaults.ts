@@ -414,6 +414,7 @@ export const DEFAULT_APP: App = {
     iconMd: 'https://example.com/icon-md.png',
     iconLg: 'https://example.com/icon-lg.png',
     appTokenScopes: ['data:read', 'task:add'],
+    clientType: 'confidential',
 }
 
 export const DEFAULT_APP_WITH_USER_COUNT: AppWithUserCount = {
