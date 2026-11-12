@@ -70,7 +70,7 @@ function resolveReference(
         const local = relative(REPO_ROOT, resolve(dirname(doc), path))
         if (existsSync(join(REPO_ROOT, local))) return local
     }
-    if (ROOTED.test(path) || path.includes('/') || existsSync(join(REPO_ROOT, path))) {
+    if (ROOTED.test(path) || path.includes('/') || files.includes(path)) {
         return existsSync(join(REPO_ROOT, path)) ? path : { problem: 'does not exist' }
     }
     const matches = files.filter(

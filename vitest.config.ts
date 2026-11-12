@@ -4,6 +4,7 @@ export default defineConfig({
     test: {
         globals: true,
         environment: 'node',
+        env: { TZ: 'UTC' },
         include: ['**/*.test.ts'],
         setupFiles: ['./src/test-utils/transport-seam.ts', './src/test-utils/msw-setup.ts'],
         clearMocks: true,
