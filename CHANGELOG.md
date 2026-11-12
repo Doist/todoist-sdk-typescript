@@ -1,3 +1,13 @@
+## [20.0.0](https://github.com/todoist/todoist-sdk-typescript/compare/v19.0.0...v20.0.0) (2026-11-12)
+
+### ⚠ BREAKING CHANGES
+
+* return the projects from the workspace project endpoints (#770)
+
+### Bug Fixes
+
+* return the projects from the workspace project endpoints ([#770](https://github.com/todoist/todoist-sdk-typescript/issues/770)) ([b32f390](https://github.com/todoist/todoist-sdk-typescript/commit/b32f39022a7c52f60a2a1f15846f24829faaae56))
+
 ## [19.0.0](https://github.com/todoist/todoist-sdk-typescript/compare/v18.0.0...v19.0.0) (2026-11-12)
 
 ### ⚠ BREAKING CHANGES

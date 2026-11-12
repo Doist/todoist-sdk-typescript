@@ -1,6 +1,6 @@
 {
     "name": "@todoist/sdk",
-    "version": "19.0.0",
+    "version": "20.0.0",
     "description": "The official TypeScript SDK for the Todoist REST API.",
     "author": "Doist developers",
     "repository": "https://github.com/todoist/todoist-sdk-typescript",
