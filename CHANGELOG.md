@@ -1,3 +1,13 @@
+## [19.0.0](https://github.com/todoist/todoist-sdk-typescript/compare/v18.0.0...v19.0.0) (2026-11-12)
+
+### ⚠ BREAKING CHANGES
+
+* **apps:** expose the OAuth client type of developer apps (#765)
+
+### Features
+
+* **apps:** expose the OAuth client type of developer apps ([#765](https://github.com/todoist/todoist-sdk-typescript/issues/765)) ([9455f8f](https://github.com/todoist/todoist-sdk-typescript/commit/9455f8f2dc10863a28f1e1f801c829477bf7e27f))
+
 ## [18.0.0](https://github.com/todoist/todoist-sdk-typescript/compare/v17.0.1...v18.0.0) (2026-11-11)
 
 ### ⚠ BREAKING CHANGES
