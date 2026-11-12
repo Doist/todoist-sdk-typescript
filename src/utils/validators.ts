@@ -31,7 +31,11 @@ import {
 } from '../types/insights/types'
 import { LabelSchema } from '../types/labels/types'
 import { ProductivityStatsSchema } from '../types/productivity/types'
-import { WorkspaceProjectSchema, ProjectSchema } from '../types/projects/types'
+import {
+    WorkspaceProjectSchema,
+    WorkspaceProjectSummarySchema,
+    ProjectSchema,
+} from '../types/projects/types'
 import { SectionSchema } from '../types/sections/types'
 import { type SyncResponse, SyncResponseSchema } from '../types/sync/response'
 import { TaskSchema } from '../types/tasks/types'
@@ -100,6 +104,11 @@ export const { validate: validateProject, validateArray: validateProjectArray } 
 
 export const { validate: validateWorkspaceProject, validateArray: validateWorkspaceProjectArray } =
     createValidator(WorkspaceProjectSchema)
+
+export const {
+    validate: validateWorkspaceProjectSummary,
+    validateArray: validateWorkspaceProjectSummaryArray,
+} = createValidator(WorkspaceProjectSummarySchema)
 
 export const { validate: validateSection, validateArray: validateSectionArray } =
     createValidator(SectionSchema)

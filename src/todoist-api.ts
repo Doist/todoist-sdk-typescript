@@ -206,6 +206,7 @@ import {
     GetWorkspaceUsersArgs,
     GetWorkspaceUsersResponse,
     GetWorkspaceProjectsArgs,
+    GetWorkspaceProjectsResponse,
     WorkspaceInvitationsResponse,
     AllWorkspaceInvitationsResponse,
     WorkspaceLogoResponse,
@@ -2005,7 +2006,9 @@ export class TodoistApi {
     }
 
     /**
-     * Gets active projects in a workspace with pagination.
+     * Gets active projects in a workspace with pagination, including projects the
+     * user can see but hasn't joined (their `role` is `null`; join one with
+     * `joinProject`). Workspace guests only get the projects they have joined.
      *
      * @param args - Arguments including workspace ID, cursor, and limit.
      * @param requestId - Optional request ID for idempotency.
@@ -2014,7 +2017,7 @@ export class TodoistApi {
     async getWorkspaceActiveProjects(
         args: GetWorkspaceProjectsArgs,
         requestId?: string,
-    ): Promise<GetProjectsResponse> {
+    ): Promise<GetWorkspaceProjectsResponse> {
         return this.workspaceClient.getWorkspaceActiveProjects(args, requestId)
     }
 
@@ -2028,7 +2031,7 @@ export class TodoistApi {
     async getWorkspaceArchivedProjects(
         args: GetWorkspaceProjectsArgs,
         requestId?: string,
-    ): Promise<GetProjectsResponse> {
+    ): Promise<GetWorkspaceProjectsResponse> {
         return this.workspaceClient.getWorkspaceArchivedProjects(args, requestId)
     }
 

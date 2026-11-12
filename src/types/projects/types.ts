@@ -66,6 +66,51 @@ export const WorkspaceProjectSchema = BaseProjectSchema.extend({
 })
 
 /**
+ * Schema for a project as listed by a workspace's project endpoints
+ * (`getWorkspaceActiveProjects`, `getWorkspaceArchivedProjects`).
+ *
+ * Those endpoints list every workspace project the user can see, including ones
+ * they haven't joined, so the payload is lighter than a {@link WorkspaceProject}.
+ * The API leaves out the workspace ID; the SDK fills it in from the request.
+ */
+export const WorkspaceProjectSummarySchema = z
+    .object({
+        id: z.string(),
+        workspaceId: z.string(),
+        name: z.string(),
+        folderId: z.string().nullable(),
+        color: z.string(),
+        icon: z.string().nullable(),
+        viewStyle: z.string(),
+        description: z.string(),
+        status: z.string(),
+        /** The user's role in the project, or `null` when they haven't joined it. */
+        role: z.string().nullable(),
+        isInviteOnly: z.boolean().nullable(),
+        isFrozen: z.boolean(),
+        canAssignTasks: z.boolean(),
+        defaultOrder: z.number().int(),
+        defaultOrderKey: z.string().nullable().optional(),
+        publicAccess: z.boolean(),
+        publicKey: z.string(),
+        access: z.object({ visibility: ProjectVisibilitySchema }).optional(),
+        isPendingDefaultCollaboratorInvites: z.boolean(),
+    })
+    .transform((data) => {
+        return {
+            ...data,
+            url: getProjectUrl(data.id, data.name),
+        }
+    })
+
+/**
+ * A workspace project as listed by `getWorkspaceActiveProjects` or
+ * `getWorkspaceArchivedProjects`. `role` is `null` when the user can see the
+ * project but hasn't joined it; join it with `joinProject`.
+ */
+export type WorkspaceProjectSummary = z.infer<typeof WorkspaceProjectSummarySchema>
+
+/**
  * How many active personal projects the user's plan allows, and how many they have.
  * Returned by `TodoistApi.getPersonalProjectCapacity`.
  */
