@@ -17,7 +17,6 @@ import {
     getWorkspaceUserTasksEndpoint,
 } from '../consts/endpoints'
 import { isSuccess, request } from '../transport/http-client'
-import type { GetProjectsResponse } from '../types/projects'
 import type {
     AddWorkspaceArgs,
     AllWorkspaceInvitationsResponse,
@@ -25,6 +24,7 @@ import type {
     GetWorkspaceMembersActivityArgs,
     GetWorkspaceMembersActivityResponse,
     GetWorkspaceProjectsArgs,
+    GetWorkspaceProjectsResponse,
     GetWorkspaceUserTasksArgs,
     GetWorkspaceUserTasksResponse,
     GetWorkspaceUsersArgs,
@@ -51,11 +51,11 @@ import {
     IdSchema,
     validateJoinWorkspaceResult,
     validateMemberActivityInfoArray,
-    validateProject,
     validateWorkspace,
     validateWorkspaceArray,
     validateWorkspaceInvitation,
     validateWorkspaceInvitationArray,
+    validateWorkspaceProjectSummaryArray,
     validateWorkspacePlanDetails,
     validateWorkspaceUserArray,
     validateWorkspaceUserTaskArray,
@@ -63,6 +63,31 @@ import {
 import { BaseClient } from './base-client'
 
 type GetAllWorkspaceInvitationsArgs = { workspaceId?: string }
+
+/** A page from a workspace's project endpoints, after `request` has camel-cased its keys. */
+type WorkspaceProjectsPage = {
+    workspaceProjects?: unknown[]
+    nextCursor?: string | null
+    hasMore?: boolean
+}
+
+/**
+ * The workspace project endpoints leave the workspace ID out of each project,
+ * so it is filled in from the request before validating.
+ */
+function parseWorkspaceProjectsPage(
+    page: WorkspaceProjectsPage,
+    workspaceId: string,
+): GetWorkspaceProjectsResponse {
+    const projects = (page.workspaceProjects ?? []).map((project) =>
+        typeof project === 'object' && project !== null ? { ...project, workspaceId } : project,
+    )
+    return {
+        results: validateWorkspaceProjectSummaryArray(projects),
+        nextCursor: page.nextCursor ?? null,
+        hasMore: page.hasMore ?? false,
+    }
+}
 
 /**
  * Internal sub-client handling all workspace-domain endpoints —
@@ -461,7 +486,7 @@ export class WorkspaceClient extends BaseClient {
     async getWorkspaceActiveProjects(
         args: GetWorkspaceProjectsArgs,
         requestId?: string,
-    ): Promise<GetProjectsResponse> {
+    ): Promise<GetWorkspaceProjectsResponse> {
         const queryParams: Record<string, string | number> = {}
         if (args.cursor) {
             queryParams.cursor = args.cursor
@@ -470,7 +495,7 @@ export class WorkspaceClient extends BaseClient {
             queryParams.limit = args.limit
         }
 
-        const response = await request<GetProjectsResponse>({
+        const response = await request<WorkspaceProjectsPage>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
             relativePath: getWorkspaceActiveProjectsEndpoint(args.workspaceId),
@@ -481,23 +506,13 @@ export class WorkspaceClient extends BaseClient {
             requestId: requestId,
         })
 
-        // oxlint-disable-next-line no-unsafe-assignment, no-unsafe-call, no-unsafe-member-access
-        const validatedProjects = response.data.results?.map((project: unknown) =>
-            validateProject(project),
-        )
-
-        return {
-            // oxlint-disable-next-line no-unsafe-assignment
-            ...response.data,
-            // oxlint-disable-next-line no-unsafe-assignment
-            results: validatedProjects || [],
-        } as GetProjectsResponse
+        return parseWorkspaceProjectsPage(response.data, args.workspaceId)
     }
 
     async getWorkspaceArchivedProjects(
         args: GetWorkspaceProjectsArgs,
         requestId?: string,
-    ): Promise<GetProjectsResponse> {
+    ): Promise<GetWorkspaceProjectsResponse> {
         const queryParams: Record<string, string | number> = {}
         if (args.cursor) {
             queryParams.cursor = args.cursor
@@ -506,7 +521,7 @@ export class WorkspaceClient extends BaseClient {
             queryParams.limit = args.limit
         }
 
-        const response = await request<GetProjectsResponse>({
+        const response = await request<WorkspaceProjectsPage>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
             relativePath: getWorkspaceArchivedProjectsEndpoint(args.workspaceId),
@@ -517,16 +532,6 @@ export class WorkspaceClient extends BaseClient {
             requestId: requestId,
         })
 
-        // oxlint-disable-next-line no-unsafe-assignment, no-unsafe-call, no-unsafe-member-access
-        const validatedProjects = response.data.results?.map((project: unknown) =>
-            validateProject(project),
-        )
-
-        return {
-            // oxlint-disable-next-line no-unsafe-assignment
-            ...response.data,
-            // oxlint-disable-next-line no-unsafe-assignment
-            results: validatedProjects || [],
-        } as GetProjectsResponse
+        return parseWorkspaceProjectsPage(response.data, args.workspaceId)
     }
 }

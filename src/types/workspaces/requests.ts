@@ -1,3 +1,4 @@
+import type { WorkspaceProjectSummary } from '../projects/types'
 import type {
     MemberActivityInfo,
     WorkspaceInvitation,
@@ -252,6 +253,24 @@ export type GetWorkspaceProjectsArgs = {
      * Maximum number of projects to return (default: 100).
      */
     limit?: number
+}
+
+/**
+ * Paginated response for a workspace's active or archived projects.
+ */
+export type GetWorkspaceProjectsResponse = {
+    /**
+     * The workspace projects in this page, including ones the user hasn't joined.
+     */
+    results: WorkspaceProjectSummary[]
+    /**
+     * Cursor for the next page of results, or `null` on the last page.
+     */
+    nextCursor: string | null
+    /**
+     * Whether there are more projects available.
+     */
+    hasMore: boolean
 }
 
 /**

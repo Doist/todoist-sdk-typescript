@@ -454,40 +454,57 @@ describe('TodoistApi workspaces', () => {
         })
     })
 
+    // The workspace project endpoints answer with `workspace_projects`, a lighter
+    // shape than a project from `getProjects`: it carries no `workspace_id`, and
+    // `role` is null for a project the user can see but hasn't joined.
+    const rawJoinedWorkspaceProject = {
+        id: 'workspace-project-1',
+        name: 'Project One',
+        folder_id: 'folder-1',
+        color: 'charcoal',
+        icon: 'lightbulb',
+        view_style: 'list',
+        description: 'A project description',
+        status: 'IN_PROGRESS',
+        role: 'ADMIN',
+        is_invite_only: false,
+        is_frozen: false,
+        can_assign_tasks: true,
+        default_order: 1,
+        default_order_key: 'a0',
+        public_access: false,
+        public_key: 'public-key-1',
+        access: { visibility: 'team', configuration: {} },
+        is_pending_default_collaborator_invites: false,
+    }
+
+    const rawUnjoinedWorkspaceProject = {
+        ...rawJoinedWorkspaceProject,
+        id: 'workspace-project-2',
+        name: 'Project Two',
+        folder_id: null,
+        icon: null,
+        role: null,
+        default_order_key: null,
+    }
+
     describe('getWorkspaceActiveProjects', () => {
-        const mockProjects = [
-            {
-                id: '1',
-                name: 'Project 1',
-                color: 'blue',
-                parentId: null,
-                inboxProject: false,
-                isShared: false,
-                isFavorite: false,
-                viewStyle: 'list' as const,
-                url: 'https://app.todoist.com/app/project/project-1-1',
-                canAssignTasks: true,
-                childOrder: 0,
-                createdAt: '2023-01-01T00:00:00Z',
-                isArchived: false,
-                isDeleted: false,
-                isFrozen: false,
-                updatedAt: '2023-01-01T00:00:00Z',
-                defaultOrder: 0,
-                description: '',
-                isCollapsed: false,
-            },
-        ]
-
-        const mockResponse = {
-            results: mockProjects,
-            nextCursor: 'next123',
-        }
-
-        test('gets workspace active projects', async () => {
+        test('returns the workspace projects from the response, including unjoined ones', async () => {
+            let requestUrl: URL | undefined
             server.use(
-                http.get(`${getSyncBaseUri()}workspaces/123/projects/active`, () => {
-                    return HttpResponse.json(mockResponse, { status: 200 })
+                http.get(`${getSyncBaseUri()}workspaces/123/projects/active`, ({ request }) => {
+                    requestUrl = new URL(request.url)
+                    return HttpResponse.json(
+                        {
+                            workspace_projects: [
+                                rawJoinedWorkspaceProject,
+                                rawUnjoinedWorkspaceProject,
+                            ],
+                            has_more: true,
+                            next_cursor: 'next123',
+                        },
+                        { status: 200 },
+                    )
                 }),
             )
 
@@ -497,26 +514,70 @@ describe('TodoistApi workspaces', () => {
                 limit: 25,
             })
 
-            expect(result.results).toEqual(
-                mockProjects.map((p) => ({
-                    ...p,
-                    createdAt: new Date(p.createdAt),
-                    updatedAt: new Date(p.updatedAt),
-                })),
-            )
+            expect(requestUrl?.searchParams.get('cursor')).toBe('cursor456')
+            expect(requestUrl?.searchParams.get('limit')).toBe('25')
+            expect(result).toEqual({
+                results: [
+                    {
+                        id: 'workspace-project-1',
+                        name: 'Project One',
+                        folderId: 'folder-1',
+                        color: 'charcoal',
+                        icon: 'lightbulb',
+                        viewStyle: 'list',
+                        description: 'A project description',
+                        status: 'IN_PROGRESS',
+                        role: 'ADMIN',
+                        isInviteOnly: false,
+                        isFrozen: false,
+                        canAssignTasks: true,
+                        defaultOrder: 1,
+                        defaultOrderKey: 'a0',
+                        publicAccess: false,
+                        publicKey: 'public-key-1',
+                        access: { visibility: 'team' },
+                        isPendingDefaultCollaboratorInvites: false,
+                        workspaceId: '123',
+                        url: 'https://app.todoist.com/app/project/workspace-project-1',
+                    },
+                    {
+                        id: 'workspace-project-2',
+                        name: 'Project Two',
+                        folderId: null,
+                        color: 'charcoal',
+                        icon: null,
+                        viewStyle: 'list',
+                        description: 'A project description',
+                        status: 'IN_PROGRESS',
+                        role: null,
+                        isInviteOnly: false,
+                        isFrozen: false,
+                        canAssignTasks: true,
+                        defaultOrder: 1,
+                        defaultOrderKey: null,
+                        publicAccess: false,
+                        publicKey: 'public-key-1',
+                        access: { visibility: 'team' },
+                        isPendingDefaultCollaboratorInvites: false,
+                        workspaceId: '123',
+                        url: 'https://app.todoist.com/app/project/workspace-project-2',
+                    },
+                ],
+                nextCursor: 'next123',
+                hasMore: true,
+            })
         })
     })
 
     describe('getWorkspaceArchivedProjects', () => {
-        const mockResponse = {
-            results: [],
-            nextCursor: null,
-        }
-
-        test('gets workspace archived projects', async () => {
+        test('returns the archived workspace projects from the response', async () => {
             server.use(
                 http.get(`${getSyncBaseUri()}workspaces/789/projects/archived`, () => {
-                    return HttpResponse.json(mockResponse, { status: 200 })
+                    // The last page carries no `next_cursor` at all.
+                    return HttpResponse.json(
+                        { workspace_projects: [rawUnjoinedWorkspaceProject], has_more: false },
+                        { status: 200 },
+                    )
                 }),
             )
 
@@ -524,7 +585,11 @@ describe('TodoistApi workspaces', () => {
                 workspaceId: '789',
             })
 
-            expect(result.results).toEqual([])
+            expect(result.results.map((project) => [project.id, project.workspaceId])).toEqual([
+                ['workspace-project-2', '789'],
+            ])
+            expect(result.nextCursor).toBeNull()
+            expect(result.hasMore).toBe(false)
         })
     })
 
