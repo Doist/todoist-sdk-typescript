@@ -9,6 +9,10 @@ import { uploadMultipartFile } from './utils/multipart-upload'
 vi.mock('./utils/multipart-upload')
 const mockedUploadMultipartFile = vi.mocked(uploadMultipartFile)
 
+function getTemplatesBaseUri() {
+    return getSyncBaseUri().replace('/api/v1/', '/api/v1.6/')
+}
+
 function getTarget() {
     return new TodoistApi(DEFAULT_AUTH_TOKEN)
 }
@@ -173,6 +177,245 @@ describe('TodoistApi template endpoints', () => {
             expect(result.templateType).toBe('project')
             expect(result.tasks).toEqual([])
             expect(result.sections).toEqual([])
+        })
+    })
+
+    describe('createProjectFromTemplateId', () => {
+        test('posts snake_case args and returns the new project ID', async () => {
+            let body: unknown
+            server.use(
+                http.post(`${getSyncBaseUri()}projects/from_template`, async ({ request }) => {
+                    body = await request.json()
+                    return HttpResponse.json({ status: 'ok', project_id: '6X7rM8997g3RQmvh' })
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.createProjectFromTemplateId({
+                templateId: 'UT_28Rc62VC22j439VcPJMw9xgWx2',
+                name: 'Q3 launch',
+                workspaceId: '42',
+                folderId: '7',
+            })
+
+            expect(body).toEqual({
+                template_id: 'UT_28Rc62VC22j439VcPJMw9xgWx2',
+                name: 'Q3 launch',
+                workspace_id: '42',
+                folder_id: '7',
+            })
+            expect(result).toEqual({ status: 'ok', projectId: '6X7rM8997g3RQmvh' })
+        })
+    })
+
+    describe('saveProjectAsTemplate', () => {
+        const mockTemplate = {
+            id: 'UT_28Rc62VC22j439VcPJMw9xgWx2',
+            name: 'Launch plan',
+            template_type: 'project',
+            template_source: 'user',
+            short_description: 'Everything for a launch',
+            long_description: 'Everything for a launch',
+            instructions: null,
+            import_url: null,
+            view_type: 'board',
+            thumbnail_image: null,
+            thumbnail_image_dark: null,
+            cover_image: null,
+            preview_image: null,
+            template_color: 'blue',
+            background_color: null,
+            background_color_dark: null,
+            creator: { user_id: '1', name: 'Ada', position: '', avatar: '' },
+            seo: null,
+            more_resources: [],
+            category_ids: [],
+            project_count: null,
+            workspace_id: null,
+            shared_with_workspace_members: false,
+            can_edit: true,
+            last_edited_by: { user_id: '1', name: 'Ada', position: '', avatar: '' },
+            last_edited_at: '2026-11-04T10:00:00Z',
+        }
+
+        test('defaults to a project template and returns the validated template', async () => {
+            let body: unknown
+            server.use(
+                http.post(`${getTemplatesBaseUri()}templates/user`, async ({ request }) => {
+                    body = await request.json()
+                    return HttpResponse.json(mockTemplate)
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.saveProjectAsTemplate({
+                projectId: '123',
+                name: 'Launch plan',
+                description: 'Everything for a launch',
+                color: 'blue',
+                forWorkspace: true,
+            })
+
+            expect(body).toEqual({
+                project_id: '123',
+                name: 'Launch plan',
+                description: 'Everything for a launch',
+                color: 'blue',
+                for_workspace: true,
+                template_type: 'project',
+            })
+            expect(result).toMatchObject({
+                id: 'UT_28Rc62VC22j439VcPJMw9xgWx2',
+                templateType: 'project',
+                templateSource: 'user',
+                viewType: 'board',
+                lastEditedBy: { userId: '1', name: 'Ada' },
+            })
+        })
+
+        test('sends a numeric color ID as a number', async () => {
+            let body: unknown
+            server.use(
+                http.post(`${getTemplatesBaseUri()}templates/user`, async ({ request }) => {
+                    body = await request.json()
+                    return HttpResponse.json(mockTemplate)
+                }),
+            )
+            const api = getTarget()
+
+            await api.saveProjectAsTemplate({
+                projectId: '123',
+                name: 'Launch plan',
+                description: '',
+                color: 30,
+            })
+
+            expect(body).toMatchObject({ color: 30 })
+        })
+
+        test('reports a curated source as todoist, however the API spells it', async () => {
+            server.use(
+                http.post(`${getTemplatesBaseUri()}templates/user`, () =>
+                    HttpResponse.json({ ...mockTemplate, template_source: 'doist' }),
+                ),
+            )
+            const api = getTarget()
+
+            const result = await api.saveProjectAsTemplate({
+                projectId: '123',
+                name: 'Launch plan',
+                description: '',
+                color: 'blue',
+            })
+
+            expect(result.templateSource).toBe('todoist')
+        })
+
+        test('saves an edited draft as content, in the API names', async () => {
+            let body: Record<string, unknown> = {}
+            server.use(
+                http.post(`${getTemplatesBaseUri()}templates/user`, async ({ request }) => {
+                    body = (await request.json()) as Record<string, unknown>
+                    return HttpResponse.json(mockTemplate)
+                }),
+            )
+            const api = getTarget()
+
+            await api.saveProjectAsTemplate({
+                projectId: '123',
+                name: 'Launch plan',
+                description: 'A launch',
+                color: 'blue',
+                content: {
+                    projects: [{ viewStyle: 'board' }],
+                    sections: [],
+                    tasks: [{ id: 't1', content: 'Plan', responsibleUid: '42' }],
+                    comments: [{ taskId: 't1', content: 'Check this' }],
+                    projectComments: [],
+                    projectViewOptionsDefaults: [],
+                },
+            })
+
+            expect(body.project_id).toBe('123')
+            expect(body.content).toEqual({
+                projects: [{ view_style: 'board' }],
+                sections: [],
+                items: [{ id: 't1', content: 'Plan', responsible_uid: '42' }],
+                notes: [{ item_id: 't1', content: 'Check this' }],
+                project_notes: [],
+                project_view_options_defaults: [],
+            })
+        })
+
+        test('rejects a response that is not a template', async () => {
+            server.use(
+                http.post(`${getTemplatesBaseUri()}templates/user`, () =>
+                    HttpResponse.json({ status: 'ok' }),
+                ),
+            )
+            const api = getTarget()
+
+            await expect(
+                api.saveProjectAsTemplate({
+                    projectId: '123',
+                    name: 'Launch plan',
+                    description: '',
+                    color: 'blue',
+                }),
+            ).rejects.toThrow()
+        })
+    })
+
+    describe('previewProjectAsTemplate', () => {
+        test('reads a project as a template draft on API v1.6, without saving', async () => {
+            let projectId: string | null = null
+            server.use(
+                http.get(`${getTemplatesBaseUri()}templates/preview`, ({ request }) => {
+                    projectId = new URL(request.url).searchParams.get('project_id')
+                    return HttpResponse.json({
+                        template_type: 'project',
+                        workspace_id: null,
+                        projects: [{ id: 'p1', name: 'Plan', view_style: 'list', description: '' }],
+                        sections: [],
+                        items: [
+                            {
+                                id: 't1',
+                                content: 'Plan',
+                                due: {
+                                    date: '2026-11-13',
+                                    string: 'every friday',
+                                    lang: 'en',
+                                    is_recurring: true,
+                                },
+                                checked: false,
+                            },
+                        ],
+                        notes: [],
+                        project_notes: [],
+                        project_view_options_defaults: [],
+                        reminders: [],
+                    })
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.previewProjectAsTemplate('123')
+
+            expect(projectId).toBe('123')
+            expect(result.workspaceId).toBeNull()
+            expect(result.content.projects).toEqual([{ viewStyle: 'list', description: '' }])
+            expect(result.content.tasks).toEqual([
+                {
+                    id: 't1',
+                    content: 'Plan',
+                    due: {
+                        date: '2026-11-13',
+                        string: 'every friday',
+                        lang: 'en',
+                        isRecurring: true,
+                    },
+                },
+            ])
         })
     })
 })

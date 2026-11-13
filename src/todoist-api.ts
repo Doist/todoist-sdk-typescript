@@ -170,6 +170,11 @@ import {
     ExportTemplateUrlResponse,
     CreateProjectFromTemplateArgs,
     CreateProjectFromTemplateResponse,
+    CreateProjectFromTemplateIdArgs,
+    CreateProjectFromTemplateIdResponse,
+    SaveProjectAsTemplateArgs,
+    TemplateContentResponse,
+    Template,
     ImportTemplateIntoProjectArgs,
     ImportTemplateFromIdArgs,
     ImportTemplateResponse,
@@ -1717,6 +1722,53 @@ export class TodoistApi {
         requestId?: string,
     ): Promise<CreateProjectFromTemplateResponse> {
         return this.templateClient.createProjectFromTemplate(args, requestId)
+    }
+
+    /**
+     * Creates a new project from a template ID.
+     *
+     * Setup templates are not supported. Workspace templates can only be used in their own workspace.
+     *
+     * @param args - Arguments including the template ID and optional name, locale, workspace and folder.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the new project's ID.
+     */
+    async createProjectFromTemplateId(
+        args: CreateProjectFromTemplateIdArgs,
+        requestId?: string,
+    ): Promise<CreateProjectFromTemplateIdResponse> {
+        return this.templateClient.createProjectFromTemplateId(args, requestId)
+    }
+
+    /**
+     * Gets the content a project would be saved as, without saving a template: its layout,
+     * sections, tasks and comments, as a draft.
+     *
+     * To save an edited draft, pass its `content` to `saveProjectAsTemplate` along with the
+     * project ID, as the Todoist web app's "Save as template" editor does.
+     *
+     * @param projectId - The project to preview.
+     * @returns A promise that resolves to the project's template type, workspace and content.
+     */
+    async previewProjectAsTemplate(projectId: string): Promise<TemplateContentResponse> {
+        return this.templateClient.previewProjectAsTemplate(projectId)
+    }
+
+    /**
+     * Saves a project as a user template.
+     *
+     * Task assignments are kept only when the template is saved to a workspace. Pass `content`
+     * to save an edited draft from `previewProjectAsTemplate` instead of the project as it is.
+     *
+     * @param args - Arguments including the project ID, template name, description and color.
+     * @param requestId - Optional custom identifier for the request.
+     * @returns A promise that resolves to the saved template.
+     */
+    async saveProjectAsTemplate(
+        args: SaveProjectAsTemplateArgs,
+        requestId?: string,
+    ): Promise<Template> {
+        return this.templateClient.saveProjectAsTemplate(args, requestId)
     }
 
     /**
