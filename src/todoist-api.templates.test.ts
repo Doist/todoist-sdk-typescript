@@ -9,6 +9,35 @@ import { uploadMultipartFile } from './utils/multipart-upload'
 vi.mock('./utils/multipart-upload')
 const mockedUploadMultipartFile = vi.mocked(uploadMultipartFile)
 
+const RAW_TEMPLATE = {
+    id: 'UT_28Rc62VC22j439VcPJMw9xgWx2',
+    name: 'Launch plan',
+    template_type: 'project',
+    template_source: 'user',
+    short_description: 'Everything for a launch',
+    long_description: 'Everything for a launch',
+    instructions: null,
+    import_url: null,
+    view_type: 'board',
+    thumbnail_image: null,
+    thumbnail_image_dark: null,
+    cover_image: null,
+    preview_image: null,
+    template_color: 'blue',
+    background_color: null,
+    background_color_dark: null,
+    creator: { user_id: '1', name: 'Ada', position: '', avatar: '' },
+    seo: null,
+    more_resources: [],
+    category_ids: [],
+    project_count: null,
+    workspace_id: null,
+    shared_with_workspace_members: false,
+    can_edit: true,
+    last_edited_by: { user_id: '1', name: 'Ada', position: '', avatar: '' },
+    last_edited_at: '2026-11-04T10:00:00Z',
+}
+
 function getTemplatesBaseUri() {
     return getSyncBaseUri().replace('/api/v1/', '/api/v1.6/')
 }
@@ -209,41 +238,12 @@ describe('TodoistApi template endpoints', () => {
     })
 
     describe('saveProjectAsTemplate', () => {
-        const mockTemplate = {
-            id: 'UT_28Rc62VC22j439VcPJMw9xgWx2',
-            name: 'Launch plan',
-            template_type: 'project',
-            template_source: 'user',
-            short_description: 'Everything for a launch',
-            long_description: 'Everything for a launch',
-            instructions: null,
-            import_url: null,
-            view_type: 'board',
-            thumbnail_image: null,
-            thumbnail_image_dark: null,
-            cover_image: null,
-            preview_image: null,
-            template_color: 'blue',
-            background_color: null,
-            background_color_dark: null,
-            creator: { user_id: '1', name: 'Ada', position: '', avatar: '' },
-            seo: null,
-            more_resources: [],
-            category_ids: [],
-            project_count: null,
-            workspace_id: null,
-            shared_with_workspace_members: false,
-            can_edit: true,
-            last_edited_by: { user_id: '1', name: 'Ada', position: '', avatar: '' },
-            last_edited_at: '2026-11-04T10:00:00Z',
-        }
-
         test('defaults to a project template and returns the validated template', async () => {
             let body: unknown
             server.use(
                 http.post(`${getTemplatesBaseUri()}templates/user`, async ({ request }) => {
                     body = await request.json()
-                    return HttpResponse.json(mockTemplate)
+                    return HttpResponse.json(RAW_TEMPLATE)
                 }),
             )
             const api = getTarget()
@@ -278,7 +278,7 @@ describe('TodoistApi template endpoints', () => {
             server.use(
                 http.post(`${getTemplatesBaseUri()}templates/user`, async ({ request }) => {
                     body = await request.json()
-                    return HttpResponse.json(mockTemplate)
+                    return HttpResponse.json(RAW_TEMPLATE)
                 }),
             )
             const api = getTarget()
@@ -296,7 +296,7 @@ describe('TodoistApi template endpoints', () => {
         test('reports a curated source as todoist, however the API spells it', async () => {
             server.use(
                 http.post(`${getTemplatesBaseUri()}templates/user`, () =>
-                    HttpResponse.json({ ...mockTemplate, template_source: 'doist' }),
+                    HttpResponse.json({ ...RAW_TEMPLATE, template_source: 'doist' }),
                 ),
             )
             const api = getTarget()
@@ -316,7 +316,7 @@ describe('TodoistApi template endpoints', () => {
             server.use(
                 http.post(`${getTemplatesBaseUri()}templates/user`, async ({ request }) => {
                     body = (await request.json()) as Record<string, unknown>
-                    return HttpResponse.json(mockTemplate)
+                    return HttpResponse.json(RAW_TEMPLATE)
                 }),
             )
             const api = getTarget()
@@ -363,6 +363,134 @@ describe('TodoistApi template endpoints', () => {
                     color: 'blue',
                 }),
             ).rejects.toThrow()
+        })
+    })
+
+    describe('getTemplates', () => {
+        test('sends filters as snake_case query params and validates each template', async () => {
+            let params: URLSearchParams | undefined
+            server.use(
+                http.get(`${getSyncBaseUri()}templates`, ({ request }) => {
+                    params = new URL(request.url).searchParams
+                    return HttpResponse.json({ results: [RAW_TEMPLATE], next_cursor: 'abc.def' })
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.getTemplates({
+                templateSource: 'all',
+                templateType: 'project',
+                query: 'launch',
+                categoryId: 'work',
+                limit: 10,
+            })
+
+            expect(Object.fromEntries(params ?? [])).toEqual({
+                template_source: 'all',
+                template_type: 'project',
+                query: 'launch',
+                category_id: 'work',
+                limit: '10',
+            })
+            expect(result.nextCursor).toBe('abc.def')
+            expect(result.results).toHaveLength(1)
+            expect(result.results[0]).toMatchObject({
+                id: 'UT_28Rc62VC22j439VcPJMw9xgWx2',
+                templateSource: 'user',
+            })
+        })
+
+        test('rejects a page with a malformed template', async () => {
+            server.use(
+                http.get(`${getSyncBaseUri()}templates`, () =>
+                    HttpResponse.json({ results: [{ id: 'x' }], next_cursor: null }),
+                ),
+            )
+            const api = getTarget()
+
+            await expect(api.getTemplates()).rejects.toThrow()
+        })
+    })
+
+    describe('getTemplatesByIds', () => {
+        test('joins the IDs into one comma-separated param', async () => {
+            let params: URLSearchParams | undefined
+            server.use(
+                http.get(`${getSyncBaseUri()}templates`, ({ request }) => {
+                    params = new URL(request.url).searchParams
+                    return HttpResponse.json({ results: [], next_cursor: null })
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.getTemplatesByIds({
+                ids: ['bug-tracking', 'UT_28Rc62VC22j439VcPJMw9xgWx2'],
+                locale: 'de',
+            })
+
+            expect(Object.fromEntries(params ?? [])).toEqual({
+                ids: 'bug-tracking,UT_28Rc62VC22j439VcPJMw9xgWx2',
+                locale: 'de',
+            })
+            expect(result).toEqual({ results: [], nextCursor: null })
+        })
+    })
+
+    describe('getTemplate', () => {
+        test('fetches one template by ID', async () => {
+            let locale: string | null | undefined
+            server.use(
+                http.get(
+                    `${getSyncBaseUri()}templates/UT_28Rc62VC22j439VcPJMw9xgWx2`,
+                    ({ request }) => {
+                        locale = new URL(request.url).searchParams.get('locale')
+                        return HttpResponse.json(RAW_TEMPLATE)
+                    },
+                ),
+            )
+            const api = getTarget()
+
+            const result = await api.getTemplate('UT_28Rc62VC22j439VcPJMw9xgWx2', { locale: 'fr' })
+
+            expect(locale).toBe('fr')
+            expect(result.name).toBe('Launch plan')
+        })
+
+        test('rejects an empty ID before making a request', async () => {
+            const api = getTarget()
+
+            await expect(api.getTemplate('')).rejects.toThrow()
+        })
+    })
+
+    describe('getTemplateCategories', () => {
+        test('returns the validated categories', async () => {
+            server.use(
+                http.get(`${getSyncBaseUri()}templates/categories`, () =>
+                    HttpResponse.json({
+                        categories: [
+                            {
+                                id: 'work',
+                                name: 'Work',
+                                description: null,
+                                seo: { title: 'Work templates', description: null },
+                            },
+                        ],
+                    }),
+                ),
+            )
+            const api = getTarget()
+
+            const result = await api.getTemplateCategories({ templateType: 'project' })
+
+            expect(result).toEqual([
+                {
+                    id: 'work',
+                    name: 'Work',
+                    description: null,
+                    seo: { title: 'Work templates', description: null },
+                },
+            ])
         })
     })
 

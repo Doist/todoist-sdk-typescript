@@ -5,7 +5,7 @@ import type { Section } from '../sections/types'
 import type { TemplateType } from '../sync/resources/suggestions'
 import type { Task } from '../tasks/types'
 import type { UploadFileArgs } from '../uploads/requests'
-import type { TemplateContent } from './types'
+import type { Template, TemplateContent } from './types'
 
 /** The template file to upload, for routes that accept a template CSV. */
 type TemplateFileUpload = Pick<UploadFileArgs, 'file' | 'fileName'>
@@ -145,4 +145,81 @@ export type CreateProjectFromTemplateIdArgs = {
 export type CreateProjectFromTemplateIdResponse = {
     status: string
     projectId: string
+}
+
+/** Template type values accepted when listing templates. */
+export const TEMPLATE_TYPE_FILTERS = ['project', 'setup', 'all'] as const
+/** Template type to list, or `'all'` for both. */
+export type TemplateTypeFilter = (typeof TEMPLATE_TYPE_FILTERS)[number]
+
+/** Template source values accepted when listing templates. */
+export const TEMPLATE_SOURCE_FILTERS = ['todoist', 'user', 'workspace', 'all'] as const
+/**
+ * Where to list templates from: curated by Doist (`'todoist'`), saved by the user (`'user'`),
+ * saved to the user's workspaces (`'workspace'`), or all of them (`'all'`).
+ */
+export type TemplateSourceFilter = (typeof TEMPLATE_SOURCE_FILTERS)[number]
+
+/**
+ * Arguments for discovering templates.
+ * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/discover_templates_api_v1_templates_get
+ */
+export type GetTemplatesArgs = {
+    /** Template type to list (default: `'project'`). */
+    templateType?: TemplateTypeFilter
+    /** Where to list templates from (default: `'todoist'`, curated templates only). */
+    templateSource?: TemplateSourceFilter
+    /** Search template text and, without `categoryId`, matching curated categories. */
+    query?: string | null
+    /** Curated category slug, as returned by `getTemplateCategories`. */
+    categoryId?: string | null
+    /** Content locale (default: `'en'`). Unsupported locales fall back to English. */
+    locale?: string
+    /** Pass the previous page's `nextCursor`, with the same filters, to continue. */
+    cursor?: string | null
+    /** Page size, up to 200 (default: 50). */
+    limit?: number
+}
+
+/**
+ * Arguments for looking up templates by ID.
+ * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/discover_templates_api_v1_templates_get
+ */
+export type GetTemplatesByIdsArgs = {
+    /** Up to 100 curated slugs or `UT_` template IDs. Missing or invisible IDs are omitted. */
+    ids: string[]
+    /** Content locale (default: `'en'`). Unsupported locales fall back to English. */
+    locale?: string
+    /** Pass the previous page's `nextCursor`, with the same IDs, to continue. */
+    cursor?: string | null
+    /** Page size, up to 200 (default: 50). */
+    limit?: number
+}
+
+/**
+ * Response from discovering or looking up templates.
+ */
+export type GetTemplatesResponse = {
+    results: Template[]
+    nextCursor: string | null
+}
+
+/**
+ * Arguments for getting a single template.
+ * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/discover_template_api_v1_templates__template_id__get
+ */
+export type GetTemplateArgs = {
+    /** Content locale (default: `'en'`). Unsupported locales fall back to English. */
+    locale?: string
+}
+
+/**
+ * Arguments for listing curated template categories.
+ * @see https://developer.todoist.com/api/v1/#tag/Templates/operation/categories_api_v1_templates_categories_get
+ */
+export type GetTemplateCategoriesArgs = {
+    /** Template type to categorize (default: `'project'`). */
+    templateType?: TemplateTypeFilter
+    /** Locale for category names and descriptions (default: `'en'`). */
+    locale?: string
 }

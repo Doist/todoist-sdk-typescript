@@ -189,3 +189,11 @@ export const TemplateContentResponseSchema = z
     }))
 /** A template's type, workspace and full content, as the template preview routes return it. */
 export type TemplateContentResponse = z.infer<typeof TemplateContentResponseSchema>
+export const TemplateCategorySchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().nullable(),
+    seo: TemplateSeoSchema,
+})
+/** A curated category used to group templates in the Todoist gallery. */
+export type TemplateCategory = z.infer<typeof TemplateCategorySchema>
