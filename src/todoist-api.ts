@@ -165,12 +165,12 @@ import {
     GetAllCompletedTasksResponse,
 } from './types/tasks'
 import {
-    ExportTemplateFileArgs,
+    ExportProjectAsCSVArgs,
     ExportTemplateUrlArgs,
     ExportTemplateUrlResponse,
-    CreateProjectFromTemplateArgs,
-    CreateProjectFromTemplateResponse,
-    ImportTemplateIntoProjectArgs,
+    CreateProjectFromCSVArgs,
+    CreateProjectFromCSVResponse,
+    ImportCSVIntoProjectArgs,
     ImportTemplateFromIdArgs,
     ImportTemplateResponse,
 } from './types/templates'
@@ -1686,13 +1686,13 @@ export class TodoistApi {
     // ── Templates ──
 
     /**
-     * Exports a project as a template file (CSV format).
+     * Exports a project as a CSV file.
      *
      * @param args - Arguments including project ID and optional date format preference.
-     * @returns A promise that resolves to the template file content as a string.
+     * @returns A promise that resolves to the CSV content as a string.
      */
-    async exportTemplateAsFile(args: ExportTemplateFileArgs): Promise<string> {
-        return this.templateClient.exportTemplateAsFile(args)
+    async exportProjectAsCSV(args: ExportProjectAsCSVArgs): Promise<string> {
+        return this.templateClient.exportProjectAsCSV(args)
     }
 
     /**
@@ -1706,31 +1706,31 @@ export class TodoistApi {
     }
 
     /**
-     * Creates a new project from a template file.
+     * Creates a new project from a CSV file.
      *
-     * @param args - Arguments including project name, template file, and optional workspace ID.
+     * @param args - Arguments including project name, CSV file, and optional workspace ID.
      * @param requestId - Optional custom identifier for the request.
      * @returns A promise that resolves to the created project data.
      */
-    async createProjectFromTemplate(
-        args: CreateProjectFromTemplateArgs,
+    async createProjectFromCSV(
+        args: CreateProjectFromCSVArgs,
         requestId?: string,
-    ): Promise<CreateProjectFromTemplateResponse> {
-        return this.templateClient.createProjectFromTemplate(args, requestId)
+    ): Promise<CreateProjectFromCSVResponse> {
+        return this.templateClient.createProjectFromCSV(args, requestId)
     }
 
     /**
-     * Imports a template file into an existing project.
+     * Imports a CSV file into an existing project.
      *
-     * @param args - Arguments including project ID and template file.
+     * @param args - Arguments including project ID and CSV file.
      * @param requestId - Optional custom identifier for the request.
      * @returns A promise that resolves to the import result.
      */
-    async importTemplateIntoProject(
-        args: ImportTemplateIntoProjectArgs,
+    async importCSVIntoProject(
+        args: ImportCSVIntoProjectArgs,
         requestId?: string,
     ): Promise<ImportTemplateResponse> {
-        return this.templateClient.importTemplateIntoProject(args, requestId)
+        return this.templateClient.importCSVIntoProject(args, requestId)
     }
 
     /**

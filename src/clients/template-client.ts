@@ -8,13 +8,13 @@ import {
 } from '../consts/endpoints'
 import { request } from '../transport/http-client'
 import type {
-    CreateProjectFromTemplateArgs,
-    CreateProjectFromTemplateResponse,
-    ExportTemplateFileArgs,
+    CreateProjectFromCSVArgs,
+    CreateProjectFromCSVResponse,
+    ExportProjectAsCSVArgs,
     ExportTemplateUrlArgs,
     ExportTemplateUrlResponse,
     ImportTemplateFromIdArgs,
-    ImportTemplateIntoProjectArgs,
+    ImportCSVIntoProjectArgs,
     ImportTemplateResponse,
 } from '../types/templates'
 import { uploadMultipartFile } from '../utils/multipart-upload'
@@ -36,7 +36,7 @@ import { BaseClient } from './base-client'
  * JSDoc.
  */
 export class TemplateClient extends BaseClient {
-    async exportTemplateAsFile(args: ExportTemplateFileArgs): Promise<string> {
+    async exportProjectAsCSV(args: ExportProjectAsCSVArgs): Promise<string> {
         const response = await request<string>({
             httpMethod: 'GET',
             baseUri: this.syncApiBase,
@@ -62,10 +62,10 @@ export class TemplateClient extends BaseClient {
         return data
     }
 
-    async createProjectFromTemplate(
-        args: CreateProjectFromTemplateArgs,
+    async createProjectFromCSV(
+        args: CreateProjectFromCSVArgs,
         requestId?: string,
-    ): Promise<CreateProjectFromTemplateResponse> {
+    ): Promise<CreateProjectFromCSVResponse> {
         const { file, fileName, name, workspaceId } = args
         const additionalFields: Record<string, string> = { name }
         if (workspaceId !== undefined && workspaceId !== null) {
@@ -85,11 +85,11 @@ export class TemplateClient extends BaseClient {
         })
         return this.validateTemplateResponse(
             data as Record<string, unknown>,
-        ) as CreateProjectFromTemplateResponse
+        ) as CreateProjectFromCSVResponse
     }
 
-    async importTemplateIntoProject(
-        args: ImportTemplateIntoProjectArgs,
+    async importCSVIntoProject(
+        args: ImportCSVIntoProjectArgs,
         requestId?: string,
     ): Promise<ImportTemplateResponse> {
         const { file, fileName, projectId } = args
